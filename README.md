@@ -4,40 +4,13 @@
 
 > 📖 **[从零搭建指南 → SETUP.md](SETUP.md)** — 从 Hermes Agent 全新安装到测试部署一站完成。
 
-TrendRadar 是一个轻量级新闻聚合与智能推送系统。从 39+ RSS 源和博客异步抓取内容，经 AC 自动机分类 + AI 评分后，按早/午/晚三段推送 Markdown 简报至企业微信，辅以周报/月报深度研判。
+TrendRadar 是一个三层结构的新闻聚合与智能推送系统：**日报**（39+ RSS 源，早/午/晚三段）、**周报**（每周一深度趋势研判）、**月报**（每月初聚合分析）。底层共享同一套多源异步抓取管线、AC 自动机分类引擎和 AI 评分系统。
 
 ---
 
-## 目录结构
+## 推送体系
 
-```
-TrendRadar/
-├── trendradar/              # 核心管线代码
-│   ├── scripts/             #   20 个管线/工具脚本
-│   ├── config/              #   关键词/时段/翻译/兴趣配置
-│   ├── migrations/          #   SQLite 数据库迁移引擎
-│   ├── skills/              #   Hermes Agent 技能定义
-│   │   ├── news-secretary/           # SKILL.md + 7 个参考文档
-│   │   ├── self-healing/             # SKILL.md + 4 个参考文档
-│   │   ├── performance-optimizer/    # SKILL.md + 2 个参考文档
-│   │   ├── system-config/            # 系统配置速查手册
-│   │   ├── godmode/                  # 越狱框架（3模组+5脚本+3参考）
-│   │   ├── weekly-trend-report/      # 每周一深度趋势周报
-│   │   └── monthly-trend-report/     # 每月1日聚合月报
-│   ├── tests/               #   92 个测试用例
-│   ├── requirements.txt
-│   ├── requirements-dev.txt
-│   └── pyproject.toml
-├── hermes-scripts/           # 自动体检/维护脚本
-│   ├── trendradar_health_check.py
-│   └── trendradar_maintenance.py
-├── .gitignore
-├── LICENSE                   # MIT 许可证
-├── README.md                  # 项目说明
-└── SETUP.md                   # 从零搭建指南
-```
-
-## Pipeline
+### 🌅 日报 — Flash 管线，日推 3 次
 
 ```
 RSS 异步抓取 (39源) → AC 自动机分类 (5域) → AI 渲染 (5路并行,~9s) → WeCom 分片推送 → [晚间] 3×Pro 深度分析
@@ -49,11 +22,34 @@ RSS 异步抓取 (39源) → AC 自动机分类 (5域) → AI 渲染 (5路并行
 | 🌤️ 午间速递 | 12:00 | 32 | 增量去重 |
 | 🌙 今日回顾 | 21:00 | 24 | 总结 + 3×Pro 深度分析 |
 
+### 📆 周报 — Pro 深度研判，每周一推送
+
+在日报累积数据基础上，每周一 09:30 用 Pro 模型执行：
+
+1. **数据聚合** — 聚合 7 天 curated JSON，提取跨板块趋势
+2. **信息茧房突围** — 运行 `blind_spot_audit.py --days 7`，识别偏好盲区
+3. **主题验证** — 每主题用 `deep-research-cli` 六步协议做网络搜索验证
+4. **输出** — 五大板块 × 3-5 主题，每主题含事件链/数据/影响/展望/置信度/对立视角
+
+### 📊 月报 — 全景复盘，每月 1 日推送
+
+在 4 期周报数据基础上，每月 1 日 09:00 用 Pro 模型执行：
+
+1. **三层聚合** — 近 4 周周报（叙事骨架）+ `aggregate_monthly.py`（量化统计）+ 深度搜索验证
+2. **热度 Top10** — `heat_tracker` 跨源覆盖 + 热度分 + 趋势走向
+3. **各板块深度** — 每板块 3-5 事件，事件链→数据→影响→展望→置信度
+4. **趋势研判** — 跨域交叉 + 下月新兴话题预测
+
+---
+
 ## 功能
 
 - **多源异步抓取** — aiohttp 异步并发，两级连接池（RSSHub + 外网直连）
 - **AC 自动机分类** — 505 关键词 × 6 域，frozenset O(1) 查找，比线性匹配快 4.4×
 - **AI 渲染** — 各板块独立 DeepSeek Flash API 调用，5 路并行，~9s
+- **日报推送** — 早/午/晚三段 Flash 管线，晚间附加 3×Pro 深度分析
+- **周报研判** — 每周一 Pro 模型深度趋势分析，含信息茧房突围
+- **月报分析** — 每月初全景复盘，聚合 4 周数据 + heat_tracker Top10
 - **兴趣偏好评分** — `config/ai_interests.yaml` 定义正面+2分/排除过滤，CLI 管理
 - **指纹去重** — MD5 截断指纹，48h 滑动窗口
 - **热度追踪** — SQLite 持久化，跨周期频次/平台/持续时间
@@ -61,8 +57,8 @@ RSS 异步抓取 (39源) → AC 自动机分类 (5域) → AI 渲染 (5路并行
 - **结构化日志** — 统一 logging 工厂，`[timestamp] [LEVEL] [module]` 格式
 - **退出码协议** — 脚本按 `exitcodes.py` 返回 0/2/3/10/11/12/99，Agent 依码决策
 - **自动体检** — 每日 15:00 自检 DB/配置/API/Gateway/全链路，异常推送
+- **推送质量优化** — 每日 21:15 评分 + 偏好收敛调优
 - **技能评估** — 集成 Anthropic skill-creator 框架，with/without 对比评分
-- **晚间 Pro 深度分析** — 3 路并行 Pro 子 agent：趋势识别、跨域影响、风险机会评估
 
 ## Hermes Agent 要求
 
@@ -70,15 +66,45 @@ RSS 异步抓取 (39源) → AC 自动机分类 (5域) → AI 渲染 (5路并行
 
 | 功能 | 依赖 Hermes 的组件 | 如果不运行 Hermes |
 |------|-------------------|------------------|
-| **推送调度** | cron job（`0 9,12,21 * * *`） | 脚本可手动跑，但无定时推送 |
+| **推送调度** | 日报 cron（`0 9,12,21 * * *`）+ 周报 cron（`30 9 * * 1`）+ 月报 cron（`0 9 1 * *`） | 脚本可手动跑，但无定时推送 |
 | **7 个 skill** | `trendradar-news-secretary`, `trendradar-self-healing`, `trendradar-performance-optimizer`, `system-config`, `godmode`, `weekly-trend-report`, `monthly-trend-report` | skill 是 Agent 指令集，脱离 Hermes 无意义 |
 | **WeCom 投递** | `send_message(target="wecom")` + Gateway IPC socket | 无法投递到企业微信 |
 | **晚间深度分析** | `delegate_task` 3×Pro 子 Agent 并行 | 晚报无深度分析板块 |
+| **周报/月报 Pro 分析** | `delegate_task` + `deep-research-cli` 六步协议 | 周报/月报降级为纯数据聚合，无深度研判 |
 | **KV 缓存共享** | Hermes KV cache（3 日报共池） | Flash API 缓存不跨 session，token 成本上升 |
 | **自动体检** | cron no_agent 模式 + health_check 脚本 | health_check.py 可单独跑，但无人接收告警 |
 | **看门狗** | cron no_agent 模式 + delivery_watchdog | 推送失败无兜底告警 |
 
 > **最小独立运行**：`trendradar/scripts/` 下的 Python 脚本（push_prepare, render_briefing, curate_and_push 等）均可脱离 Hermes 手动执行，用于调试和数据产出。但全自动推送流水线必须依赖 Hermes Agent。
+
+## 目录结构
+
+```
+TrendRadar/
+├── trendradar/              # 核心 Python 包
+│   ├── scripts/             #   20 个管线/工具脚本
+│   ├── config/              #   关键词/时段/翻译/兴趣配置
+│   ├── migrations/          #   SQLite 数据库迁移引擎
+│   ├── skills/              #   Hermes Agent 技能定义
+│   │   ├── news-secretary/           # 日报推送（核心）
+│   │   ├── self-healing/             # 自动体检/自修复
+│   │   ├── performance-optimizer/    # 推送质量优化
+│   │   ├── system-config/            # 系统配置速查
+│   │   ├── godmode/                  # 越狱框架
+│   │   ├── weekly-trend-report/      # 周报深度研判
+│   │   └── monthly-trend-report/     # 月报全景分析
+│   ├── tests/               #   92 个测试用例
+│   ├── requirements.txt
+│   ├── requirements-dev.txt
+│   └── pyproject.toml
+├── hermes-scripts/           # 自动体检/维护脚本
+│   ├── trendradar_health_check.py
+│   └── trendradar_maintenance.py
+├── .gitignore
+├── LICENSE
+├── README.md
+└── SETUP.md
+```
 
 ## 快速开始
 
@@ -92,10 +118,9 @@ export DEEPSEEK_API_KEY="sk-xxx"
 # 3. 初始化数据库
 python3 -c "from scripts.settings import ensure_db_migrated; ensure_db_migrated()"
 
-# 4. 手动跑一次全流程
+# 4. 手动跑一次日报
 python3 scripts/push_prepare.py --push-id morning
 python3 scripts/render_briefing.py --push-id morning
-python3 scripts/fragment_push.py < output.md
 ```
 
 ## 测试
