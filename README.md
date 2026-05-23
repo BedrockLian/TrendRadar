@@ -26,6 +26,7 @@ TrendRadar/
 │   ├── trendradar_health_check.py
 │   └── trendradar_maintenance.py
 ├── .gitignore
+├── LICENSE                   # MIT 许可证
 └── README.md                  # 项目说明
 ```
 
