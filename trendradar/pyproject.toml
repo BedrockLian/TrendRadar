@@ -1,22 +1,27 @@
 [project]
 name = "trendradar"
-version = "5.3.0"
+version = "5.4.0"
 description = "AI-powered multi-source news aggregation and briefing system"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
     "aiohttp>=3.9",
     "feedparser>=6.0",
     "pyyaml>=6.0",
+    "pyahocorasick>=2.0",
     "zstandard>=0.23; platform_system != 'Windows'",
+    "charset-normalizer>=3.0",
 ]
 
 [project.optional-dependencies]
-optimize = ["pyahocorasick>=2.0"]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.24",
     "pytest-timeout>=2.0",
     "ruff>=0.4",
+]
+free-threaded = [
+    "feedparser>=6.0",
+    "zstandard>=0.23",
 ]
 
 [tool.ruff]
