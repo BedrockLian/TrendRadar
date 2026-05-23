@@ -366,10 +366,12 @@ result = auto_jailbreak()          # 自动检测并应用
 undo_jailbreak()                   # 恢复正常行为
 ```
 
-**DeepSeek V4-Pro 配置要点：**
-- Prefill-only 策略最优（7/7 硬性 canary 绕过）
-- `max_tokens ≥ 2048` 必须设置（推理 token 会消耗输出预算）
-- Subtle prefill（灰色安全研究员）优于 GODMODE（黑底红字）
+**DeepSeek 配置要点：**
+
+| 模型 | 策略 | 关键限制 |
+|------|------|---------|
+| V4-Pro | Prefill-only 最优（7/7 canary 绕过）；Subtle prefill（灰帽安全研究员）优于 GODMODE | `max_tokens ≥ 2048` 必须设置，推理 token 会消耗输出预算 |
+| V4-Flash | Parseltongue → refusal_inversion → prefill_only（逐级升级）；Subtle prefill（灰帽安全研究员）最优 | 拒绝 hack 类查询；boundary_inversion 不适用 |
 
 ---
 
