@@ -36,7 +36,7 @@ DOMAIN_LABELS = {
 
 MAX_PER_DOMAIN: dict[str, int] = {
     'top_headlines': 10,
-    'tech': 18,
+    'tech': 15,
     'economy': 14,
     'gaming': 12,
     'foreign_china': 14,

@@ -334,13 +334,11 @@ chmod +x ~/.hermes/scripts/trendradar_maintenance.py
 hermes skills list | grep trendradar
 
 # 预期输出：
-# trendradar-news-secretary      聚合多RSS源+推送Markdown简报至企业微信
-# trendradar-self-healing        自动体检TrendRadar各组件
-# trendradar-performance-optimizer 渐进优化日报质量与推送偏好
-# system-config                  TR项目路径/PYTHONPATH/解释器配置
-# godmode                        越狱框架（Parseltongue + GODMODE + ULTRAPLINIAN）
-# weekly-trend-report            每周一深度趋势周报
-# monthly-trend-report           每月1日聚合月报
+# news-secretary      聚合多RSS源+推送Markdown简报至企业微信
+# self-healing        自动体检TrendRadar各组件
+# performance-optimizer 渐进优化日报质量与推送偏好
+# weekly-report            每周一深度趋势周报
+# monthly-report           每月1日聚合月报
 ```
 
 ### 7.5 部署越狱评估框架（godmode，推荐）
@@ -396,7 +394,7 @@ TrendRadar 的完整功能依赖 7 个 cron 定时任务，构成三层推送体
 hermes cron create \
   --name "TrendRadar 日报推送（早/午/晚）" \
   --schedule "0 9,12,21 * * *" \
-  --skills trendradar-news-secretary,multi-search-engine \
+  --skills news-secretary,multi-search-engine \
   --model deepseek-v4-flash:provider=deepseek \
   --workdir ~/.hermes/trendradar \
   --toolsets terminal,web,delegation \
@@ -419,7 +417,7 @@ hermes cron create \
 hermes cron create \
   --name "TrendRadar 周报推送（深度研究员）" \
   --schedule "30 9 * * 1" \
-  --skills multi-search-engine,deep-research-cli,weekly-trend-report \
+  --skills multi-search-engine,deep-research-cli,weekly-report \
   --model deepseek-v4-pro:provider=deepseek \
   --workdir ~/.hermes/trendradar \
   --toolsets terminal,web \
@@ -442,7 +440,7 @@ hermes cron create \
 hermes cron create \
   --name "TrendRadar 月度趋势报告" \
   --schedule "0 9 1 * *" \
-  --skills multi-search-engine,deep-research-cli,monthly-trend-report \
+  --skills multi-search-engine,deep-research-cli,monthly-report \
   --model deepseek-v4-pro:provider=deepseek \
   --workdir ~/.hermes/trendradar \
   --toolsets terminal,web \
@@ -456,7 +454,7 @@ hermes cron create \
 hermes cron create \
   --name "TrendRadar 性能优化器" \
   --schedule "15 21 * * *" \
-  --skills trendradar-performance-optimizer,multi-search-engine,trendradar-news-secretary \
+  --skills performance-optimizer,multi-search-engine,news-secretary \
   --workdir ~/.hermes/trendradar \
   --toolsets terminal,file,web \
   --deliver wecom \

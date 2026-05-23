@@ -51,7 +51,7 @@ def _econ_extra() -> frozenset:
 def _foreign_sources() -> frozenset:
     return frozenset(s['name'].lower() for s in _sources()
                      if s.get('authority', 1) >= 2 and s.get('platform') in (
-        'reuters', 'bbc', 'nytimes', 'arstechnica', 'techcrunch',
+        'reuters', 'bbc', 'nytimes', 'arstechnica', 'techcrunch', 'nhk',
         'VideoGamesChronicle', 'PCGamer', 'Eurogamer', 'RockPaperShotgun',
         'GamersNexus', 'nintendoeverything', 'aftermath', 'automaton'))
 
@@ -126,11 +126,14 @@ def _load_interests() -> tuple[frozenset, frozenset]:
 
 @lru_cache(maxsize=1)
 def _china_kw() -> frozenset:
-    return frozenset({'中国', '北京', '上海', '习近平', '中俄', '中美', '中央', '解放军', '外交部',
-                       '国家', '国务院', '台湾', '台独', '经济', '股市', '制造业', '贸易',
-                       '芯片', '半导体', '华为', 'TikTok', '支付宝', '微信', '人民币',
-                       '一带一路', '大湾区', 'China', 'Chinese', 'Beijing', 'Xi Jinping',
-                       'Taiwan', 'Sino-', 'Made in China'})
+    return frozenset({'中国', '北京', '上海', '广州', '深圳', '习近平', '中俄', '中美', '中日',
+                       '中欧', '中央', '解放军', '外交部', '商务部', '国务院', '发改委',
+                       '国家', '台湾', '台独', '香港', '澳门', '经济', '股市', '制造业',
+                       '贸易', '关税', '芯片', '半导体', '华为', 'TikTok', '支付宝', '微信',
+                       '人民币', '比亚迪', '阿里巴巴', '腾讯', '宁德时代',
+                       '一带一路', '大湾区', 'China', 'Chinese', 'Beijing', 'Shanghai',
+                       'Xi Jinping', 'Taiwan', 'Hong Kong', 'Sino-', 'Made in China',
+                       'tariff', 'trade war', 'supply chain', 'yuan'})
 
 
 @lru_cache(maxsize=1)

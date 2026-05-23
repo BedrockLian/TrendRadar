@@ -13,7 +13,7 @@ TrendRadar 是一个三层结构的新闻聚合与智能推送系统：**日报*
 ### 🌅 日报 — Flash 管线，日推 3 次
 
 ```
-RSS 异步抓取 (39源) → AC 自动机分类 (5域) → AI 渲染 (5路并行,~9s) → WeCom 分片推送 → [晚间] 3×Pro 深度分析
+RSS 异步抓取 (39源) → AC 自动机分类 (5域) → render_markdown.py脚本渲染 (~0s) → WeCom 分片推送 → [晚间] 3×Pro 深度分析
 ```
 
 | 时段 | 时间 | 条数 | 特点 |
@@ -46,7 +46,7 @@ RSS 异步抓取 (39源) → AC 自动机分类 (5域) → AI 渲染 (5路并行
 
 - **多源异步抓取** — aiohttp 异步并发，两级连接池（RSSHub + 外网直连）
 - **AC 自动机分类** — 505 关键词 × 6 域，frozenset O(1) 查找，比线性匹配快 4.4×
-- **AI 渲染** — 各板块独立 DeepSeek Flash API 调用，5 路并行，~9s
+- **Script 渲染** — `render_markdown.py` 纯脚本拼接，~0s，零 token 成本，格式硬编码永远一致
 - **日报推送** — 早/午/晚三段 Flash 管线，晚间附加 3×Pro 深度分析
 - **周报研判** — 每周一 Pro 模型深度趋势分析，含信息茧房突围
 - **月报分析** — 每月初全景复盘，聚合 4 周数据 + heat_tracker Top10
@@ -68,7 +68,7 @@ RSS 异步抓取 (39源) → AC 自动机分类 (5域) → AI 渲染 (5路并行
 | 功能 | 依赖 Hermes 的组件 | 如果不运行 Hermes |
 |------|-------------------|------------------|
 | **推送调度** | 日报 cron（`0 9,12,21 * * *`）+ 周报 cron（`30 9 * * 1`）+ 月报 cron（`0 9 1 * *`） | 脚本可手动跑，但无定时推送 |
-| **7 个 skill** | `trendradar-news-secretary`, `trendradar-self-healing`, `trendradar-performance-optimizer`, `system-config`, `godmode`, `weekly-trend-report`, `monthly-trend-report` | skill 是 Agent 指令集，脱离 Hermes 无意义 |
+| **7 个 skill** | `news-secretary`, `self-healing`, `performance-optimizer`, `system-config`, `godmode`, `weekly-report`, `monthly-report` | skill 是 Agent 指令集，脱离 Hermes 无意义 |
 | **WeCom 投递** | `send_message(target="wecom")` + Gateway IPC socket | 无法投递到企业微信 |
 | **晚间深度分析** | `delegate_task` 3×Pro 子 Agent 并行 | 晚报无深度分析板块 |
 | **周报/月报 Pro 分析** | `delegate_task` + `deep-research-cli` 六步协议 | 周报/月报降级为纯数据聚合，无深度研判 |
@@ -76,14 +76,14 @@ RSS 异步抓取 (39源) → AC 自动机分类 (5域) → AI 渲染 (5路并行
 | **自动体检** | cron no_agent 模式 + health_check 脚本 | health_check.py 可单独跑，但无人接收告警 |
 | **看门狗** | cron no_agent 模式 + delivery_watchdog | 推送失败无兜底告警 |
 
-> **最小独立运行**：`trendradar/scripts/` 下的 Python 脚本（push_prepare, render_briefing, curate_and_push 等）均可脱离 Hermes 手动执行，用于调试和数据产出。但全自动推送流水线必须依赖 Hermes Agent。
+> **最小独立运行**：`trendradar/scripts/` 下的 Python 脚本（push_prepare, render_markdown, curate_and_push 等）均可脱离 Hermes 手动执行，用于调试和数据产出。但全自动推送流水线必须依赖 Hermes Agent。
 
 ## 目录结构
 
 ```
 TrendRadar/
 ├── trendradar/              # 核心 Python 包
-│   ├── scripts/             #   20 个管线/工具脚本
+│   ├── scripts/             #   21 个管线/工具脚本
 │   ├── config/              #   关键词/时段/翻译/兴趣配置
 │   ├── migrations/          #   SQLite 数据库迁移引擎
 │   ├── skills/              #   Hermes Agent 技能定义
@@ -91,9 +91,8 @@ TrendRadar/
 │   │   ├── self-healing/             # 自动体检/自修复
 │   │   ├── performance-optimizer/    # 推送质量优化
 │   │   ├── system-config/            # 系统配置速查
-│   │   ├── godmode/                  # 越狱框架
-│   │   ├── weekly-trend-report/      # 周报深度研判
-│   │   └── monthly-trend-report/     # 月报全景分析
+│   │   ├── weekly-report/            # 周报深度研判
+│   │   └── monthly-report/           # 月报全景分析
 │   ├── tests/               #   92 个测试用例
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
@@ -121,7 +120,7 @@ python3 -c "from scripts.settings import ensure_db_migrated; ensure_db_migrated(
 
 # 4. 手动跑一次日报
 python3 scripts/push_prepare.py --push-id morning
-python3 scripts/render_briefing.py --push-id morning
+python3 scripts/render_markdown.py --push-id morning
 ```
 
 ## 测试
@@ -140,6 +139,7 @@ cd trendradar && pytest tests/ -v --timeout 15
 | 分类 | pyahocorasick (AC 自动机) |
 | 存储 | SQLite (WAL + mmap) |
 | AI | DeepSeek Flash / Pro API |
+| 渲染 | `render_markdown.py`（纯脚本，~0s） / `render_deep_analysis.py`（深度分析格式化） |
 | 推送 | 企业微信 (WeCom) |
 | 调度 | Hermes Agent cron |
 | 压缩 | zstandard (zstd) |
