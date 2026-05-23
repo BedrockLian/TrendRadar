@@ -1,0 +1,48 @@
+# AI 翻译配置
+# 控制哪些源需要翻译
+
+translate:
+  enabled: true
+  target_language: zh-CN
+
+  # 需要翻译的英文源（源名必须与 sources.json 的 name 字段一致）
+  sources:
+    - BBC 商务
+    - BBC 科技
+    - 纽约时报·世界
+    - 纽约时报·科技
+    - 卫报·科技
+    - 卫报·商务
+    - 南华早报
+    - 路透社·商业
+    - 路透社·中国
+    - 路透社·科技
+    - Ars Technica
+    - TechCrunch
+    - The Verge·游戏
+    - PC Gamer
+    - Eurogamer
+    - Rock Paper Shotgun
+    - Video Games Chronicle
+    - GamesIndustry.biz
+    - Aftermath
+    - Automaton West
+    - Nintendo Everything
+    - Japan Times
+    - Inside Games
+    - NHK ビジネス
+
+  # 不需要翻译的源（已含中文）
+  exclude:
+    - BBC 中文
+    - 华尔街见闻
+    - 日经亚洲
+    - FT 中文网
+
+  # 日文源翻译
+  translate_japanese: true
+  japanese_sources:
+    - 4Gamer
+    - Japan Times
+    - Inside Games
+    - NHK ビジネス

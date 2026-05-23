@@ -1,0 +1,26 @@
+# 运行时数据
+data/
+cache/
+logs/
+mail_queue/
+output/
+*.db
+*.db-*
+
+# 密钥和配置
+.env
+config/ai_interests.txt.bak
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# 备份
+trendradar-backup/
+
+# 系统
+*.swp
+.DS_Store
+Thumbs.db

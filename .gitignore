@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+*.swp
+.DS_Store
+Thumbs.db
+trendradar/data/
+trendradar/cache/
+trendradar/logs/
+trendradar/mail_queue/
+trendradar/output/
+trendradar/*.db
+trendradar/.env
+trendradar/config/ai_interests.txt.bak
