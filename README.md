@@ -18,7 +18,7 @@ TrendRadar/
 │   │   ├── news-secretary/           # SKILL.md + 7 个参考文档
 │   │   ├── self-healing/             # SKILL.md + 4 个参考文档
 │   │   ├── performance-optimizer/    # SKILL.md + 2 个参考文档
-│   │   └── trendradar-system-config/ # 系统配置速查手册
+│   │   └── system-config/            # 系统配置速查手册
 │   ├── tests/               #   92 个测试用例
 │   ├── requirements.txt
 │   ├── requirements-dev.txt

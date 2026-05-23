@@ -1,7 +1,7 @@
 ---
-name: trendradar-system-config
-slug: trendradar-system-config
-version: 1.0.1
+name: system-config
+slug: system-config
+version: 1.1.0
 description: TrendRadar 项目路径、PYTHONPATH、Python 解释器、环境变量等系统配置知识。
 author: Hermes Agent
 metadata:
@@ -57,3 +57,21 @@ export PYTHONPATH=/home/asus/.hermes
 | health_check.py | `~/.hermes/scripts/trendradar_health_check.py` |
 | delivery_watchdog.py | `~/.hermes/scripts/delivery_watchdog.py` |
 | maintenance.py | `~/.hermes/scripts/trendradar_maintenance.py` |
+
+## Workflow: Syncing Changes to GitHub
+
+After modifying any TrendRadar system files, sync them to the git repo:
+
+```bash
+# Files in ~/.hermes/skills/trendradar/ → trendradar/skills/
+# Files in ~/.hermes/scripts/ → hermes-scripts/
+# Files in ~/.hermes/trendradar/ → trendradar/
+cd ~/TrendRadar
+cp -r ~/.hermes/skills/trendradar/<skill-name>/ trendradar/skills/<skill-name>/
+cp ~/.hermes/scripts/<script> hermes-scripts/<script>
+git add -A
+git commit -m "<descriptive message>"
+git push
+```
+
+Always sync to `~/TrendRadar/` (independent publish repo), not just the live `~/.hermes/trendradar/`.
