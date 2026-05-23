@@ -1,6 +1,6 @@
 # TrendRadar 📡
 
-> 多源 RSS 聚合 + AI 策展 → 企业微信日/周/月简报
+> 多源 RSS 聚合 + AI 策展 + Pro 深度分析 → 企业微信日/周/月/季简报。含自动体检、偏好收敛、技能评估。
 
 > 📖 **[从零搭建指南 → SETUP.md](SETUP.md)** — 从 Hermes Agent 全新安装到测试部署一站完成。
 
@@ -37,7 +37,7 @@ TrendRadar/
 ## Pipeline
 
 ```
-RSS 异步抓取 (39源) → AC 自动机分类 (5域) → AI 渲染 (5路并行,~9s) → WeCom 分片推送
+RSS 异步抓取 (39源) → AC 自动机分类 (5域) → AI 渲染 (5路并行,~9s) → WeCom 分片推送 → [晚间] 3×Pro 深度分析
 ```
 
 | 时段 | 时间 | 条数 | 特点 |
@@ -58,6 +58,8 @@ RSS 异步抓取 (39源) → AC 自动机分类 (5域) → AI 渲染 (5路并行
 - **结构化日志** — 统一 logging 工厂，`[timestamp] [LEVEL] [module]` 格式
 - **退出码协议** — 脚本按 `exitcodes.py` 返回 0/2/3/10/11/12/99，Agent 依码决策
 - **自动体检** — 每日 15:00 自检 DB/配置/API/Gateway/全链路，异常推送
+- **技能评估** — 集成 Anthropic skill-creator 框架，with/without 对比评分
+- **晚间 Pro 深度分析** — 3 路并行 Pro 子 agent：趋势识别、跨域影响、风险机会评估
 
 ## Hermes Agent 要求
 
@@ -66,7 +68,7 @@ RSS 异步抓取 (39源) → AC 自动机分类 (5域) → AI 渲染 (5路并行
 | 功能 | 依赖 Hermes 的组件 | 如果不运行 Hermes |
 |------|-------------------|------------------|
 | **推送调度** | cron job（`0 9,12,21 * * *`） | 脚本可手动跑，但无定时推送 |
-| **3 个 skill** | `trendradar-news-secretary`, `trendradar-self-healing`, `trendradar-performance-optimizer` | skill 是 Agent 指令集，脱离 Hermes 无意义 |
+| **4 个 skill** | `trendradar-news-secretary`, `trendradar-self-healing`, `trendradar-performance-optimizer`, `system-config` | skill 是 Agent 指令集，脱离 Hermes 无意义 |
 | **WeCom 投递** | `send_message(target="wecom")` + Gateway IPC socket | 无法投递到企业微信 |
 | **晚间深度分析** | `delegate_task` 3×Pro 子 Agent 并行 | 晚报无深度分析板块 |
 | **KV 缓存共享** | Hermes KV cache（3 日报共池） | Flash API 缓存不跨 session，token 成本上升 |
