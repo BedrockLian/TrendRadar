@@ -25,7 +25,8 @@ TrendRadar/
 ├── hermes-scripts/           # 自动体检/维护脚本
 │   ├── trendradar_health_check.py
 │   └── trendradar_maintenance.py
-└── docs/                     # 架构决策和改进计划
+├── .gitignore
+└── README.md                  # 项目说明
 ```
 
 ## Pipeline
