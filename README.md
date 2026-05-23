@@ -11,7 +11,7 @@ TrendRadar 是一个轻量级新闻聚合与智能推送系统。从 39+ RSS 源
 ```
 TrendRadar/
 ├── trendradar/              # 核心管线代码
-│   ├── scripts/             #   18 个管线/工具脚本
+│   ├── scripts/             #   20 个管线/工具脚本
 │   ├── config/              #   关键词/时段/翻译/兴趣配置
 │   ├── migrations/          #   SQLite 数据库迁移引擎
 │   ├── skills/              #   Hermes Agent 技能定义
