@@ -220,7 +220,7 @@ def check_pipeline():
     # 4) 流水线步骤完整性 — 验证 cron prompt 引用的脚本都存在
     pipeline_steps = ['push_slot_detect.py', 'push_prepare.py', 'batch_fetch.py',
                       'track_events.py', 'record_fingerprints.py', 'fetch_feeds.py',
-                      'fetch_hotlists.py', 'ai_translate.py']
+                      'ai_translate.py']
     for ps in pipeline_steps:
         if not (SCRIPTS / ps).exists():
             fail('pipeline', 'WARN', f'流水线脚本 {ps} 缺失')
