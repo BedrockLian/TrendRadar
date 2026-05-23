@@ -108,6 +108,17 @@ git push
 
 ⚠️ 始终同步到独立发布仓库 `~/TrendRadar/`，而非直接操作实时系统 `~/.hermes/trendradar/`。
 
+## TrendRadar 内置技能
+
+| 名称 | 用途 |
+|------|------|
+| `trendradar-news-secretary` | 日报推送管线（RSS → 分类 → 渲染 → 分片 → 晚间 Pro 分析） |
+| `trendradar-self-healing` | 自动体检 + 自修复（DB/配置/API/Gateway/记忆） |
+| `trendradar-performance-optimizer` | 推送质量评分 + 推送偏好收敛调优 |
+| `system-config` | ⬅ 本技能：系统配置速查 |
+| `weekly-trend-report` | 每周一深度趋势周报：五大板块 + 信息茧房突围 |
+| `monthly-trend-report` | 每月1日聚合月报：四周数据 + 深度搜索验证 |
+
 ## 已安装的外部技能
 
 | 名称 | 来源 | 用途 |
@@ -115,8 +126,6 @@ git push
 | `anthropic-skill-creator` | [Anthropic 官方](https://github.com/anthropics/claude-plugins-official) | 技能评估框架（with/without 对比 + 评分 Agent + 盲比） |
 | `skill-builder` | clawhub 社区 | 技能编写规范指南 |
 | `godmode` | [G0DM0D3](https://github.com/elder-plinius/G0DM0D3) / [L1B3RT4S](https://github.com/elder-plinius/L1B3RT4S) | API 级越狱框架：Parseltongue 输入混淆 + GODMODE 系统指令 + Prefill + ULTRAPLINIAN 多模型竞速 |
-| `weekly-trend-report` | 内置 | 每周一深度趋势周报：五大板块 + 信息茧房突围 |
-| `monthly-trend-report` | 内置 | 每月1日聚合月报：四周数据 + 深度搜索验证 |
 
 ## 技能评估基线
 
