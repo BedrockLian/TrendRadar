@@ -15,14 +15,14 @@ TrendRadar/
 │   ├── config/              #   关键词/时段/翻译/兴趣配置
 │   ├── migrations/          #   SQLite 数据库迁移引擎
 │   ├── skills/              #   Hermes Agent 技能定义
-│   │   ├── news-secretary/       # SKILL.md + 7 个参考文档
-│   │   ├── self-healing/         # SKILL.md + 4 个参考文档
-│   │   └── performance-optimizer/ # SKILL.md + 2 个参考文档
+│   │   ├── news-secretary/           # SKILL.md + 7 个参考文档
+│   │   ├── self-healing/             # SKILL.md + 4 个参考文档
+│   │   ├── performance-optimizer/    # SKILL.md + 2 个参考文档
+│   │   └── trendradar-system-config/ # 系统配置速查手册
 │   ├── tests/               #   92 个测试用例
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
 │   └── pyproject.toml
-│   
 ├── hermes-scripts/           # 自动体检/维护脚本
 │   ├── trendradar_health_check.py
 │   └── trendradar_maintenance.py

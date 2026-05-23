@@ -208,9 +208,11 @@ def check_pipeline():
             fail('pipeline', 'WARN', f'{mod_name}.py 缺失')
             continue
         try:
+            env = os.environ.copy()
+            env['PYTHONPATH'] = str(TR.parent)
             r = subprocess.run(
                 [sys.executable, '-c', f'import sys; sys.path.insert(0, "{SCRIPTS}"); import {mod_name}'],
-                capture_output=True, text=True, timeout=15
+                capture_output=True, text=True, timeout=15, env=env
             )
             if r.returncode != 0:
                 fail('pipeline', 'WARN', f'{label} 导入失败: {r.stderr[:80]}')
@@ -236,6 +238,7 @@ def auto_repair_missing_table():
     db = DATA / 'fingerprints.db'
     if not db.exists(): return
     try:
+        sys.path.insert(0, str(TR.parent))
         from trendradar.migrations.runner import migrate
         ver = migrate(db)
         if ver > 0:
