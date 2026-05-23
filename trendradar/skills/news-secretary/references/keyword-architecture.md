@@ -37,7 +37,7 @@ safety：纯中文 31 词（灾害/安全类）
 
 ## 扩充原则
 
-1. 先跑 `blind_spot_audit.py` + 检查 raw 中 `other` 域
+1. 检查 raw 中 `other` 域比例，确定漏分类领域
 2. 避免通用词（不加 `studio`/`発表`/`sales` 等跨行业词）
 3. 双语配对，日厂用简称
 4. 改 `_kw()` 时同步 `_kw_sets()`

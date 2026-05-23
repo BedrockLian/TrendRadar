@@ -43,7 +43,7 @@ timeline.yaml → push_slot_detect → push_prepare(RSS+blog+AC分类)
 | `references/sources-format.md` | sources.json v2.0 schema |
 
 ## 兴趣偏好
-`config/ai_interests.yaml` — 正面+2分，排除=0分过滤。CLI + 评分细则见 `references/interest-scoring.md`。
+`config/ai_interests.yaml` — 正面+2分，排除=0分过滤。CLI: `python3 scripts/interest_cli.py {list,add,remove,exclude}`。
 
 ## 故障恢复
 ```bash

@@ -53,6 +53,4 @@ foreach item:
 
 - `curate_and_push.py` — `_kw()`, `_all_source_category()`, `curate_all()`
 - `fetch_feeds.py` — `_kw_sets()`, `_preclassify()`
-- `blind_spot_audit.py` — 源覆盖率审计
-- `diversity_injector.py` — 反偏好注入
-- `classification-traps.md` — 已知分类陷阱（游戏源 vs 外媒看华冲突）
+- `references/traps.md` — 已知分类陷阱（游戏源 vs 外媒看华/AC自动机等）

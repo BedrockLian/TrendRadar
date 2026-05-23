@@ -26,7 +26,7 @@ LLM 输出 "Now let me" / "Here is" 等过程描述会被推送到 WeCom。**修
 
 ## 9. Free-threaded Python (python3.14t) 缺 C 扩展
 `--disable-gil` 编译的 Python ABI 为 `cpython-314t`，与标准 `cpython-314` 不兼容。以下 C 扩展缺失：
-- **`_zstd`**：`from compression import zstd` 报 `ModuleNotFoundError: No module named '_zstd'`。修复：`config.py` 已加三级 fallback（`compression.zstd` → `zstandard` → 普通 JSON），但首次部署需 `python3.14t -m pip install zstandard`。
+- **`_zstd`**：`from compression import zstd` 报 `ModuleNotFoundError: No module named '_zstd'`。修复：`settings.py` 已加三级 fallback（`compression.zstd` → `zstandard` → 普通 JSON），但首次部署需 `python3.14t -m pip install zstandard`。
 - **`feedparser`**：venv 的包不被 python3.14t 共享。需手动装：`python3.14t -m pip install feedparser`。
 
 ## 10. python3.14t 需要 PYTHONPATH
