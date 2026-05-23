@@ -35,11 +35,11 @@ LLM 输出 "Now let me" / "Here is" 等过程描述会被推送到 WeCom。**修
 ## 11. translate.yaml 源名与 sources.json 不同步
 `config/translate.yaml` 的 `sources` 和 `japanese_sources` 列的是源名字符串，与 `data/sources.json` 的 `name` 字段一一对应。如果 sources.json 重构（比如 `纽约时报` 拆分出 `纽约时报·世界` 和 `纽约时报·科技`），translate.yaml 的旧名不会自动失效——翻译静默跳过不存在的源，没有任何报错。**修复**：`pytest tests/ -k translate_config` 会校验全部映射。建议在改 sources.json 后立即跑此测试。
 
-## 12. 标题翻译遗漏（v5.4.0 修复）
-旧版 `ai_translate.py` 只翻译 `summary` 字段，不翻译 `title`。`render_briefing.py` 将原始英文标题传给 LLM 后可能仍保留英文。**v5.4.0 修复**：ai_translate 同时检测标题 CJK 占比并写入 `title_cn`。render_briefing 优先取 `title_cn`。渲染 prompt 也要求 LLM 翻译残留英文标题。
+## 12. 标题翻译遗漏（v5.5.0 修复）
+旧版 `ai_translate.py` 只翻译 `summary` 字段，不翻译 `title`。`render_briefing.py` 将原始英文标题传给 LLM 后可能仍保留英文。**v5.5.0 修复**：ai_translate 同时检测标题 CJK 占比并写入 `title_cn`。render_briefing 优先取 `title_cn`。渲染 prompt 也要求 LLM 翻译残留英文标题。
 
-## 13. 分片缺失导致 WeCom 截断（v5.4.0 修复）
-旧版 cron 将渲染后的完整简报作为 final response 由系统 auto-deliver，超过 4000 字符时 WeCom 静默截断。**v5.4.0 修复**：新增 `fragment_push.py`，渲染输出经分片后逐片用 `send_message` 投递，片间 1.5s 延迟，尾注仅末片。cron prompt 最后返回 [SILENT] 防重复。
+## 13. 分片缺失导致 WeCom 截断（v5.5.0 修复）
+ 旧版 cron 将渲染后的完整简报作为 final response 由系统 auto-deliver，超过 4000 字符时 WeCom 静默截断。**v5.5.0 修复**：新增 `fragment_push.py`，渲染输出经分片后逐片用 `send_message` 投递，片间 1.5s 延迟，尾注仅末片。cron prompt 最后返回 [SILENT] 防重复。
 
 ## 14. fragment_push.py 不可作为独立 CLI 推送
 `fragment_push.py` 从 stdin 读全文、输出 JSON 数组到 stdout。它不分发消息——分发由 cron agent 用 `send_message` 工具完成。不要试图在 shell 中直接 `fragment_push.py | ...` 推送。
