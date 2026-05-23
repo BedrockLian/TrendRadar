@@ -339,6 +339,8 @@ hermes skills list | grep trendradar
 # trendradar-performance-optimizer 渐进优化日报质量与推送偏好
 # system-config                  TR项目路径/PYTHONPATH/解释器配置
 # godmode                        越狱框架（Parseltongue + GODMODE + ULTRAPLINIAN）
+# weekly-trend-report            每周一深度趋势周报
+# monthly-trend-report           每月1日聚合月报
 ```
 
 ### 7.5 部署越狱评估框架（godmode，推荐）
