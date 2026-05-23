@@ -302,7 +302,23 @@ cp -r ~/TrendRadar/trendradar/skills/performance-optimizer ~/.hermes/skills/tren
 cp -r ~/TrendRadar/trendradar/skills/system-config ~/.hermes/skills/trendradar/
 ```
 
-### 7.2 部署外围脚本
+### 7.2 部署技能评估框架（可选）
+
+TrendRadar 集成了 Anthropic skill-creator 框架，可对技能进行定量评估（with/without 对比 + 评分）：
+
+```bash
+# 如果已拉取（通过本指南首次设置时需手动拉取）
+hermes skills list | grep anthropic-skill-creator
+```
+
+该框架提供：
+- 9 组 test case × 2（with/without）并行跑 → 评分 → 聚合报告
+- 评分 Agent（grader）、盲比 Agent（comparator）、分析 Agent（analyzer）
+- Web 评估查看器
+
+> 拉取方式：参考 https://github.com/anthropics/claude-plugins-official/tree/main/plugins/skill-creator
+
+### 7.3 部署外围脚本
 
 ```bash
 cp ~/TrendRadar/hermes-scripts/trendradar_health_check.py ~/.hermes/scripts/
@@ -311,7 +327,7 @@ chmod +x ~/.hermes/scripts/trendradar_health_check.py
 chmod +x ~/.hermes/scripts/trendradar_maintenance.py
 ```
 
-### 7.3 验证部署
+### 7.4 验证部署
 
 ```bash
 # 确认 skills 可被 Hermes 加载
@@ -328,7 +344,7 @@ hermes skills list | grep trendradar
 
 ## 8. 注册定时任务
 
-TrendRadar 的完整功能依赖 6 个 cron 定时任务。
+TrendRadar 的完整功能依赖 7 个 cron 定时任务（含可选看门狗为 8 个）。
 
 ### 8.1 日报推送（核心）
 
@@ -411,13 +427,27 @@ hermes cron create \
   --repeat forever
 ```
 
-### 8.7 验证所有任务
+### 8.7 降级看门狗（可选）
+
+监测 WeCom 推送投递健康，异常时通过 QQ 邮箱告警。静默运行，无异常不输出。
+
+```bash
+hermes cron create \
+  --name "TrendRadar 推送降级看门狗" \
+  --schedule "0 10,14,22 * * *" \
+  --script delivery_watchdog.py \
+  --no-agent \
+  --deliver local \
+  --repeat forever
+```
+
+### 8.8 验证所有任务
 
 ```bash
 hermes cron list
 ```
 
-预期输出 6 个任务，状态均为 `scheduled`。
+预期输出 6~7 个任务（不含可选看门狗为 6 个），状态均为 `scheduled`。
 
 ---
 
@@ -514,6 +544,7 @@ rm -f ~/.hermes/scripts/trendradar_maintenance.py
 
 # 删除技能
 rm -rf ~/.hermes/skills/trendradar
+rm -rf ~/.hermes/skills/anthropic-skill-creator  # 评估框架（如已安装）
 
 # 仓库保留
 # rm -rf ~/TrendRadar
