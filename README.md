@@ -21,7 +21,9 @@ TrendRadar/
 │   │   ├── self-healing/             # SKILL.md + 4 个参考文档
 │   │   ├── performance-optimizer/    # SKILL.md + 2 个参考文档
 │   │   ├── system-config/            # 系统配置速查手册
-│   │   └── godmode/                  # 越狱框架（3模组+5脚本+3参考）
+│   │   ├── godmode/                  # 越狱框架（3模组+5脚本+3参考）
+│   │   ├── weekly-trend-report/      # 每周一深度趋势周报
+│   │   └── monthly-trend-report/     # 每月1日聚合月报
 │   ├── tests/               #   92 个测试用例
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
