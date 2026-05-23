@@ -21,8 +21,8 @@ TrendRadar/
 │   ├── tests/               #   92 个测试用例
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
-│   ├── pyproject.toml
-│   └── README.md
+│   └── pyproject.toml
+│   
 ├── hermes-scripts/           # 自动体检/维护脚本
 │   ├── trendradar_health_check.py
 │   └── trendradar_maintenance.py
