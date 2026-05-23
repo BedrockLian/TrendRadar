@@ -1,6 +1,6 @@
 [project]
 name = "trendradar"
-version = "5.4.0"
+version = "5.5.0"
 description = "AI-powered multi-source news aggregation and briefing system"
 requires-python = ">=3.12"
 dependencies = [

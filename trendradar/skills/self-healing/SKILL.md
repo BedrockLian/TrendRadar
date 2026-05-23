@@ -1,7 +1,7 @@
 ---
 name: trendradar-self-healing
 slug: trendradar-self-healing
-version: 2.2.0
+version: 2.3.0
 description: 自动体检TrendRadar各组件。检测DB/配置/API/Gateway/全链路/记忆膨胀，修复常见故障。
 author: Hermes Agent
 metadata:

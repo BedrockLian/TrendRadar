@@ -1,7 +1,7 @@
 ---
 name: trendradar-news-secretary
 slug: trendradar-news-secretary
-version: 5.4.0
+version: 5.5.0
 description: 聚合多RSS源+博客推送Markdown简报至企业微信。Flash管线策展+Pro晚间深度分析。
 author: Hermes Agent
 metadata:

@@ -1,7 +1,7 @@
 ---
 name: trendradar-performance-optimizer
 slug: trendradar-performance-optimizer
-version: 2.1.0
+version: 2.2.0
 description: 渐进优化TrendRadar日报质量与推送偏好。每日21:15自愈式收敛调优。
 author: Hermes Agent
 tags: [trendradar, quality, push-preference, self-healing]
