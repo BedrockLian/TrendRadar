@@ -11,7 +11,7 @@ metadata:
     push_schedule: { merged: "0 9,12,21 * * *" }
     data_dir: ~/.hermes/trendradar
     scripts_dir: ~/.hermes/trendradar/scripts
-    companion_skills: [monthly-trend-report, wecom-format, trendradar-self-healing]
+    companion_skills: [monthly-trend-report, trendradar-self-healing]
 ---
 
 ## Pipeline

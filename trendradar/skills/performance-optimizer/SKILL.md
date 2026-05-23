@@ -7,7 +7,7 @@ author: Hermes Agent
 tags: [trendradar, quality, push-preference, self-healing]
 metadata:
   hermes:
-    companion_skills: [trendradar-news-secretary, wecom-format]
+    companion_skills: [trendradar-news-secretary]
 ---
 
 ## 触发
