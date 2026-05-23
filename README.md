@@ -59,6 +59,7 @@ RSS 异步抓取 (39源) → AC 自动机分类 (5域) → AI 渲染 (5路并行
 - **自动体检** — 每日 15:00 自检 DB/配置/API/Gateway/全链路，异常推送
 - **推送质量优化** — 每日 21:15 评分 + 偏好收敛调优
 - **技能评估** — 集成 Anthropic skill-creator 框架，with/without 对比评分
+- **推送降级看门狗** — 每日 3 次巡检 WeCom IPC socket 连通性，检查所有 cron job 投递错误，异常时 QQ 邮箱告警
 
 ## Hermes Agent 要求
 
