@@ -546,6 +546,8 @@ rm -f ~/.hermes/scripts/trendradar_maintenance.py
 rm -rf ~/.hermes/skills/trendradar
 rm -rf ~/.hermes/skills/anthropic-skill-creator  # 评估框架（如已安装）
 
-# 仓库保留
-# rm -rf ~/TrendRadar
+# ⚠️ 以下两行默认注释掉，防止误删代码历史
+# 如需彻底清除，取消注释手动执行：
+# rm -rf ~/TrendRadar                    # 删除 git 仓库克隆
+# rm -rf /mnt/c/Users/ASUS/Documents/TrendRadar-System  # 删除 Windows 文档备份
 ```
