@@ -328,7 +328,7 @@ hermes skills list | grep trendradar
 
 ## 8. 注册定时任务
 
-TrendRadar 的完整功能依赖 5 个 cron 定时任务。
+TrendRadar 的完整功能依赖 6 个 cron 定时任务。
 
 ### 8.1 日报推送（核心）
 
@@ -338,7 +338,7 @@ TrendRadar 的完整功能依赖 5 个 cron 定时任务。
 hermes cron create \
   --name "TrendRadar 日报推送（早/午/晚）" \
   --schedule "0 9,12,21 * * *" \
-  --skills trendradar-news-secretary,multi-search-engine,wecom-format \
+  --skills trendradar-news-secretary,multi-search-engine \
   --model deepseek-v4-flash:provider=deepseek \
   --workdir ~/.hermes/trendradar \
   --toolsets terminal,web,delegation \
@@ -352,7 +352,7 @@ hermes cron create \
 hermes cron create \
   --name "TrendRadar 周报推送（深度研究员）" \
   --schedule "30 9 * * 1" \
-  --skills multi-search-engine,deep-research-cli,weekly-trend-report,wecom-format \
+  --skills multi-search-engine,deep-research-cli,weekly-trend-report \
   --model deepseek-v4-pro:provider=deepseek \
   --workdir ~/.hermes/trendradar \
   --toolsets terminal,web \
@@ -360,20 +360,34 @@ hermes cron create \
   --repeat forever
 ```
 
-### 8.3 日报推送后优化器
+### 8.3 月报推送（每月1日）
+
+```bash
+hermes cron create \
+  --name "TrendRadar 月度趋势报告" \
+  --schedule "0 9 1 * *" \
+  --skills multi-search-engine,deep-research-cli,monthly-trend-report \
+  --model deepseek-v4-pro:provider=deepseek \
+  --workdir ~/.hermes/trendradar \
+  --toolsets terminal,web \
+  --deliver wecom \
+  --repeat forever
+```
+
+### 8.4 日报推送后优化器
 
 ```bash
 hermes cron create \
   --name "TrendRadar 性能优化器" \
   --schedule "15 21 * * *" \
-  --skills trendradar-performance-optimizer,multi-search-engine,trendradar-news-secretary,wecom-format \
+  --skills trendradar-performance-optimizer,multi-search-engine,trendradar-news-secretary \
   --workdir ~/.hermes/trendradar \
   --toolsets terminal,file,web \
   --deliver wecom \
   --repeat forever
 ```
 
-### 8.4 每日维护（静默）
+### 8.5 每日维护（静默）
 
 ```bash
 hermes cron create \
@@ -385,7 +399,7 @@ hermes cron create \
   --repeat forever
 ```
 
-### 8.5 自动体检（每日 15:00）
+### 8.6 自动体检（每日 15:00）
 
 ```bash
 hermes cron create \
@@ -397,13 +411,13 @@ hermes cron create \
   --repeat forever
 ```
 
-### 8.6 验证所有任务
+### 8.7 验证所有任务
 
 ```bash
 hermes cron list
 ```
 
-预期输出 5 个任务，状态均为 `scheduled`。
+预期输出 6 个任务，状态均为 `scheduled`。
 
 ---
 
