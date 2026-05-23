@@ -21,6 +21,7 @@ DB(fingerprints/heat_tracker)、脚本导入、配置存在、Cron注册、Gatew
 
 ## 记忆压缩（Agent值守）
 无独立cron — Agent值守。使用率≥75%时按 `references/memory-compression.md` 协议逐条replace替换。
+**压缩后必须报告量化指标**：修改前字符数 → 修改后字符数 → 减少量和减少百分比。确保无核心信息丢失。
 
 ## 缓存清理（按序执行）
 1. TrendRadar旧缓存(>1天) → 2. `__pycache__`(排除venv) → 3. pip cache purge → 4. apt-get clean → 5. thumbnails → 6. 旧日志gzip → 7. 会话文件 → 8. SQLite VACUUM
