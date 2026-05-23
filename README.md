@@ -54,6 +54,22 @@ RSS 异步抓取 (39源) → AC 自动机分类 (5域) → AI 渲染 (5路并行
 - **退出码协议** — 脚本按 `exitcodes.py` 返回 0/2/3/10/11/12/99，Agent 依码决策
 - **自动体检** — 每日 15:00 自检 DB/配置/API/Gateway/全链路，异常推送
 
+## Hermes Agent 要求
+
+本系统深度集成 [Hermes Agent](https://hermes-agent.nousresearch.com)，**脱离 Hermes 无法完全运行**。以下列出 Hermes 专属依赖：
+
+| 功能 | 依赖 Hermes 的组件 | 如果不运行 Hermes |
+|------|-------------------|------------------|
+| **推送调度** | cron job（`0 9,12,21 * * *`） | 脚本可手动跑，但无定时推送 |
+| **3 个 skill** | `trendradar-news-secretary`, `trendradar-self-healing`, `trendradar-performance-optimizer` | skill 是 Agent 指令集，脱离 Hermes 无意义 |
+| **WeCom 投递** | `send_message(target="wecom")` + Gateway IPC socket | 无法投递到企业微信 |
+| **晚间深度分析** | `delegate_task` 3×Pro 子 Agent 并行 | 晚报无深度分析板块 |
+| **KV 缓存共享** | Hermes KV cache（3 日报共池） | Flash API 缓存不跨 session，token 成本上升 |
+| **自动体检** | cron no_agent 模式 + health_check 脚本 | health_check.py 可单独跑，但无人接收告警 |
+| **看门狗** | cron no_agent 模式 + delivery_watchdog | 推送失败无兜底告警 |
+
+> **最小独立运行**：`trendradar/scripts/` 下的 Python 脚本（push_prepare, render_briefing, curate_and_push 等）均可脱离 Hermes 手动执行，用于调试和数据产出。但全自动推送流水线必须依赖 Hermes Agent。
+
 ## 快速开始
 
 ```bash
