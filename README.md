@@ -20,7 +20,8 @@ TrendRadar/
 │   │   ├── news-secretary/           # SKILL.md + 7 个参考文档
 │   │   ├── self-healing/             # SKILL.md + 4 个参考文档
 │   │   ├── performance-optimizer/    # SKILL.md + 2 个参考文档
-│   │   └── system-config/            # 系统配置速查手册
+│   │   ├── system-config/            # 系统配置速查手册
+│   │   └── godmode/                  # 越狱框架（3模组+5脚本+3参考）
 │   ├── tests/               #   92 个测试用例
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
@@ -68,7 +69,7 @@ RSS 异步抓取 (39源) → AC 自动机分类 (5域) → AI 渲染 (5路并行
 | 功能 | 依赖 Hermes 的组件 | 如果不运行 Hermes |
 |------|-------------------|------------------|
 | **推送调度** | cron job（`0 9,12,21 * * *`） | 脚本可手动跑，但无定时推送 |
-| **4 个 skill** | `trendradar-news-secretary`, `trendradar-self-healing`, `trendradar-performance-optimizer`, `system-config` | skill 是 Agent 指令集，脱离 Hermes 无意义 |
+| **5 个 skill** | `trendradar-news-secretary`, `trendradar-self-healing`, `trendradar-performance-optimizer`, `system-config`, `godmode` | skill 是 Agent 指令集，脱离 Hermes 无意义 |
 | **WeCom 投递** | `send_message(target="wecom")` + Gateway IPC socket | 无法投递到企业微信 |
 | **晚间深度分析** | `delegate_task` 3×Pro 子 Agent 并行 | 晚报无深度分析板块 |
 | **KV 缓存共享** | Hermes KV cache（3 日报共池） | Flash API 缓存不跨 session，token 成本上升 |

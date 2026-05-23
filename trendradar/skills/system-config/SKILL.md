@@ -1,7 +1,7 @@
 ---
 name: system-config
 slug: system-config
-version: 1.3.0
+version: 1.4.0
 description: TrendRadar 项目路径、PYTHONPATH、Python 解释器、环境变量等系统配置知识。
 author: Hermes Agent
 metadata:
@@ -114,3 +114,8 @@ git push
 |------|------|------|
 | `anthropic-skill-creator` | [Anthropic 官方](https://github.com/anthropics/claude-plugins-official) | 技能评估框架（with/without 对比 + 评分 Agent + 盲比） |
 | `skill-builder` | clawhub 社区 | 技能编写规范指南 |
+| `godmode` | [G0DM0D3](https://github.com/elder-plinius/G0DM0D3) / [L1B3RT4S](https://github.com/elder-plinius/L1B3RT4S) | API 级越狱框架：Parseltongue 输入混淆 + GODMODE 系统指令 + Prefill + ULTRAPLINIAN 多模型竞速 |
+
+## 技能评估基线
+
+`references/evaluation-baseline.md` 记录了 2026-05-23 对三个 TrendRadar 技能的定量评估结果：with-skill 93% vs without-skill 67%（Δ+26%）。后续改进后可重新跑 18 组 subagent 对比检验效果。

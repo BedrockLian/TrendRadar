@@ -338,7 +338,38 @@ hermes skills list | grep trendradar
 # trendradar-self-healing        自动体检TrendRadar各组件
 # trendradar-performance-optimizer 渐进优化日报质量与推送偏好
 # system-config                  TR项目路径/PYTHONPATH/解释器配置
+# godmode                        越狱框架（Parseltongue + GODMODE + ULTRAPLINIAN）
 ```
+
+### 7.5 部署越狱评估框架（godmode，推荐）
+
+TrendRadar 涉及的 DeepSeek API 调用在部分敏感场景下可能被内容过滤拦截。godmode 提供 API 级越狱框架，用于评估和绕过模型安全限制。
+
+**预装检查：**
+```bash
+ls ~/.hermes/skills/red-teaming/godmode/
+```
+
+**核心能力：**
+- **GODMODE CLASSIC** — 替换系统指令 + Prefill 消除安全过滤
+- **Parseltongue** — 33 种输入混淆技巧（Leetspeak / Bubble / Braille / Morse 等），绕过关键词分类器
+- **ULTRAPLINIAN** — 多模型竞速（55 模型 × 5 梯队），找出最不设防的模型
+
+**快速使用：**
+```python
+# 自动越狱（检测当前模型 → 测试策略 → 锁定最优方案）
+exec(open(os.path.expanduser(
+    os.path.join(os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes")),
+    "skills/red-teaming/godmode/scripts/load_godmode.py")
+)).read())
+result = auto_jailbreak()          # 自动检测并应用
+undo_jailbreak()                   # 恢复正常行为
+```
+
+**DeepSeek V4-Pro 配置要点：**
+- Prefill-only 策略最优（7/7 硬性 canary 绕过）
+- `max_tokens ≥ 2048` 必须设置（推理 token 会消耗输出预算）
+- Subtle prefill（灰色安全研究员）优于 GODMODE（黑底红字）
 
 ---
 
@@ -545,6 +576,7 @@ rm -f ~/.hermes/scripts/trendradar_maintenance.py
 # 删除技能
 rm -rf ~/.hermes/skills/trendradar
 rm -rf ~/.hermes/skills/anthropic-skill-creator  # 评估框架（如已安装）
+rm -rf ~/.hermes/skills/red-teaming/godmode       # 越狱框架
 
 # ⚠️ 以下两行默认注释掉，防止误删代码历史
 # 如需彻底清除，取消注释手动执行：
