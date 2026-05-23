@@ -2,6 +2,8 @@
 
 > 多源 RSS 聚合 + AI 策展 → 企业微信日/周/月简报
 
+> 📖 **[从零搭建指南 → SETUP.md](SETUP.md)** — 从 Hermes Agent 全新安装到测试部署一站完成。
+
 TrendRadar 是一个轻量级新闻聚合与智能推送系统。从 39+ RSS 源和博客异步抓取内容，经 AC 自动机分类 + AI 评分后，按早/午/晚三段推送 Markdown 简报至企业微信。
 
 ---
@@ -28,8 +30,8 @@ TrendRadar/
 │   └── trendradar_maintenance.py
 ├── .gitignore
 ├── LICENSE                   # MIT 许可证
-└── README.md                  # 项目说明
-```
+├── README.md                  # 项目说明
+└── SETUP.md                   # 从零搭建指南
 
 ## Pipeline
 
