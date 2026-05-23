@@ -32,6 +32,7 @@ TrendRadar/
 ├── LICENSE                   # MIT 许可证
 ├── README.md                  # 项目说明
 └── SETUP.md                   # 从零搭建指南
+```
 
 ## Pipeline
 
