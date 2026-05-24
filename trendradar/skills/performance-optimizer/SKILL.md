@@ -48,5 +48,4 @@ metadata:
 |------|------|
 | `references/fix-recipes.md` | 已验证修复脚本和验证命令 |
 | `references/param-tables.md` | 参数调整范围与步长 |
-| `references/performance-pitfalls.md` | 已知瓶颈模式 |
-| news-secretary `references/render-format.md` | 简报格式规范（交叉引用） |
+| `references/render-format.md` | 简报格式规范 |

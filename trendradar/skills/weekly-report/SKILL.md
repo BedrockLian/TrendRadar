@@ -41,11 +41,11 @@ cron 每周一 09:30（job `c20e2c82deda`），或手动。
 - 检查 `python3 scripts/blind_spot_audit.py --days 7` 输出
 
 ## 格式
-简报格式和空行规范见 news-secretary `references/render-format.md`。
+简报格式和空行规范见 `references/render-format.md`。
 
 ## 参考
 
 | 文件 | 内容 |
 |------|------|
 | `references/weekly-format.md` | 周报格式模板 |
-| news-secretary `references/render-format.md` | 简报格式规范（交叉引用） |
+| `references/render-format.md` | 简报格式规范 |

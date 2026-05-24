@@ -35,13 +35,11 @@ cron 每月 1 日 09:00 (Pro, job `0b14c67429ba`)，或手动。
 引用 `blind_spot_audit.py --days 30`。汇总 `_serendipity: true` 到附录。
 
 ### 4. 格式
-简报格式和空行规范见 news-secretary `references/render-format.md`。无表格/引用/斜体。外文翻中文。每条至少 1 对立视角。零前置文本。
+简报格式和空行规范见 `references/render-format.md`。无表格/引用/斜体。外文翻中文。每条至少 1 对立视角。零前置文本。
 
 ## 参考
 
 | 文件 | 内容 |
 |------|------|
 | `references/monthly-template.md` | 完整模板 |
-| `references/monthly-queries.md` | 聚合查询示例 |
-| `references/aggregate-usage.md` | aggregate_monthly.py 指南 |
-| news-secretary `references/render-format.md` | 简报格式规范（交叉引用） |
+| `references/render-format.md` | 简报格式规范 |

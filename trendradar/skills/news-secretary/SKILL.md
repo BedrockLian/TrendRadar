@@ -48,18 +48,11 @@ export PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GI
 | `references/render-format.md` | 简报输出格式（板块/空行/emoji） |
 | `references/deep-analysis-format.md` | 深度分析协议 + 格式化规范 |
 | `references/translation-pipeline-sync.md` | 翻译管线：title_cn偏好 + 来源检测 |
-| `references/render-markdown.md` | 纯脚本渲染器说明 |
-| `references/render-deep-analysis.md` | 深度分析格式化器说明 |
 | `references/import-architecture.md` | 脚本导入架构 + 裸导入修复模式 |
 | `references/orchestrator-notes.md` | 编排器可靠性：解析/并行/回退 |
 | `references/cron-sendmessage-fallback.md` | cron context 下投递机制：auto-delivery 协议 |
 | `references/keyword-architecture.md` | 505词×6域完整词表 |
 | `references/classification-architecture.md` | 分类规则/优先级 |
-| `references/free-threaded-build.md` | python3.14t 编译安装 |
-| `references/cron-audit.md` | Cron 全量审计清单 |
-| `references/render-markdown-failures.md` | 渲染失败排查 |
-| `references/sources-format.md` | 源格式规范 |
-| `references/script-rendering.md` | 脚本渲染架构 |
 
 ## 兴趣偏好
 `config/ai_interests.yaml` — 正面+2分，排除=0分过滤。CLI: `python3 scripts/interest_cli.py {list,add,remove,exclude}`。

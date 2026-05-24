@@ -110,7 +110,7 @@ TrendRadar/
 │   │   ├── system-config/            # 系统配置速查（v2.0）
 │   │   ├── weekly-report/            # 周报深度研判（v2.2）
 │   │   └── monthly-report/           # 月报全景分析（v2.2）
-│   ├── references/           #   26 份参考文档
+│   ├── references/           #   运行时参考文档
 │   ├── tests/               #   92 个测试用例
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
