@@ -481,6 +481,36 @@
       "enabled": true,
       "feed_url": "https://rss.nytimes.com/services/xml/rss/nyt/Science.xml",
       "authority": 3
+    },
+    {
+      "id": "npr_world",
+      "name": "NPR 国际",
+      "platform": "npr",
+      "type": "rss",
+      "category": "foreign_china",
+      "enabled": true,
+      "feed_url": "https://feeds.npr.org/1004/rss.xml",
+      "authority": 3
+    },
+    {
+      "id": "npr_business",
+      "name": "NPR 商务",
+      "platform": "npr",
+      "type": "rss",
+      "category": "economy",
+      "enabled": true,
+      "feed_url": "https://feeds.npr.org/1006/rss.xml",
+      "authority": 3
+    },
+    {
+      "id": "npr_science",
+      "name": "NPR 科技",
+      "platform": "npr",
+      "type": "rss",
+      "category": "tech",
+      "enabled": true,
+      "feed_url": "https://feeds.npr.org/1007/rss.xml",
+      "authority": 3
     }
   ],
   "exploration_sources": [],
