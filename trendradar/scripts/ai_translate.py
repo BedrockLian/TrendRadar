@@ -198,18 +198,14 @@ async def batch_translate(
     session: aiohttp.ClientSession,
     items: list,
     api_key: str,
+    source_lang: str = 'English',
 ) -> list[tuple[str, str]]:
     """Translate a batch of (title, summary) pairs. Returns list of (title_cn, summary_cn) tuples."""
     if not items:
         return []
 
-    # Detect source language from first non-empty item
-    source_lang = 'English'
-    for t, s in items:
-        sample = t or s
-        if sample:
-            source_lang = detect_source_lang(sample)
-            break
+    # Source language was determined by get_source_lang in _load_and_scan
+    # and passed through items_to_translate tuple
 
     # Build the user message: each item = title line + summary line
     user_lines = []
@@ -270,6 +266,9 @@ async def _batch_translate_all(
     Returns a list of (batch_items, translations_or_None, error_or_None) tuples.    """
     # Split into batches
     batches = []
+    # Determine source language from first item
+    source_lang = items_to_translate[0][7] if items_to_translate else 'English'
+    
     for batch_start in range(0, len(items_to_translate), BATCH_SIZE):
         batch = items_to_translate[batch_start:batch_start + BATCH_SIZE]
         # Build (title, summary) pairs for translation
@@ -280,7 +279,7 @@ async def _batch_translate_all(
         batch, pairs, batch_start
     ) -> tuple[list, list | None, Exception | None]:
         try:
-            translations = await batch_translate(session, pairs, api_key)
+            translations = await batch_translate(session, pairs, api_key, source_lang)
             batch_end = batch_start + len(batch)
             print(
                 f"[TRANSLATE] Batch {batch_start+1}-{batch_end}/{len(items_to_translate)}: "
@@ -417,7 +416,7 @@ async def process_curated(push_id: str) -> dict:
         # batch: list of (domain, idx, item, title, summary, needs_title, needs_summary)
         # translations: list of (title_cn, summary_cn) tuples
         for entry, (title_cn, summary_cn) in zip(batch, translations, strict=True):
-            domain, idx, item, title, summary, needs_title, needs_summary = entry
+            domain, idx, item, title, summary, needs_title, needs_summary, _source_lang = entry
             if needs_title:
                 item['title_cn'] = title_cn
             if needs_summary:
