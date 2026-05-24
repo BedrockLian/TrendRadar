@@ -318,21 +318,20 @@ async def _batch_translate_all(
 def _load_and_scan(push_id: str) -> tuple[dict, list, Path]:
     """Load curated JSON and scan for items needing translation.
     Returns (data, items_to_translate, curated_path).
-    Each item is (domain, idx, item, title, summary)."""
-    curated_path = DATA_DIR / f'curated_{push_id}.json'
+    Each item is (domain, idx, item, title, summary).
+    Prefers dated file (YYYYMMDD) to match render_markdown.py priority."""
+    from datetime import datetime, timezone, timedelta
+    CST = timezone(timedelta(hours=8))
+    today_file = datetime.now(CST).strftime('%Y%m%d')
+    curated_path = DATA_DIR / f'curated_{push_id}_{today_file}.json'
     if not curated_path.exists():
-        from datetime import datetime, timezone, timedelta
-        CST = timezone(timedelta(hours=8))
-        today = datetime.now(CST).strftime('%Y%m%d')
-        dated_path = DATA_DIR / f'curated_{push_id}_{today}.json'
-        if dated_path.exists():
-            curated_path = dated_path
-        else:
-            print(
-                f"[TRANSLATE] No curated file found for push-id '{push_id}'",
-                file=sys.stderr,
-            )
-            sys.exit(1)
+        curated_path = DATA_DIR / f'curated_{push_id}.json'
+    if not curated_path.exists():
+        print(
+            f"[TRANSLATE] No curated file found for push-id '{push_id}'",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     data = json.loads(curated_path.read_text())
     from settings import DOMAINS
@@ -355,7 +354,17 @@ def _load_and_scan(push_id: str) -> tuple[dict, list, Path]:
             needs_summary = not has_summary_cn and summary and needs_translation(summary)
 
             if needs_title or needs_summary:
-                items_to_translate.append((domain, idx, item, title, summary, needs_title, needs_summary))
+                                # Determine source language by platform
+                plat = item.get('source_platform', '').lower()
+                source_lang = None
+                for kw in ['nhk', 'nhk ビジネス', '4gamer']:
+                    if kw in plat: source_lang = 'Japanese'; break
+                if not source_lang:
+                    for kw in ['bbc', 'reuters', 'nytimes', 'guardian', 'techcrunch',
+                               '路透社', '纽约时报', '卫报', 'ars technica', 'pc gamer',
+                               'nintendo everything', 'eurogamer', 'video games chronicle']:
+                        if kw in plat: source_lang = 'English'; break
+                items_to_translate.append((domain, idx, item, title, summary, needs_title, needs_summary, source_lang))
 
     return data, items_to_translate, curated_path
 
