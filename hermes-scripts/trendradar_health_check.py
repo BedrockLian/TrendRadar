@@ -237,15 +237,22 @@ def check_fingerprint_recent():
     pass
 
 def auto_repair_missing_table():
-    """自动重建指纹表 — 通过迁移引擎确保 schema 为最新版。"""
+    """自动重建指纹表 — 通过迁移引擎确保 schema 为最新版。
+    
+    使用 repair_missing_tables() 替代 migrate()，因为后者在 _migrations
+    已记录版本时会跳过已应用迁移，无法修复被意外删除的表。
+    """
     db = DATA / 'fingerprints.db'
     if not db.exists(): return
     try:
         sys.path.insert(0, str(TR.parent))
-        from trendradar.migrations.runner import migrate
+        from trendradar.migrations.runner import repair_missing_tables, migrate
+        if repair_missing_tables(db):
+            FIXES.append('已修复缺失的数据库表')
+        # 同时确保 schema 为最新版本（处理未来新增迁移）
         ver = migrate(db)
-        if ver > 0:
-            FIXES.append(f'已执行数据库迁移至 v{ver}')
+        if ver > 0 and not any('数据库迁移' in f for f in FIXES):
+            FIXES.append(f'数据库 schema 版本 v{ver}')
     except Exception as e:
         fail('repair', 'WARN', f'数据库迁移失败: {e}')
 

@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS fingerprints (
     url TEXT,
     push_id TEXT,
     push_time TEXT,
+    event_keywords TEXT,
     created_at TEXT,
     run_id TEXT DEFAULT ''
 );
