@@ -44,17 +44,27 @@ _CJK_RANGES = [
 
 
 def _is_cjk(c: str) -> bool:
+    """True if c is a CJK Unified Ideograph (Chinese hanzi / Japanese kanji / Korean hanja).
+    Hiragana (0x3040-0x309F), Katakana (0x30A0-0x30FF), and Hangul (0xAC00-0xD7AF)
+    are excluded — they are distinct scripts that should trigger translation.
+    """
     cp = ord(c)
-    if cp < 0x3000:
+    # CJK Symbols & Punctuation (0x3000-0x303F) — include fullwidth punctuation
+    if 0x3000 <= cp <= 0x303F:
+        return True
+    # Hiragana (0x3040-0x309F) and Katakana (0x30A0-0x30FF) — Japanese, NOT CJK
+    if 0x3040 <= cp <= 0x30FF:
         return False
-    if cp <= 0x9FFF:
+    # CJK Unified Ideographs (0x4E00-0x9FFF) + Ext A (0x3400-0x4DBF)
+    if 0x3400 <= cp <= 0x9FFF:
         return True
-    if 0xAC00 <= cp <= 0xD7AF:
-        return True
+    # CJK Compatibility Ideographs
     if 0xF900 <= cp <= 0xFAFF:
         return True
+    # Fullwidth forms (punctuation, Latin)
     if 0xFF00 <= cp <= 0xFFEF:
         return True
+    # CJK Extension B, C, D, E, Compatibility Supplement
     if cp < 0x20000:
         return False
     return (0x20000 <= cp <= 0x2CEAF or 0x2F800 <= cp <= 0x2FA1F)
@@ -71,8 +81,20 @@ def cjk_ratio(text: str) -> float:
     return sum(1 for c in chars if _is_cjk(c)) / len(chars)
 
 
+def _has_japanese_kana(text: str) -> bool:
+    """Detect Japanese text by looking for Hiragana (0x3040-0x309F) or Katakana (0x30A0-0x30FF)."""
+    return any('぀' <= c <= 'ゟ' or '゠' <= c <= 'ヿ' for c in text)
+
+
+def detect_source_lang(text: str) -> str:
+    """Detect source language: 'Japanese' if has kana, else 'English'."""
+    if _has_japanese_kana(text):
+        return 'Japanese'
+    return 'English'
+
+
 def is_english_summary(text: str) -> bool:
-    """A summary is considered English if <50% of its chars are CJK."""
+    """A summary is considered English if <50% of its chars are Chinese CJK."""
     return cjk_ratio(text) < 0.5
 
 
@@ -169,6 +191,14 @@ async def batch_translate(
     if not items:
         return []
 
+    # Detect source language from first non-empty item
+    source_lang = 'English'
+    for t, s in items:
+        sample = t or s
+        if sample:
+            source_lang = detect_source_lang(sample)
+            break
+
     # Build the user message: each item = title line + summary line
     user_lines = []
     for i, (title, summary) in enumerate(items):
@@ -184,7 +214,7 @@ async def batch_translate(
 
     user_message = "\n\n".join(user_lines)
     messages = [
-        {"role": "system", "content": get_system_prompt()},
+        {"role": "system", "content": get_system_prompt(source_lang)},
         {"role": "user", "content": user_message},
     ]
 
