@@ -77,7 +77,7 @@ cd ~/TrendRadar
 ```
 TrendRadar/
 ├── trendradar/                        # 核心 Python 包
-│   ├── scripts/                       # 管线脚本（20+ 个）
+│   ├── scripts/                       # 管线脚本（23 个）
 │   ├── config/                        # 关键词/时段/翻译/兴趣配置
 │   ├── migrations/                    # SQLite 数据库迁移引擎
 │   ├── skills/                        # Hermes Agent 技能定义
@@ -85,6 +85,7 @@ TrendRadar/
 │   │   ├── self-healing/              # 自动体检/自修复
 │   │   ├── performance-optimizer/     # 偏好收敛优化
 │   │   └── system-config/             # 系统配置速查
+│   ├── references/                     # 参考文档（19 份）
 │   ├── tests/                         # 测试用例（90+）
 │   ├── pyproject.toml                 # 项目元数据/依赖
 │   └── requirements.txt               # 依赖清单
@@ -323,8 +324,10 @@ hermes skills list | grep anthropic-skill-creator
 ```bash
 cp ~/TrendRadar/hermes-scripts/trendradar_health_check.py ~/.hermes/scripts/
 cp ~/TrendRadar/hermes-scripts/trendradar_maintenance.py ~/.hermes/scripts/
+cp ~/TrendRadar/hermes-scripts/delivery_watchdog.py ~/.hermes/scripts/
 chmod +x ~/.hermes/scripts/trendradar_health_check.py
 chmod +x ~/.hermes/scripts/trendradar_maintenance.py
+chmod +x ~/.hermes/scripts/delivery_watchdog.py
 ```
 
 ### 7.4 验证部署
@@ -334,11 +337,12 @@ chmod +x ~/.hermes/scripts/trendradar_maintenance.py
 hermes skills list | grep trendradar
 
 # 预期输出：
-# news-secretary      聚合多RSS源+推送Markdown简报至企业微信
-# self-healing        自动体检TrendRadar各组件
-# performance-optimizer 渐进优化日报质量与推送偏好
-# weekly-report            每周一深度趋势周报
-# monthly-report           每月1日聚合月报
+# news-secretary          聚合多RSS源+推送Markdown简报至企业微信
+# self-healing            自动体检TrendRadar各组件
+# performance-optimizer   渐进优化日报质量与推送偏好
+# weekly-report           每周一深度趋势周报
+# monthly-report          每月1日聚合月报
+# system-config           系统配置速查
 ```
 
 ### 7.5 部署越狱评估框架（godmode，推荐）
@@ -551,6 +555,9 @@ hermes cron run 90a2866775df
 # 同步脚本
 cp -r ~/.hermes/trendradar/scripts/ ~/TrendRadar/trendradar/
 
+# 同步参考文档
+cp -r ~/.hermes/trendradar/references/ ~/TrendRadar/trendradar/
+
 # 同步技能
 cp -r ~/.hermes/skills/trendradar/news-secretary/ ~/TrendRadar/trendradar/skills/
 
@@ -579,7 +586,9 @@ git push
 ```bash
 cd ~/TrendRadar
 git pull
-cp -r trendradar/* ~/.hermes/trendradar/
+cp -r trendradar/scripts/ ~/.hermes/trendradar/
+cp -r trendradar/references/ ~/.hermes/trendradar/
+cp -r trendradar/skills/ ~/.hermes/skills/trendradar/
 cp hermes-scripts/* ~/.hermes/scripts/
 # 重新安装依赖（如有变更）
 cd ~/.hermes/trendradar && python3.14t -m pip install -r requirements.txt

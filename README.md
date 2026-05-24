@@ -68,7 +68,7 @@ RSS 异步抓取 (39源) → AC 自动机分类 (5域) → render_markdown.py脚
 | 功能 | 依赖 Hermes 的组件 | 如果不运行 Hermes |
 |------|-------------------|------------------|
 | **推送调度** | 日报 cron（`0 9,12,21 * * *`）+ 周报 cron（`30 9 * * 1`）+ 月报 cron（`0 9 1 * *`） | 脚本可手动跑，但无定时推送 |
-| **7 个 skill** | `news-secretary`, `self-healing`, `performance-optimizer`, `system-config`, `godmode`, `weekly-report`, `monthly-report` | skill 是 Agent 指令集，脱离 Hermes 无意义 |
+| **7 个 skill** | `news-secretary`, `self-healing`, `performance-optimizer`, `system-config`, `weekly-report`, `monthly-report` | skill 是 Agent 指令集，脱离 Hermes 无意义 |
 | **WeCom 投递** | `send_message(target="wecom")` + Gateway IPC socket | 无法投递到企业微信 |
 | **晚间深度分析** | `delegate_task` 3×Pro 子 Agent 并行 | 晚报无深度分析板块 |
 | **周报/月报 Pro 分析** | `delegate_task` + `deep-research-cli` 六步协议 | 周报/月报降级为纯数据聚合，无深度研判 |
@@ -83,7 +83,7 @@ RSS 异步抓取 (39源) → AC 自动机分类 (5域) → render_markdown.py脚
 ```
 TrendRadar/
 ├── trendradar/              # 核心 Python 包
-│   ├── scripts/             #   21 个管线/工具脚本
+│   ├── scripts/             #   23 个管线/工具脚本
 │   ├── config/              #   关键词/时段/翻译/兴趣配置
 │   ├── migrations/          #   SQLite 数据库迁移引擎
 │   ├── skills/              #   Hermes Agent 技能定义
@@ -93,13 +93,15 @@ TrendRadar/
 │   │   ├── system-config/            # 系统配置速查
 │   │   ├── weekly-report/            # 周报深度研判
 │   │   └── monthly-report/           # 月报全景分析
+│   ├── references/           #   19 份参考文档
 │   ├── tests/               #   92 个测试用例
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
 │   └── pyproject.toml
-├── hermes-scripts/           # 自动体检/维护脚本
-│   ├── trendradar_health_check.py
-│   └── trendradar_maintenance.py
+├── hermes-scripts/           # 自动体检/维护/看门狗脚本
+│   ├── trendradar_health_check.py     # 每日自动体检
+│   ├── trendradar_maintenance.py      # 每日备份清理
+│   └── delivery_watchdog.py           # 推送降级看门狗
 ├── .gitignore
 ├── LICENSE
 ├── README.md
