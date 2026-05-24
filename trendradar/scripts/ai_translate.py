@@ -345,8 +345,8 @@ def _load_and_scan(push_id: str) -> tuple[dict, list, Path]:
                     for kw in ['bbc', 'reuters', 'nytimes', 'guardian', 'techcrunch',
                                '路透社', '纽约时报', '卫报', 'ars technica', 'pc gamer',
                                'nintendo everything', 'eurogamer', 'video games chronicle',
-                               'npr', 'koreaherald']:
-                        if kw in plat: source_lang = 'English'; break
+                               'npr', 'koreaherald', 'nikkei']:
+                         if kw in plat: source_lang = 'English'; break
                 items_to_translate.append((domain, idx, item, title, summary, needs_title, needs_summary, source_lang))
 
     return data, items_to_translate, curated_path
