@@ -42,4 +42,6 @@ cron 每月 1 日 09:00 (Pro, job `0b14c67429ba`)，或手动。
 | 文件 | 内容 |
 |------|------|
 | `references/monthly-template.md` | 完整模板 |
+| `references/monthly-queries.md` | 聚合查询示例 |
+| `references/aggregate-usage.md` | aggregate_monthly.py 指南 |
 | `references/render-format.md` | 简报格式规范 |
