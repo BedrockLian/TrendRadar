@@ -511,6 +511,26 @@
       "enabled": true,
       "feed_url": "https://feeds.npr.org/1007/rss.xml",
       "authority": 3
+    },
+    {
+      "id": "nhk_science",
+      "name": "NHK 科学医疗",
+      "platform": "nhk",
+      "type": "rss",
+      "category": "tech",
+      "enabled": true,
+      "feed_url": "https://www3.nhk.or.jp/rss/news/cat3.xml",
+      "authority": 3
+    },
+    {
+      "id": "nhk_economy",
+      "name": "NHK 经济",
+      "platform": "nhk",
+      "type": "rss",
+      "category": "economy",
+      "enabled": true,
+      "feed_url": "https://www3.nhk.or.jp/rss/news/cat5.xml",
+      "authority": 3
     }
   ],
   "exploration_sources": [],
