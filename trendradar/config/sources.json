@@ -461,6 +461,26 @@
       "enabled": true,
       "feed_url": "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
       "authority": 3
+    },
+    {
+      "id": "nytimes_business",
+      "name": "纽约时报·商务",
+      "platform": "nytimes",
+      "type": "rss",
+      "category": "economy",
+      "enabled": true,
+      "feed_url": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",
+      "authority": 3
+    },
+    {
+      "id": "nytimes_science",
+      "name": "纽约时报·科学",
+      "platform": "nytimes",
+      "type": "rss",
+      "category": "tech",
+      "enabled": true,
+      "feed_url": "https://rss.nytimes.com/services/xml/rss/nyt/Science.xml",
+      "authority": 3
     }
   ],
   "exploration_sources": [],
