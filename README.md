@@ -13,7 +13,7 @@ TrendRadar 是一个三层结构的新闻聚合与智能推送系统：**日报*
 ### 🌅 日报 — Flash 管线，日推 3 次
 
 ```
-RSS 异步抓取 (39源) → AC 自动机分类 (5域) → render_markdown.py脚本渲染 (~0s) → WeCom 分片推送 → [晚间] 3×Pro 深度分析
+RSS 异步抓取 (39源) → AC 自动机分类 (5域) → render_markdown.py脚本渲染 (~0s) → cron 自动投递（系统输出 → WeCom） → [晚间] 3×Pro 深度分析
 ```
 
 | 时段 | 时间 | 条数 | 特点 |
@@ -46,7 +46,7 @@ RSS 异步抓取 (39源) → AC 自动机分类 (5域) → render_markdown.py脚
 
 - **多源异步抓取** — aiohttp 异步并发，两级连接池（RSSHub + 外网直连）
 - **AC 自动机分类** — 505 关键词 × 6 域，frozenset O(1) 查找，比线性匹配快 4.4×
-- **Script 渲染** — `render_markdown.py` 纯脚本拼接，~0s，零 token 成本，格式硬编码永远一致
+- **纯脚本渲染** — `render_markdown.py` 从 curated JSON 直接拼接，~0s，零 token 成本，格式硬编码永远一致
 - **日报推送** — 早/午/晚三段 Flash 管线，晚间附加 3×Pro 深度分析
 - **周报研判** — 每周一 Pro 模型深度趋势分析，含信息茧房突围
 - **月报分析** — 每月初全景复盘，聚合 4 周数据 + heat_tracker Top10
@@ -68,15 +68,15 @@ RSS 异步抓取 (39源) → AC 自动机分类 (5域) → render_markdown.py脚
 | 功能 | 依赖 Hermes 的组件 | 如果不运行 Hermes |
 |------|-------------------|------------------|
 | **推送调度** | 日报 cron（`0 9,12,21 * * *`）+ 周报 cron（`30 9 * * 1`）+ 月报 cron（`0 9 1 * *`） | 脚本可手动跑，但无定时推送 |
-| **7 个 skill** | `news-secretary`, `self-healing`, `performance-optimizer`, `system-config`, `weekly-report`, `monthly-report` | skill 是 Agent 指令集，脱离 Hermes 无意义 |
-| **WeCom 投递** | `send_message(target="wecom")` + Gateway IPC socket | 无法投递到企业微信 |
+| **6 个 skill** | `news-secretary`, `self-healing`, `performance-optimizer`, `system-config`, `weekly-report`, `monthly-report` | skill 是 Agent 指令集，脱离 Hermes 无意义 |
+| **WeCom 投递** | cron 系统输出 → Gateway IPC socket 自动投递 | 脱离 Hermes 无法接收推送 |
 | **晚间深度分析** | `delegate_task` 3×Pro 子 Agent 并行 | 晚报无深度分析板块 |
 | **周报/月报 Pro 分析** | `delegate_task` + `deep-research-cli` 六步协议 | 周报/月报降级为纯数据聚合，无深度研判 |
 | **KV 缓存共享** | Hermes KV cache（3 日报共池） | Flash API 缓存不跨 session，token 成本上升 |
 | **自动体检** | cron no_agent 模式 + health_check 脚本 | health_check.py 可单独跑，但无人接收告警 |
 | **看门狗** | cron no_agent 模式 + delivery_watchdog | 推送失败无兜底告警 |
 
-> **最小独立运行**：`trendradar/scripts/` 下的 Python 脚本（push_prepare, render_markdown, curate_and_push 等）均可脱离 Hermes 手动执行，用于调试和数据产出。但全自动推送流水线必须依赖 Hermes Agent。
+> **最小独立运行**：`trendradar/scripts/` 下的 Python 脚本（push_prepare, render_markdown, curate_and_push 等）均可脱离 Hermes 手动执行，用于调试和数据产出。全自动推送流水线依赖 Hermes Agent cron 调度 + 系统输出自动投递。
 
 ## 目录结构
 
