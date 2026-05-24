@@ -441,6 +441,26 @@
       "enabled": true,
       "feed_url": "https://feeds.bbci.co.uk/news/world/asia/china/rss.xml",
       "authority": 3
+    },
+    {
+      "id": "bbc_world",
+      "name": "BBC 世界",
+      "platform": "bbc",
+      "type": "rss",
+      "category": "foreign_china",
+      "enabled": true,
+      "feed_url": "https://feeds.bbci.co.uk/news/world/rss.xml",
+      "authority": 3
+    },
+    {
+      "id": "bbc_science",
+      "name": "BBC 科学环境",
+      "platform": "bbc",
+      "type": "rss",
+      "category": "tech",
+      "enabled": true,
+      "feed_url": "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
+      "authority": 3
     }
   ],
   "exploration_sources": [],
