@@ -69,5 +69,6 @@ sqlite3 ~/.hermes/trendradar/data/fingerprints.db "VACUUM;"
 ## 适用范围
 
 - 清理前确认 `hermes gateway` 和 `cron` 未在写入关键数据
-- 不在 cron 维护脚本中自动执行（仅手动触发，防止误删）
+- **自动维护**: `trendradar_maintenance.py` 每日 03:00 自动执行 `cleanup()` 函数，清理 >7 天的 cache/*.json、cache/*.json.zst、data/curated_*_YYYYMMDD.json、data/curated_*_YYYYMMDD.json.zst、data/raw_*.json（排除 test_* 文件）
+- 本手册步骤为**额外手动触发**的激进清理（含日志/缩略图/pip cache/VACUUM），用于磁盘紧张时回收更多空间
 - 完整流程每次可回收 20-40MB
