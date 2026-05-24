@@ -551,6 +551,16 @@
       "enabled": true,
       "feed_url": "https://www.koreaherald.com/rss/newsAll",
       "authority": 3
+    },
+    {
+      "id": "reuters_world",
+      "name": "路透社·国际",
+      "platform": "reuters",
+      "type": "rss",
+      "category": "foreign_china",
+      "enabled": true,
+      "feed_url": "http://localhost:1200/reuters/world",
+      "authority": 3
     }
   ],
   "exploration_sources": [],
