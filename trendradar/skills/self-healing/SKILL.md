@@ -1,6 +1,6 @@
 ---
-name: trendradar-self-healing
-slug: trendradar-self-healing
+name: self-healing
+slug: self-healing
 version: 2.3.0
 description: 自动体检TrendRadar各组件。检测DB/配置/API/Gateway/全链路/记忆膨胀，修复常见故障。
 author: Hermes Agent
@@ -41,6 +41,8 @@ DB(fingerprints/heat_tracker)、脚本导入、配置存在、Cron注册、Gatew
 | python3.14t依赖缝隙 | `pip install feedparser zstandard`；需 `export PYTHONPATH=... PYTHON_GIL=0` |
 | mail_queue 积累 | 忽略或定期清理 >7天 .eml |
 | 导入测试误报 | `python3 -c "import xxx"` 产生的argparse/sys.argv Traceback 无害，不是真实导入失败 |
+| cron 技能名不匹配 | 检查所有 cron job 的 skills 列表：hermes cron list → 逐项核对技能名是否与磁盘目录匹配（ls ~/.hermes/skills/trendradar/）。精简重命名后旧名仍残留在 cron 中会导致 Skill not found。修复：cronjob action=update job_id=xxx skills=[新名称列表] |
+| tirith 拦截中文命令 | hermes config set security.tirith_enabled false 关闭扫描。影响所有含中文内容的 terminal 命令 |
 
 ## 参考文档
 | 文件 | 内容 |

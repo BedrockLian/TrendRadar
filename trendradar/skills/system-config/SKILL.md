@@ -1,7 +1,7 @@
 ---
 name: system-config
 slug: system-config
-version: 1.4.0
+version: 1.5.0
 description: TrendRadar 项目路径、PYTHONPATH、Python 解释器、环境变量等系统配置知识。
 author: Hermes Agent
 metadata:
@@ -35,7 +35,8 @@ metadata:
 | push_prepare.py | `~/.hermes/trendradar/scripts/` |
 | batch_fetch.py | `~/.hermes/trendradar/scripts/` |
 | fetch_feeds.py | `~/.hermes/trendradar/scripts/` |
-| render_briefing.py | `~/.hermes/trendradar/scripts/` |
+| render_markdown.py | `~/.hermes/trendradar/scripts/` |
+| render_deep_analysis.py | `~/.hermes/trendradar/scripts/` |
 | health_check.py | `~/.hermes/scripts/trendradar_health_check.py` |
 | maintenance.py | `~/.hermes/scripts/trendradar_maintenance.py` |
 | delivery_watchdog.py | `~/.hermes/scripts/delivery_watchdog.py` |
@@ -45,8 +46,8 @@ metadata:
 | 名称 | Job ID | 调度 | 模式 | 技能/脚本 |
 |------|--------|------|------|-----------|
 | 日报推送 | `90a2866775df` | `0 9,12,21 * * *` | LLM | news-secretary, multi-search-engine |
-| 周报推送 | `c20e2c82deda` | `30 9 * * 1` | LLM Pro | multi-search-engine, deep-research-cli, weekly-trend-report |
-| 月报推送 | `0b14c67429ba` | `0 9 1 * *` | LLM Pro | multi-search-engine, deep-research-cli, monthly-trend-report |
+| 周报推送 | `c20e2c82deda` | `30 9 * * 1` | LLM Pro | multi-search-engine, deep-research-cli, weekly-report |
+| 月报推送 | `0b14c67429ba` | `0 9 1 * *` | LLM Pro | multi-search-engine, deep-research-cli, monthly-report |
 | 性能优化器 | `718b663e8c04` | `15 21 * * *` | LLM | performance-optimizer, multi-search-engine, news-secretary |
 | 自动体检 | `c987a2883174` | `0 15 * * *` | no_agent | `trendradar_health_check.py` |
 | 每日维护 | `68db70cd8556` | `0 3 * * *` | no_agent | `trendradar_maintenance.py` |
@@ -88,16 +89,22 @@ export PYTHONPATH=/home/asus/.hermes
 修改 TrendRadar 系统文件后，同步到 Git 仓库的标准化流程：
 
 ```bash
-# 同步技能文件
-cp -r ~/.hermes/skills/trendradar/<skill-name>/ ~/TrendRadar/trendradar/skills/<skill-name>/
+# 同步核心代码（scripts/ + config/ + migrations/）
+cp -r ~/.hermes/trendradar/scripts/ ~/TrendRadar/trendradar/
+cp -r ~/.hermes/trendradar/config/ ~/TrendRadar/trendradar/
+cp -r ~/.hermes/trendradar/migrations/ ~/TrendRadar/trendradar/
 
 # 同步中心脚本
 cp ~/.hermes/scripts/trendradar_health_check.py ~/TrendRadar/hermes-scripts/
 cp ~/.hermes/scripts/trendradar_maintenance.py ~/TrendRadar/hermes-scripts/
 cp ~/.hermes/scripts/delivery_watchdog.py ~/TrendRadar/hermes-scripts/
 
-# 同步核心代码
-cp -r ~/.hermes/trendradar/scripts/ ~/TrendRadar/trendradar/
+# 注意：skills 目录不在 repo 中
+# ~/.hermes/skills/trendradar/ 是 Hermes 运行时技能目录
+# 仓库中的 README.md 仅记录技能名称和用途，不存储 SKILL.md 内容
+
+# 更新文档
+# 手动编辑 ~/TrendRadar/README.md 和 ~/TrendRadar/SETUP.md 中的技能名引用
 
 # 提交推送
 cd ~/TrendRadar
@@ -107,17 +114,18 @@ git push
 ```
 
 ⚠️ 始终同步到独立发布仓库 `~/TrendRadar/`，而非直接操作实时系统 `~/.hermes/trendradar/`。
+⚠️ 技能文件（SKILL.md）保存在 `~/.hermes/skills/trendradar/` 下，不纳入 Git 仓库。但 `README.md` 和 `SETUP.md` 中的技能名称引用需手动更新——确保三个地方一致：技能目录名、frontmatter `name:` 字段、cron 的 `skills:` 列表。任何一处不匹配都会导致 cron 报 `Skill not found`。
 
 ## TrendRadar 内置技能
 
 | 名称 | 用途 |
 |------|------|
-| `trendradar-news-secretary` | 日报推送管线（RSS → 分类 → 渲染 → 分片 → 晚间 Pro 分析） |
-| `trendradar-self-healing` | 自动体检 + 自修复（DB/配置/API/Gateway/记忆） |
-| `trendradar-performance-optimizer` | 推送质量评分 + 推送偏好收敛调优 |
+| `news-secretary` | 日报推送管线（RSS → 分类 → 渲染 → 分片 → 晚间 Pro 分析） |
+| `self-healing` | 自动体检 + 自修复（DB/配置/API/Gateway/记忆） |
+| `performance-optimizer` | 推送质量评分 + 推送偏好收敛调优 |
 | `system-config` | ⬅ 本技能：系统配置速查 |
-| `weekly-trend-report` | 每周一深度趋势周报：五大板块 + 信息茧房突围 |
-| `monthly-trend-report` | 每月1日聚合月报：四周数据 + 深度搜索验证 |
+| `weekly-report` | 每周一深度趋势周报：五大板块 + 信息茧房突围 |
+| `monthly-report` | 每月1日聚合月报：四周数据 + 深度搜索验证 |
 
 ## 已安装的外部技能
 

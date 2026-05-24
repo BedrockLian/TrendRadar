@@ -1,6 +1,6 @@
-# TrendRadar 日报流水线 (cron 90a2866775df)
+# Pipeline — TrendRadar 日报推送管线
 
-8 步执行，`0 9,12,21 * * *`。脚本阶段用 python3.14t（free-threaded），渲染用 render_briefing.py（5 路并行 API，~9s）。
+8 步执行，`0 9,12,21 * * *`。脚本阶段用 python3.14t（free-threaded），渲染用 render_markdown.py（纯脚本，~0s）。
 
 ## 步骤表
 
@@ -17,10 +17,22 @@
 
 ## 故障恢复
 
+### 数据损坏
 ```bash
 rm -f ~/.hermes/trendradar/cache/batch_{slot}.json
 rm -f ~/.hermes/trendradar/data/curated_{slot}.json
 cronjob action=run job_id=90a2866775df
+```
+
+### Gateway 崩溃后补推（简报已出但未送达）
+```
+hermes gateway start  # 先恢复通道
+cd ~/.hermes/trendradar
+# 绕过 slot 检测，三步直推：
+/usr/local/bin/python3.14t scripts/render_markdown.py --push-id {slot} 2>/dev/null | \
+  /usr/local/bin/python3.14t scripts/fragment_push.py 2>&1
+# 末尾 JSON 数组 → 逐片 send_message(target="wecom")，片间 1.5s
+# 注意：不要重跑完整 pipeline（会破坏指纹/热度一致性）
 ```
 
 ## 脚本清单
@@ -31,7 +43,8 @@ cronjob action=run job_id=90a2866775df
 `curate_and_push.py` | 5 domain 并行精选
 `ai_translate.py` | AI 批量翻译
 `batch_fetch.py` | 10 并发全文抓取
-`render_briefing.py` | 5 路并行渲染（替代 Agent 手动渲染）
+`render_markdown.py` | 纯脚本渲染（替代 Agent 手动渲染）
+`render_deep_analysis.py` | Pro 深度分析格式化排版
 `fragment_push.py` | 按 `### ` 板块分片，尾注仅末片
 `track_events.py` | 跨日事件追踪
 `record_fingerprints.py` | 指纹记录

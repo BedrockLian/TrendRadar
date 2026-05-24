@@ -1,6 +1,6 @@
 ---
-name: monthly-trend-report
-slug: monthly-trend-report
+name: monthly-report
+slug: monthly-report
 version: 2.1.0
 description: 每月初推送月度趋势研究报告。聚合四周数据+深度搜索验证。
 author: Hermes Agent
