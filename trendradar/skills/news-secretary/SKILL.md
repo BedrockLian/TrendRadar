@@ -52,7 +52,6 @@ export PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GI
 | `references/render-deep-analysis.md` | 深度分析格式化器说明 |
 | `references/import-architecture.md` | 脚本导入架构 + 裸导入修复模式 |
 | `references/orchestrator-notes.md` | 编排器可靠性：解析/并行/回退 |
-
 | `references/cron-sendmessage-fallback.md` | cron context 下投递机制：auto-delivery 协议 |
 | `references/keyword-architecture.md` | 505词×6域完整词表 |
 | `references/classification-architecture.md` | 分类规则/优先级 |
