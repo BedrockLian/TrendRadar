@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from settings import get_logger
+from trendradar.scripts.settings import get_logger
 log = get_logger('push-slot-detect')
 """读取 timeline.yaml，检测当前时段并输出路由参数。
 容忍 ±1 分钟误差，避免 cron 启动延迟导致 NO_SLOT。"""

@@ -1,8 +1,8 @@
 ---
 name: performance-optimizer
 slug: performance-optimizer
-version: 2.2.0
-description: 渐进优化TrendRadar日报质量与推送偏好。每日21:15自愈式收敛调优。
+version: 2.3.0
+description: 渐进优化 TrendRadar 日报质量与推送偏好。每日 21:15 自愈式收敛调优。
 author: Hermes Agent
 tags: [trendradar, quality, push-preference, self-healing]
 metadata:
@@ -11,56 +11,42 @@ metadata:
 ---
 
 ## 触发
+每天 21:15 cron `718b663e8c04` 自动触发，或手动。
 
-每天 21:15 cron `718b663e8c04` 自动触发，或手动调用。
-
-> 性能维度脚本阶段~7s，远低于阈值，不再作为优化目标。
-> 瓶颈在外网HTTP，非CPU，非可优化范围。
-> 实际耗时：push_prepare 2.0s + batch_fetch 5.2s（并行后~5.5s）。batch_fetch为全链路瓶颈。
+> 性能维度已达目标（脚本阶段 ~7s），不再优化。瓶颈在外网 HTTP，非可优化范围。
 
 ## 质量协议
 
-**评分**：空摘要<5%(+15)、重复<3%(+10)、头条命中≥60%(+10)、每板块≥3条(+10)、外媒满14条(+5)、分布均匀(+10)
-扣分：空摘要≥20%(-15)、板块为0(-20)、单源≥50%(-15)。目标 ≥85。
+**评分** (>85 达标): 空摘要<5%(+15)、重复<3%(+10)、头条命中≥60%(+10)、每板块≥3条(+10)、外媒满14条(+5)、分布均匀(+10)。扣分: 空摘要≥20%(-15)、板块为0(-20)、单源≥50%(-15)。
 
-**单源集中度预警**：即使单源占比未达50%扣分线，也应关注 ≥40% 的单源依赖（单一来源故障可致板块塌缩）。在评分报告中额外标注集中度风险。
+**单源集中度预警**: ≥40% 即使未达扣分线也应标注塌缩风险。
 
-**杠杆**：MIN_SCORE(5-8,±1)、MAX_PER_DOMAIN(±2)、blog recency保底(1-3,±1)、关键词(±5词)、白名单(增/删)。
-详见 `references/param-tables.md`。
+**杠杆**: MIN_SCORE(5-8,±1)、MAX_PER_DOMAIN(±2)、blog recency(1-3,±1)、关键词(±5词)、白名单(增/删)。详见 `references/param-tables.md`。
 
-**交互**：评分<85时列出扣分项+建议，问修哪个(编号/all/跳过)。
-
-**已验证的修复模式**（按优先级排序）：
-
-| 问题 | 修复操作 | 已验证 |
-|------|---------|--------|
-| **短摘要**（摘要<20字，单条扣分） | 读取curated JSON → 基于标题+来源语义展开至30-60字 → 写回JSON | ✅ |
-| **tech 过度集中**（tech >=16条） | settings.py 中 MAX_PER_DOMAIN[tech] 从18降至15 | ✅ |
-| **tirith 拦截中文命令**（全管道阻塞） | hermes config set security.tirith_enabled false — cron run 前必须检查此配置。见 self-healing 故障表 | ✅ |
-| **foreign_china 过少**（<=2条） | curate_and_push.py 中 china_kw() 扩充+foreign_sources() 加nhk | ✅ |
-
-**注意**：短摘要修复直接修改curated JSON，下次pipeline重跑会覆盖。持久化需在源数据层做。
+**交互**: 评分<85 → 列出扣分项+建议 → 问修哪个(编号/all/跳过)。单参数调整，3轮无改善→收敛，跳过 7 天恢复。
 
 ## 推送偏好协议
 
-**基准**：`settings.py` 中的 `BRIEFING_RATIO`（早24/午32/晚24）和 `DAILY_LIMIT=80` 为事实源。
-5板块：top_headlines/foreign_china/tech/economy/gaming。
+**基准**: `settings.py` 的 `BRIEFING_RATIO`（早24/午32/晚24）和 `DAILY_LIMIT=80`。5 板块: top_headlines/foreign_china/tech/economy/gaming。
 
-**偏差**：总量±30%→推送偏差；板块连续多天<3条→饿死；同源连续多天首位→垄断；单源占比连续≥40%→来源集中（需关注塌缩风险）。
-**饿死检测深度**：不仅要看"量够不够"（每板块≥3条），还要看"来源够不够"——即使数量达标（如 gaming 满载12条），若单源占比超40%或活动来源数降至2个以下，也应标记为"来源脆弱型饱和"并预警。
+**偏差检测**: 总量±30%→偏差；板块连续多天<3条→饿死；同源连续首位→垄断；单源≥40%→来源集中。饿死检测需同时看来源数，即使数量达标也可能"来源脆弱型饱和"。
 
-**交互**：列出偏差+选项，问"怎么调"。
+**交互**: 列出偏差+选项 → 问"怎么调"。
 
 ## 通用规则
 
-- **输出**：直接报告，禁止自述("Now let me"/"Here is"等)。两份维度都达标→`[SILENT]`
-- **单参数调整**：每轮改1参数1方向。改善→继续；变差→回滚；3轮无改善→"收敛"，跳过7天后恢复
-- **数据采集**：cron output + 脚本打点 + quality scripts
+- **输出**: 直接报告，禁止自述。两维度都达标→`[SILENT]`
+- **数据采集**: cron output + 脚本打点 + quality scripts
+
+## 已验证修复
+
+详见 `references/fix-recipes.md`：短摘要扩写、tech 上限调整、tirith 关闭、foreign_china 扩充。
 
 ## 参考
 
 | 文件 | 内容 |
 |------|------|
+| `references/fix-recipes.md` | 已验证修复脚本和验证命令 |
 | `references/param-tables.md` | 参数调整范围与步长 |
 | `references/performance-pitfalls.md` | 已知瓶颈模式 |
-| `references/fix-recipes.md` | 已验证的修复脚本和验证命令 |
+| news-secretary `references/render-format.md` | 简报格式规范（交叉引用） |

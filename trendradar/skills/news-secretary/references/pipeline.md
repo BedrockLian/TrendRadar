@@ -31,7 +31,7 @@ cd ~/.hermes/trendradar
 # 绕过 slot 检测，三步直推：
 /usr/local/bin/python3.14t scripts/render_markdown.py --push-id {slot} 2>/dev/null | \
   /usr/local/bin/python3.14t scripts/fragment_push.py 2>&1
-# 末尾 JSON 数组 → 逐片 send_message(target="wecom")，片间 1.5s
+# 末尾 JSON 数组 → 作为 final response 逐片输出，系统自动投递 WeCom，片间 1.5s
 # 注意：不要重跑完整 pipeline（会破坏指纹/热度一致性）
 ```
 

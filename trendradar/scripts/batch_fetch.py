@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from settings import get_logger
+from trendradar.scripts.settings import get_logger
 log = get_logger('batch-fetch')
 """批量直连抓取 — 10 并发抓取头条+外媒 URL 全文（aiohttp + curl 兜底 + 100%命中）"""
 import json, sys, asyncio, subprocess, re, os
@@ -13,7 +13,7 @@ except ImportError:
     _HAS_CHARSET_NORMALIZER = False
 
 CST = timezone(timedelta(hours=8))
-from settings import get_data_dir, get_cache_dir, write_compressed
+from trendradar.scripts.settings import get_data_dir, get_cache_dir, write_compressed
 DATA_DIR = get_data_dir()
 CACHE_DIR = get_cache_dir()
 CONCURRENCY = 10

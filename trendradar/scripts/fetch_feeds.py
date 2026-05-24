@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from settings import get_logger
+from trendradar.scripts.settings import get_logger
 log = get_logger('fetch-feeds')
 """TrendRadar 采集员 — 35个RSS源异步并行抓取（统一 TaskGroup + 3.14 异步优化版）"""
 import json, re, sys, asyncio
@@ -20,11 +20,11 @@ except (ImportError, AttributeError):
     log.warning('InterpreterPoolExecutor 不可用，降级为 ThreadPoolExecutor')
 
 CST = timezone(timedelta(hours=8))
-from settings import get_data_dir, get_cache_dir, write_compressed
+from trendradar.scripts.settings import get_data_dir, get_cache_dir, write_compressed
 DATA_DIR = get_data_dir()
 CACHE_DIR = get_cache_dir()
 
-from settings import RSSHUB_CONCURRENT, EXTERNAL_CONCURRENT, TIMEOUT_SEC
+from trendradar.scripts.settings import RSSHUB_CONCURRENT, EXTERNAL_CONCURRENT, TIMEOUT_SEC
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
 RSS_FRESHNESS_MAX_AGE_DAYS = 1  # 全局默认，单源可在 sources.json 中覆盖 freshness_days
 
@@ -154,7 +154,7 @@ async def fetch_all(push_id: str = '') -> dict:
 
     # 热度追踪 + 预附 heat_info
     try:
-        import heat_tracker as ht
+        import trendradar.scripts.heat_tracker as ht
         stats = ht.update_tracker(merged, push_id)
         hi = ht.get_heat_info(merged)
         for item in merged:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """TrendRadar 自动体检 + 自修复脚本"""
-import json, sqlite3, subprocess, sys, os, re, time
+import json, sqlite3, subprocess, sys, os, re, time, logging
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
@@ -9,7 +9,7 @@ TR = Path(os.environ.get('TRENDRADAR_HOME', Path.home() / '.hermes' / 'trendrada
 SCRIPTS = TR / 'scripts'
 DATA = TR / 'data'
 CACHE = TR / 'cache'
-SKILL_DIR = Path(os.environ.get('HERMES_SKILLS_DIR', Path.home() / '.hermes' / 'skills' / 'productivity' / 'trendradar-news-secretary'))
+SKILL_DIR = Path(os.environ.get('HERMES_SKILLS_DIR', Path.home() / '.hermes' / 'skills' / 'trendradar' / 'news-secretary'))
 
 ISSUES = []
 FIXES = []
@@ -50,7 +50,9 @@ def check_db():
 def check_scripts():
     """所有脚本可执行"""
     required = ['push_prepare.py', 'batch_fetch.py', 'fetch_feeds.py', 'push_slot_detect.py',
-                'record_fingerprints.py', 'track_events.py', 'heat_tracker.py', 'ai_translate.py']
+                'record_fingerprints.py', 'track_events.py', 'heat_tracker.py', 'ai_translate.py',
+                'render_markdown.py', 'fragment_push.py', 'render_deep_analysis.py',
+                'curate_and_push.py', 'pipeline_orchestrator.py']
     for name in required:
         p = SCRIPTS / name
         if not p.exists():
@@ -211,7 +213,7 @@ def check_pipeline():
             env = os.environ.copy()
             env['PYTHONPATH'] = str(TR.parent)
             r = subprocess.run(
-                [sys.executable, '-c', f'import sys; sys.path.insert(0, "{SCRIPTS}"); import {mod_name}'],
+                [sys.executable, '-c', f'import trendradar.scripts.{mod_name}'],
                 capture_output=True, text=True, timeout=15, env=env
             )
             if r.returncode != 0:
@@ -222,7 +224,8 @@ def check_pipeline():
     # 4) 流水线步骤完整性 — 验证 cron prompt 引用的脚本都存在
     pipeline_steps = ['push_slot_detect.py', 'push_prepare.py', 'batch_fetch.py',
                       'track_events.py', 'record_fingerprints.py', 'fetch_feeds.py',
-                      'ai_translate.py']
+                      'ai_translate.py', 'render_markdown.py', 'fragment_push.py',
+                      'render_deep_analysis.py', 'pipeline_orchestrator.py']
     for ps in pipeline_steps:
         if not (SCRIPTS / ps).exists():
             fail('pipeline', 'WARN', f'流水线脚本 {ps} 缺失')

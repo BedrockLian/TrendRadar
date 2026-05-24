@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from settings import get_logger
+from trendradar.scripts.settings import get_logger
 log = get_logger('fragment-push')
 """
 fragment_push.py — Split rendered briefing markdown into WeCom-compatible fragments.

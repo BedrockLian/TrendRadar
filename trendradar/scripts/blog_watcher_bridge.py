@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from settings import get_logger
+from trendradar.scripts.settings import get_logger
 log = get_logger('blog-watcher-bridge')
 """blogwatcher ↔ TrendRadar bridge.
 Runs blogwatcher-cli scan, reads unread articles from its SQLite DB,
@@ -16,7 +16,7 @@ from datetime import datetime, timezone, timedelta
 # ── paths ──────────────────────────────────────────────────────────────
 CST = timezone(timedelta(hours=8))
 BLOGWATCHER_DB = Path.home() / '.blogwatcher-cli' / 'blogwatcher-cli.db'
-from settings import get_data_dir, get_cache_dir
+from trendradar.scripts.settings import get_data_dir, get_cache_dir
 TR_DATA_DIR = get_data_dir()
 TR_CACHE_DIR = get_cache_dir()
 

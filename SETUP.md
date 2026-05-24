@@ -50,7 +50,7 @@ python3.14t --version
 
 - 已创建企业微信机器人
 - Hermes Agent 已配置 WeCom 平台并连接成功
-- `hermes send_message action=list` 能看到 `wecom:bl` 等目标
+- `hermes gateway status` 确认 WeCom 已连接
 
 ### 1.4 API Key
 
@@ -84,14 +84,17 @@ TrendRadar/
 │   │   ├── news-secretary/            # 日报推送技能（核心）
 │   │   ├── self-healing/              # 自动体检/自修复
 │   │   ├── performance-optimizer/     # 偏好收敛优化
-│   │   └── system-config/             # 系统配置速查
-│   ├── references/                     # 参考文档（19 份）
+│   │   ├── system-config/             # 系统配置速查
+│   │   ├── weekly-report/             # 周报深度研判
+│   │   └── monthly-report/            # 月报全景分析
+│   ├── references/                     # 参考文档（26 份）
 │   ├── tests/                         # 测试用例（90+）
 │   ├── pyproject.toml                 # 项目元数据/依赖
 │   └── requirements.txt               # 依赖清单
 ├── hermes-scripts/                    # Hermes 外围脚本
-│   ├── trendradar_health_check.py     # 自动体检
-│   └── trendradar_maintenance.py      # 每日维护（备份+清理）
+│   ├── trendradar_health_check.py     # 自动体检（15项检查）
+│   ├── trendradar_maintenance.py      # 每日维护（备份+清理）
+│   └── delivery_watchdog.py           # 推送降级看门狗
 ├── .gitignore
 ├── LICENSE
 └── README.md
@@ -345,40 +348,6 @@ hermes skills list | grep trendradar
 # system-config           系统配置速查
 ```
 
-### 7.5 部署越狱评估框架（godmode，推荐）
-
-TrendRadar 涉及的 DeepSeek API 调用在部分敏感场景下可能被内容过滤拦截。godmode 提供 API 级越狱框架，用于评估和绕过模型安全限制。
-
-**预装检查：**
-```bash
-ls ~/.hermes/skills/red-teaming/godmode/
-```
-
-**核心能力：**
-- **GODMODE CLASSIC** — 替换系统指令 + Prefill 消除安全过滤
-- **Parseltongue** — 33 种输入混淆技巧（Leetspeak / Bubble / Braille / Morse 等），绕过关键词分类器
-- **ULTRAPLINIAN** — 多模型竞速（55 模型 × 5 梯队），找出最不设防的模型
-
-**快速使用：**
-```python
-# 自动越狱（检测当前模型 → 测试策略 → 锁定最优方案）
-exec(open(os.path.expanduser(
-    os.path.join(os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes")),
-    "skills/red-teaming/godmode/scripts/load_godmode.py")
-)).read())
-result = auto_jailbreak()          # 自动检测并应用
-undo_jailbreak()                   # 恢复正常行为
-```
-
-**DeepSeek 配置要点：**
-
-| 模型 | 策略 | 关键限制 |
-|------|------|---------|
-| V4-Pro | Prefill-only 最优（7/7 canary 绕过）；Subtle prefill（灰帽安全研究员）优于 GODMODE | `max_tokens ≥ 2048` 必须设置，推理 token 会消耗输出预算 |
-| V4-Flash | Parseltongue → refusal_inversion → prefill_only（逐级升级）；Subtle prefill（灰帽安全研究员）最优 | 拒绝 hack 类查询；boundary_inversion 不适用 |
-
----
-
 ## 8. 注册定时任务
 
 TrendRadar 的完整功能依赖 7 个 cron 定时任务，构成三层推送体系：
@@ -558,11 +527,17 @@ cp -r ~/.hermes/trendradar/scripts/ ~/TrendRadar/trendradar/
 # 同步参考文档
 cp -r ~/.hermes/trendradar/references/ ~/TrendRadar/trendradar/
 
-# 同步技能
-cp -r ~/.hermes/skills/trendradar/news-secretary/ ~/TrendRadar/trendradar/skills/
+# 同步配置和迁移
+cp -r ~/.hermes/trendradar/config/ ~/TrendRadar/trendradar/
+cp -r ~/.hermes/trendradar/migrations/ ~/TrendRadar/trendradar/
+
+# 同步技能（6个）
+cp -r ~/.hermes/skills/trendradar/ ~/TrendRadar/trendradar/skills/
 
 # 同步外围脚本
 cp ~/.hermes/scripts/trendradar_health_check.py ~/TrendRadar/hermes-scripts/
+cp ~/.hermes/scripts/trendradar_maintenance.py ~/TrendRadar/hermes-scripts/
+cp ~/.hermes/scripts/delivery_watchdog.py ~/TrendRadar/hermes-scripts/
 
 # 提交推送
 cd ~/TrendRadar
@@ -611,8 +586,6 @@ rm -f ~/.hermes/scripts/trendradar_maintenance.py
 
 # 删除技能
 rm -rf ~/.hermes/skills/trendradar
-rm -rf ~/.hermes/skills/anthropic-skill-creator  # 评估框架（如已安装）
-rm -rf ~/.hermes/skills/red-teaming/godmode       # 越狱框架
 
 # ⚠️ 以下两行默认注释掉，防止误删代码历史
 # 如需彻底清除，取消注释手动执行：

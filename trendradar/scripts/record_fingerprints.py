@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-from settings import get_logger
+from trendradar.scripts.settings import get_logger
 log = get_logger('record-fingerprints')
 """记录本次推送指纹到 DB，供后续时段去重。"""
 import json, sys, sqlite3
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
-from heat_tracker import make_fingerprint
+from trendradar.scripts.heat_tracker import make_fingerprint
 
 CST = timezone(timedelta(hours=8))
-from settings import get_data_dir, DOMAINS
+from trendradar.scripts.settings import get_data_dir, DOMAINS
 DATA_DIR = get_data_dir()
 DB_PATH = DATA_DIR / 'fingerprints.db'
 
@@ -28,7 +28,7 @@ def record(push_id: str):
             try:
                 curated = json.loads(p.read_text())
                 break
-            except json.JSONDecodeError, Exception:
+            except (json.JSONDecodeError, Exception):
                 continue
     if not curated:
         log.info(f'未找到 {push_id} 精选数据')

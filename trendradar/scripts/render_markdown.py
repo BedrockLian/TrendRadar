@@ -8,14 +8,14 @@ render_markdown.py — 纯脚本渲染 TrendRadar 简报，无需 LLM API。
 用法: python3 render_markdown.py --push-id morning|noon|evening
 输出: Markdown 简报到 stdout，兼容 fragment_push.py 分片
 """
-from settings import get_logger
+from trendradar.scripts.settings import get_logger
 log = get_logger('render-markdown')
 
 import json, sys
 from datetime import datetime, timezone, timedelta
 
 CST = timezone(timedelta(hours=8))
-from settings import get_data_dir, DOMAINS, DOMAIN_LABELS, SLOT_NAMES
+from trendradar.scripts.settings import get_data_dir, DOMAINS, DOMAIN_LABELS, SLOT_NAMES
 
 DATA_DIR = get_data_dir()
 

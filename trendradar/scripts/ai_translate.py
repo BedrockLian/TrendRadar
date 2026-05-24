@@ -20,28 +20,10 @@ from pathlib import Path
 
 import aiohttp
 
-from settings import get_data_dir
+from trendradar.scripts.settings import get_data_dir
 DATA_DIR = get_data_dir()
 
 # ── CJK detection ────────────────────────────────────────────────────────────
-
-# Unicode ranges for CJK characters (simplified, handles most common cases)
-_CJK_RANGES = [
-    (0x4E00, 0x9FFF),   # CJK Unified Ideographs
-    (0x3400, 0x4DBF),   # CJK Unified Ideographs Extension A
-    (0x20000, 0x2A6DF), # CJK Unified Ideographs Extension B
-    (0x2A700, 0x2B73F), # CJK Unified Ideographs Extension C
-    (0x2B740, 0x2B81F), # CJK Unified Ideographs Extension D
-    (0x2B820, 0x2CEAF), # CJK Unified Ideographs Extension E
-    (0xF900, 0xFAFF),   # CJK Compatibility Ideographs
-    (0x2F800, 0x2FA1F), # CJK Compatibility Ideographs Supplement
-    (0x3000, 0x303F),   # CJK Symbols and Punctuation
-    (0xFF00, 0xFFEF),   # Halfwidth and Fullwidth Forms
-    (0x3040, 0x309F),   # Hiragana
-    (0x30A0, 0x30FF),   # Katakana
-    (0xAC00, 0xD7AF),   # Hangul Syllables (Korean)
-]
-
 
 def _is_cjk(c: str) -> bool:
     """True if c is a CJK Unified Ideograph (Chinese hanzi / Japanese kanji / Korean hanja).
@@ -127,7 +109,7 @@ def is_foreign_china_source(source_platform: str) -> bool:
 
 # ── Translation API ──────────────────────────────────────────────────────────
 
-from settings import get_api_key, get_api_endpoint, get_model
+from trendradar.scripts.settings import get_api_key, get_api_endpoint, get_model
 from string import Template
 
 API_ENDPOINT = get_api_endpoint()
@@ -334,7 +316,7 @@ def _load_and_scan(push_id: str) -> tuple[dict, list, Path]:
         sys.exit(1)
 
     data = json.loads(curated_path.read_text())
-    from settings import DOMAINS
+    from trendradar.scripts.settings import DOMAINS
     domains = DOMAINS
     items_to_translate = []
 
@@ -371,7 +353,7 @@ def _load_and_scan(push_id: str) -> tuple[dict, list, Path]:
 
 def _write_back(data: dict, curated_path: Path, push_id: str):
     """Write translated data back to curated file and dated variant."""
-    from settings import atomic_write_json
+    from trendradar.scripts.settings import atomic_write_json
     atomic_write_json(curated_path, data)
 
     from datetime import datetime, timezone, timedelta
@@ -379,7 +361,7 @@ def _write_back(data: dict, curated_path: Path, push_id: str):
     today = datetime.now(CST).strftime('%Y%m%d')
     dated_path = DATA_DIR / f'curated_{push_id}_{today}.json'
     if dated_path.exists():
-        from settings import atomic_write_json
+        from trendradar.scripts.settings import atomic_write_json
         atomic_write_json(dated_path, data)
 
 
@@ -401,7 +383,7 @@ async def process_curated(push_id: str) -> dict:
         file=sys.stderr,
     )
 
-    from settings import get_api_key
+    from trendradar.scripts.settings import get_api_key
     api_key = get_api_key()
     if not api_key:
         print(

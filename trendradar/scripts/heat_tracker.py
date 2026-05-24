@@ -12,7 +12,7 @@ import threading
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, List, Tuple
 
-from settings import get_data_dir
+from trendradar.scripts.settings import get_data_dir
 
 from functools import lru_cache
 
@@ -46,7 +46,7 @@ def init_db():
     global _INITIALIZED
     if _INITIALIZED:
         return
-    from settings import ensure_db_migrated
+    from trendradar.scripts.settings import ensure_db_migrated
     ensure_db_migrated(DB_PATH)
     conn = get_db()
     conn.execute("PRAGMA journal_mode=WAL")
@@ -71,20 +71,20 @@ def make_fingerprint(title: str, url: str = '') -> str:
         try:
             from urllib.parse import urlparse
             parsed = urlparse(url)
-            from settings import FINGERPRINT_URL_SEGMENTS
+            from trendradar.scripts.settings import FINGERPRINT_URL_SEGMENTS
             segments = [s for s in parsed.path.split('/') if s][:FINGERPRINT_URL_SEGMENTS]
             url_key = parsed.netloc + '/' + '/'.join(segments)
             norm += url_key.lower()
         except Exception:
             pass
-    from settings import FINGERPRINT_MD5_LEN
+    from trendradar.scripts.settings import FINGERPRINT_MD5_LEN
     return hashlib.md5(norm.encode()).hexdigest()[:FINGERPRINT_MD5_LEN]
 
 
 def _gen_fingerprints(items: list, push_id: str, now: str) -> dict:
     """生成指纹映射表。返回 {fingerprint: (item, signal)}。"""
     fp_map = {}
-    from settings import HEAT_WORDS
+    from trendradar.scripts.settings import HEAT_WORDS
     for item in items:
         title = item.get('title', '')
         if not title:
@@ -168,7 +168,7 @@ def _write_batch(conn, update_batch: list, insert_batch: list, stats: dict) -> d
                      fetch_cycles, platforms, platform_count, heat_signals, domain, rank_history, status)
                 VALUES (?, ?, ?, ?, 1, 1, ?, ?, ?, ?, ?, 'active')
             """, insert_batch)
-        from settings import HEAT_SLEEP_HOURS
+        from trendradar.scripts.settings import HEAT_SLEEP_HOURS
         cutoff = (datetime.now(CST) - timedelta(hours=HEAT_SLEEP_HOURS)).isoformat()
         conn.execute("UPDATE heat_tracker SET status = 'dormant' WHERE last_seen < ? AND status = 'active'", (cutoff,))
         stats['total_active'] = conn.execute(
@@ -253,7 +253,7 @@ def _calc_heat(fp: str, title: str, row, now: datetime) -> dict:
         info['span_hours'] = _calc_span_hours(row['first_seen'], row['last_seen'])
         info['rank_timeline'] = json.loads(row['rank_history'] or '[]')
 
-        from settings import HEAT_DEEP_CYCLES, HEAT_DEEP_SPAN, HEAT_SUSTAINED_CYCLES, HEAT_SUSTAINED_SPAN
+        from trendradar.scripts.settings import HEAT_DEEP_CYCLES, HEAT_DEEP_SPAN, HEAT_SUSTAINED_CYCLES, HEAT_SUSTAINED_SPAN
         if row['fetch_cycles'] >= HEAT_DEEP_CYCLES and info['span_hours'] >= HEAT_DEEP_SPAN:
             info['is_deep'] = True
             info['is_sustained'] = True

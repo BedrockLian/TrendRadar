@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from settings import get_logger
+from trendradar.scripts.settings import get_logger
 log = get_logger('curate-and-push')
 """TrendRadar Curator — 全局重分类 + 并行精选（frozenset加速 + cache）"""
 import json, sys
@@ -8,7 +8,7 @@ from pathlib import Path
 from functools import lru_cache, cache
 
 CST = timezone(timedelta(hours=8))
-from settings import get_data_dir, get_cache_dir, MIN_SCORE, MAX_PER_DOMAIN, DOMAINS, TRENDRADAR_HOME
+from trendradar.scripts.settings import get_data_dir, get_cache_dir, MIN_SCORE, MAX_PER_DOMAIN, DOMAINS, TRENDRADAR_HOME
 from trendradar.config.keywords import has_keyword_match, ALL_KEYWORDS
 DATA_DIR = get_data_dir()
 CACHE_DIR = get_cache_dir()
@@ -170,7 +170,7 @@ def _score(item: dict, domain: str = 'tech') -> dict:
     if recency == 0 and item.get('_is_blog'):
         recency = 1
     uniqueness = 3 if any(m in title for m in ['[续]', '[新]', '[更新]']) else 2 if url else 1
-    from settings import SCORE_HEAT_WORDS
+    from trendradar.scripts.settings import SCORE_HEAT_WORDS
     cov, hits = item.get('_coverage_count', 1), sum(1 for w in SCORE_HEAT_WORDS if w in title)
     heat = 3 if cov >= 4 or (cov >= 2 and hits >= 2) else 2 if cov >= 3 or hits >= 2 else 1 if cov >= 2 or hits >= 1 else 0
     total = clarity + authority + recency + uniqueness + heat
@@ -298,7 +298,7 @@ def curate_all(raw: list, push_id: str) -> dict:
     """全局重分类 + 并行精选（拆分为 _classify_items / _score_headlines / _curate_sections）。"""
     # 热度信息
     try:
-        import heat_tracker as ht
+        import trendradar.scripts.heat_tracker as ht
         if not any('_heat' in item for item in raw):
             hi = ht.get_heat_info(raw)
             for item in raw:

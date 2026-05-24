@@ -8,17 +8,17 @@
 import json, sys
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
-from heat_tracker import make_fingerprint as fingerprint
+from trendradar.scripts.heat_tracker import make_fingerprint as fingerprint
 
 CST = timezone(timedelta(hours=8))
-from settings import get_data_dir
+from trendradar.scripts.settings import get_data_dir
 DATA_DIR = get_data_dir()
 
 
 def load_curated(path: str) -> list:
     data = json.loads(Path(path).read_text(encoding='utf-8'))
     items = []
-    from settings import DOMAINS
+    from trendradar.scripts.settings import DOMAINS
     for domain in DOMAINS:
         for item in data.get(domain, []):
             item['_domain'] = domain

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from settings import get_logger
+from trendradar.scripts.settings import get_logger
 log = get_logger('push-prepare')
 """TrendRadar 推送准备脚本 — Fetch + Curation + 精简输出 + 指纹查询 一键完成。
 自动 fetch 兜底：raw JSON 不存在时自动调用 fetch_feeds.py，不再依赖外部 prefetch cron jobs。"""
@@ -9,13 +9,13 @@ from datetime import datetime, timezone, timedelta
 from concurrent.futures import ThreadPoolExecutor
 
 CST = timezone(timedelta(hours=8))
-from settings import get_data_dir, get_cache_dir, TRENDRADAR_HOME, DOMAINS
+from trendradar.scripts.settings import get_data_dir, get_cache_dir, TRENDRADAR_HOME, DOMAINS
 SCRIPTS_DIR = TRENDRADAR_HOME / 'scripts'
 DATA_DIR = get_data_dir()
 CACHE_DIR = get_cache_dir()
 
 from trendradar.scripts.common import gen_run_id, run_id_marker, set_run_id_ctx
-from settings import write_compressed
+from trendradar.scripts.settings import write_compressed
 
 
 def ensure_raw_exists(push_id: str):
@@ -35,10 +35,10 @@ def ensure_raw_exists(push_id: str):
         
     reason = "龄超4h需刷新" if raw_path.exists() else "首次fetch"
     log.info(f"{reason} — 触发 fetch（push-id={push_id}）")
-    from fetch_feeds import fetch_all
+    from trendradar.scripts.fetch_feeds import fetch_all
     start = datetime.now(CST)
     result = asyncio.run(fetch_all(push_id))
-    from settings import atomic_write_json
+    from trendradar.scripts.settings import atomic_write_json
     atomic_write_json(raw_path, {'items': result['items'],
         'saved_at': datetime.now(CST).isoformat()})
     elapsed = (datetime.now(CST) - start).total_seconds()
@@ -132,7 +132,7 @@ def run_curation(push_id: str) -> dict:
     write_compressed(out_path, result)
     # 同时保存带日期后缀的副本，供 track_events 跨日比对
     dated_path = DATA_DIR / f'curated_{push_id}_{datetime.now(CST).strftime("%Y%m%d")}.json'
-    from settings import atomic_write_json
+    from trendradar.scripts.settings import atomic_write_json
     atomic_write_json(dated_path, result)
     n = {d: len(result.get(d, [])) for d in DOMAINS}
     log.info(f"精选: 头条{n['top_headlines']} 外媒看华{n['foreign_china']} 科技{n['tech']} 经济{n['economy']} 游戏{n['gaming']} 共{result['total']}条")
@@ -168,7 +168,7 @@ def get_today_fingerprints() -> list:
         return []
     import sqlite3
     try:
-        import heat_tracker as ht
+        import trendradar.scripts.heat_tracker as ht
         conn = ht.get_db()
     except Exception:
         conn = sqlite3.connect(str(db))
