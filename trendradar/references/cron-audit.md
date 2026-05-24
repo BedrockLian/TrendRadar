@@ -42,7 +42,7 @@ ls ~/.hermes/trendradar/references/ | wc -l
 
 skills 中的 `cat references/xxx.md` 依赖此目录。如果缺失：
 ```bash
-mkdir -p ~/.hermes/trendradar/references && cp -r ~/.hermes/skills/trendradar/news-secretary/references/* $_
+cp -r ~/TrendRadar/trendradar/references/ ~/.hermes/trendradar/
 ```
 
 ## ⑤ 残留旧名扫描
