@@ -3,13 +3,13 @@
 覆盖 pure functions (no API/network):
   - _is_cjk(): CJK 字符检测
   - cjk_ratio(): CJK 占比计算
-  - is_english_summary(): 英文摘要判定（<50% CJK）
+  - needs_translation(): 是否需要翻译（英文/日文→True，纯中文→False）
   - is_foreign_china_source(): 外媒来源匹配
 """
 
 import pytest
 import os
-from ai_translate import _is_cjk, cjk_ratio, is_english_summary, is_foreign_china_source
+from ai_translate import _is_cjk, cjk_ratio, needs_translation, is_foreign_china_source
 
 
 class TestIsCjk:
@@ -19,8 +19,8 @@ class TestIsCjk:
         assert _is_cjk('人') is True
 
     def test_japanese_kana(self):
-        assert _is_cjk('あ') is True   # Hiragana
-        assert _is_cjk('ア') is True   # Katakana
+        assert _is_cjk('あ') is False   # Hiragana — not CJK
+        assert _is_cjk('ア') is False   # Katakana — not CJK
 
     def test_english_ascii(self):
         assert _is_cjk('A') is False
@@ -56,22 +56,23 @@ class TestCjkRatio:
         assert cjk_ratio('你好 世界') == 1.0
 
 
-class TestIsEnglishSummary:
+class TestNeedsTranslation:
     def test_chinese_summary(self):
-        assert is_english_summary('中国人工智能产业快速发展') is False
+        assert needs_translation('中国人工智能产业快速发展') is False
 
     def test_english_summary(self):
-        assert is_english_summary('China AI industry grows rapidly') is True
+        assert needs_translation('China AI industry grows rapidly') is True
 
     def test_boundary_50_percent(self):
-        """恰好 50% CJK 不算英文（< 0.5 才触发）"""
-        # '中英' = 2/2 CJK = 1.0 → False
-        assert is_english_summary('中英') is False
+        # '中英' = 2/2 CJK = 1.0 -> False
+        assert needs_translation('中英') is False
 
     def test_mixed_majority_english(self):
-        """>50% 英文 → True"""
-        # 'China的AI市场' = 1 CJK / 5 total ≈ 0.2 → True
-        assert is_english_summary('China的AI市场') is True
+        # 'China的AI市场' = 1 CJK / 5 total -> True
+        assert needs_translation('China的AI市场') is True
+
+    def test_japanese_with_kanji(self):
+        assert needs_translation('茂木外相 イラン外相と電話会談') is True
 
 
 class TestIsForeignChinaSource:
