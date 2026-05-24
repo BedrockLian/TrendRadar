@@ -34,8 +34,6 @@ def backup():
 
     items = [
         (TRENDRADAR_HOME / 'data' / 'fingerprints.db', 'fingerprints.db'),
-        (TRENDRADAR_HOME / 'data' / 'preferences.json', 'preferences.json'),
-        (TRENDRADAR_HOME / 'data' / 'push_log.json', 'push_log.json'),
         (TRENDRADAR_HOME / 'data' / 'sources.json', 'sources.json'),
     ]
     errors = []
@@ -131,13 +129,18 @@ def cleanup():
 def runtests() -> bool:
     """运行 pytest 烟雾测试，返回是否全部通过。"""
     import subprocess
+    pipeline_python = os.environ.get('PYTHON', '/usr/local/bin/python3.14t')
+    if not os.access(pipeline_python, os.X_OK):
+        pipeline_python = sys.executable
+    penv = os.environ.copy()
+    penv['PYTHONPATH'] = str(TRENDRADAR_HOME.parent)
     result = subprocess.run(
-        ['python3', '-m', 'pytest', 'tests/', '-q', '--tb=line', '-m', 'not slow'],
+        [pipeline_python, '-m', 'pytest', 'tests/', '-q', '--tb=line', '-m', 'not slow'],
         cwd=str(TRENDRADAR_HOME),
-        capture_output=True, text=True, timeout=120,
+        capture_output=True, text=True, timeout=120, env=penv,
     )
     if result.returncode != 0:
-        print(f'[TESTS FAILED] {result.stdout[-200:]}', file=sys.stderr)
+        print(f'[TESTS FAILED] {result.stdout[-200:]}')
         return False
     return True
 
@@ -161,4 +164,5 @@ if __name__ == '__main__':
     cleanup()
     summary()
     if not runtests():
-        print('[WARNING] 烟雾测试未通过，但备份和清理已完成', file=sys.stderr)
+        print('[WARNING] 烟雾测试未通过，但备份和清理已完成')
+        sys.exit(1)

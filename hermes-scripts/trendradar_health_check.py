@@ -147,7 +147,11 @@ def check_cron():
 
 
 def check_gateway():
-    """WeCom gateway 连接"""
+    """WeCom gateway 连接 — 检查 IPC socket + hermes gateway 进程
+
+    如果 Gateway 被有意禁用（如迁移到纯 no_agent 推送），此检查会误报 WARN。
+    届时需移除本检查或降级为 info-only。
+    """
     sock = Path('/tmp/hermes-wecom-card.sock')
     if not sock.exists():
         fail('gateway', 'WARN', 'IPC socket /tmp/hermes-wecom-card.sock 不存在')
@@ -179,9 +183,9 @@ def check_data_freshness():
 
 
 def check_api():
-    """快速 API 连通性测试"""
+    """快速外网连通性测试（不依赖具体 provider，纯网络层面）"""
     for url, label in [
-        ('https://api.deepseek.com/v1/models', 'DeepSeek API'),
+        ('https://api.deepseek.com/v1/models', '外网 API 可达（DeepSeek）'),
         ('https://httpbin.org/get', '外网出口'),
     ]:
         try:
