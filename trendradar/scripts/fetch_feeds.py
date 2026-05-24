@@ -21,6 +21,8 @@ except (ImportError, AttributeError):
 
 CST = timezone(timedelta(hours=8))
 from trendradar.scripts.settings import get_data_dir, get_cache_dir, write_compressed
+from trendradar.scripts.settings import RSSHUB_CONCURRENT, EXTERNAL_CONCURRENT, TIMEOUT_SEC
+from trendradar.scripts.settings import PROXY_URL, needs_proxy
 DATA_DIR = get_data_dir()
 CACHE_DIR = get_cache_dir()
 
@@ -123,28 +125,42 @@ async def fetch_all(push_id: str = '') -> dict:
     sources = _get_sources()
     print(f'[FETCH] {len(sources)}源（RSSHub {sum(1 for _,_,r,_ in sources if r)} + 外网 {sum(1 for _,_,r,_ in sources if not r)}）')
 
-    # 按类型分配 Semaphore
+    # 按类型分配 Semaphore，外网源走代理
     sems = {True: asyncio.Semaphore(RSSHUB_CONCURRENT),
             False: asyncio.Semaphore(EXTERNAL_CONCURRENT)}
     connector = aiohttp.TCPConnector(limit=40, limit_per_host=10)
 
-    async with aiohttp.ClientSession(connector=connector,
-                                     headers={'User-Agent': USER_AGENT}) as session:
+    # 分流：国内源直连，外媒源走米霍姆代理
+    direct_sources = [(n, u, r, fd) for n, u, r, fd in sources if not needs_proxy(u)]
+    proxy_sources = [(n, u, r, fd) for n, u, r, fd in sources if needs_proxy(u)]
+    print(f'[FETCH] {len(sources)}源（直连 {len(direct_sources)} + 代理 {len(proxy_sources)}）')
+
+    async def _fetch_batch(source_group: list, session):
         async with asyncio.TaskGroup() as tg:
             tasks = {n: tg.create_task(_fetch_one(session, n, u, r, sems[r], fd))
-                     for n, u, r, fd in sources}
+                     for n, u, r, fd in source_group}
+        result: dict[str, list] = {}
+        for name, task in tasks.items():
+            try:
+                n, items = task.result()
+                result[n] = items
+            except Exception as e:
+                log.error(f'{name}: {e}')
+        return result
 
-    # 合并结果（tasks 保留序）
-    all_results: dict[str, list] = {}
-    failures = 0
-    for name, task in tasks.items():
-        try:
-            n, items = task.result()
-            all_results[n] = items
-        except Exception as e:
-            log.error(f'{name}: {e}')
-            failures += 1
+    # 直连 session
+    async with aiohttp.ClientSession(connector=connector,
+                                     headers={'User-Agent': USER_AGENT}) as direct_session:
+        direct_results = await _fetch_batch(direct_sources, direct_session)
 
+    # 代理 session
+    async with aiohttp.ClientSession(connector=connector,
+                                     headers={'User-Agent': USER_AGENT},
+                                     proxy=PROXY_URL) as proxy_session:
+        proxy_results = await _fetch_batch(proxy_sources, proxy_session)
+
+    all_results = {**direct_results, **proxy_results}
+    failures = sum(1 for v in all_results.values() if not v)
     if failures:
         log.info(f'{failures}源失败')
 

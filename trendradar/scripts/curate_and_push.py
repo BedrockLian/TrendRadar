@@ -8,7 +8,7 @@ from pathlib import Path
 from functools import lru_cache, cache
 
 CST = timezone(timedelta(hours=8))
-from trendradar.scripts.settings import get_data_dir, get_cache_dir, MIN_SCORE, MAX_PER_DOMAIN, DOMAINS, TRENDRADAR_HOME
+from trendradar.scripts.settings import get_data_dir, get_cache_dir, MIN_SCORE, MAX_PER_DOMAIN, DOMAINS, TRENDRADAR_HOME, BRIEFING_RATIO
 from trendradar.config.keywords import has_keyword_match, ALL_KEYWORDS
 DATA_DIR = get_data_dir()
 CACHE_DIR = get_cache_dir()
@@ -133,7 +133,9 @@ def _china_kw() -> frozenset:
                        '人民币', '比亚迪', '阿里巴巴', '腾讯', '宁德时代',
                        '一带一路', '大湾区', 'China', 'Chinese', 'Beijing', 'Shanghai',
                        'Xi Jinping', 'Taiwan', 'Hong Kong', 'Sino-', 'Made in China',
-                       'tariff', 'trade war', 'supply chain', 'yuan'})
+                       'tariff', 'trade war', 'supply chain', 'yuan',
+                       '美中', '中美关系', '对华', '外贸', '制裁', '出口管制',
+                       '地缘', '脱钩', '外媒', '国际'})
 
 
 @lru_cache(maxsize=1)
@@ -319,4 +321,28 @@ def curate_all(raw: list, push_id: str) -> dict:
     result = _curate_sections(pool, push_id)
     result['top_headlines'] = top_headlines
     result['total'] = sum(len(result[d]) for d in DOMAINS)
+
+    # per-slot 总量截断（③ 硬上限）
+    max_total = BRIEFING_RATIO.get(push_id, 30)
+    if result['total'] > max_total:
+        # 按板块比例截断：优先保留头条，其他板块各自缩减
+        non_headline = result['total'] - len(top_headlines)
+        remaining = max_total - len(top_headlines)
+        if remaining < 0:
+            # 头条已超标，截断头条
+            result['top_headlines'] = top_headlines[:max_total]
+            for d in DOMAINS:
+                if d != 'top_headlines':
+                    result[d] = []
+        elif remaining < non_headline:
+            # 按比例缩减非头条板块
+            for d in ['tech', 'gaming', 'economy', 'foreign_china']:
+                keep = max(1, int(len(result[d]) / non_headline * remaining))
+                result[d] = result[d][:keep]
+                remaining -= keep
+                if remaining <= 0:
+                    break
+        result['truncated'] = True
+        result['total'] = sum(len(result[d]) for d in DOMAINS)
+
     return result

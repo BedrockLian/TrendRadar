@@ -1,7 +1,7 @@
 ---
 name: news-secretary
 slug: news-secretary
-version: 6.0.0
+version: 6.1.0
 description: 聚合多RSS源+博客，推送Markdown简报至企业微信。编排器一键管线 + 晚间Pro深度分析。
 author: Hermes Agent
 metadata:
@@ -13,7 +13,7 @@ metadata:
 ---
 
 ## 触发
-cron `0 9,12,21 * * *` (morning 24条 / noon 32条 / evening 24条)。晚间追加 3×Pro 深度分析。
+cron `0 9,12,21 * * *` (morning 30条 / noon 30条 / evening 20条, 日上限80)。晚间追加 3×Pro 深度分析。
 
 ## 管线
 
@@ -32,6 +32,17 @@ LLM 运行编排器，解析 `fragments` 数组投递。编排器不可用时走
 仅 evening。`delegate_task` 并行 3 个 Pro 子 Agent（趋势/跨域/风险），各基于当日 curated JSON（不联网）。
 输出经 `render_deep_analysis.py --topic "主题"` 管道格式化后作为 final response 逐篇投递（系统自动推送 WeCom）。
 完整协议见 `references/deep-analysis-format.md`。
+
+**重要：每条分析作为独立 final response 分别输出，不得与简报正文拼接在一起。** 简报走 step 3, 分析走 step 4, 互不干扰。
+
+## 输出规范（用户批准的样式）
+
+简报和深度分析由纯脚本（`render_markdown.py` / `render_deep_analysis.py`）生成，Agent 只做透传：
+
+1. **不加工内容** — 输出 briefing 字段内容本身，不加任何前缀/后缀/说明文字（如"所有分析已完成""以下是今日晚报"等）。脚本输出的已经是完整 Markdown，直接透传即可。
+2. **深度分析独立投递** — 晚间 3 条深度分析各自作为单独 final response 输出，不得拼接在简报末尾，不得与其他分析合并。
+3. **空行铁律** — 保持 render_markdown.py 的双空行分隔格式（条目间 \n\n\n，板块标题后 \n\n\n）。
+4. **严禁 LLM 改写** — 简报和分析内容由脚本生成，Agent 不得修改、摘要、重排或添加解释性文字。
 
 ## 运行时
 ```bash

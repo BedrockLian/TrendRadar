@@ -84,7 +84,7 @@ def run_curation(push_id: str) -> dict:
 
     Returns: curated dict with domains
     """
-    import curate_and_push as curate
+    import trendradar.scripts.curate_and_push as curate
     
     # RSS fetch 和 blog scan 并行执行
     def _do_fetch():
@@ -203,7 +203,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     import sys
-    from exitcodes import EXIT_CONFIG_ERROR, EXIT_FATAL
+    from trendradar.scripts.exitcodes import EXIT_CONFIG_ERROR, EXIT_FATAL
 
     try:
         curated = run_curation(args.push_id)

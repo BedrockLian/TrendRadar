@@ -4,7 +4,7 @@
 
 > 📖 **[从零搭建指南 → SETUP.md](SETUP.md)** — 从 Hermes Agent 全新安装到测试部署一站完成。
 
-TrendRadar 是一个三层结构的新闻聚合与智能推送系统：**日报**（39+ RSS 源，早/午/晚三段）、**周报**（每周一深度趋势研判）、**月报**（每月初聚合分析）。底层共享同一套多源异步抓取管线、AC 自动机分类引擎和 `pipeline_orchestrator.py` 编排器。
+TrendRadar 是一个三层结构的新闻聚合与智能推送系统：**日报**（多 RSS 源，早/午/晚三段）、**周报**（每周一深度趋势研判）、**月报**（每月初聚合分析）。底层共享同一套多源异步抓取管线、AC 自动机分类引擎和 `pipeline_orchestrator.py` 编排器。
 
 ---
 
@@ -21,9 +21,9 @@ pipeline_orchestrator.py（一键6阶段）
 
 | 时段 | 时间 | 条数 | 特点 |
 |------|------|------|------|
-| 🌅 早报 | 09:00 | 24 | 全天精选 |
-| 🌤️ 午间速递 | 12:00 | 32 | 增量去重 |
-| 🌙 今日回顾 | 21:00 | 24 | 总结 + 3×Pro 深度分析 |
+| 🌅 早报 | 09:00 | 30 | 全天精选 |
+| 🌤️ 午间速递 | 12:00 | 30 | 增量去重 |
+| 🌙 今日回顾 | 21:00 | 20 | 总结 + 3×Pro 深度分析 |
 
 ### 📆 周报 — Pro 深度研判，每周一推送
 
@@ -87,10 +87,10 @@ pipeline_orchestrator.py（一键6阶段）
 ```
 TrendRadar/
 ├── trendradar/              # 核心 Python 包
-│   ├── scripts/             #   23 个管线/工具脚本
+│   ├── scripts/             #   管线/工具脚本
 │   │   ├── pipeline_orchestrator.py     # 一键编排器（6阶段自动管线）
 │   │   ├── push_prepare.py             # fetch + curation 编排
-│   │   ├── fetch_feeds.py              # 39+ RSS 异步抓取
+│   │   ├── fetch_feeds.py              # 多 RSS 异步抓取
 │   │   ├── curate_and_push.py          # 5 域并行精选
 │   │   ├── ai_translate.py             # AI 批量翻译
 │   │   ├── batch_fetch.py              # 10 并发全文抓取

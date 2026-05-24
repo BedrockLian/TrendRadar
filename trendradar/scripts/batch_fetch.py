@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from trendradar.scripts.settings import get_logger
+from settings import get_logger
 log = get_logger('batch-fetch')
 """批量直连抓取 — 10 并发抓取头条+外媒 URL 全文（aiohttp + curl 兜底 + 100%命中）"""
 import json, sys, asyncio, subprocess, re, os
@@ -13,14 +13,14 @@ except ImportError:
     _HAS_CHARSET_NORMALIZER = False
 
 CST = timezone(timedelta(hours=8))
-from trendradar.scripts.settings import get_data_dir, get_cache_dir, write_compressed
+from settings import get_data_dir, get_cache_dir, write_compressed
 DATA_DIR = get_data_dir()
 CACHE_DIR = get_cache_dir()
 CONCURRENCY = 10
 TIMEOUT = 15
-PROXY = os.environ.get('HTTP_PROXY') or os.environ.get('HTTPS_PROXY') or 'http://host.docker.internal:7897'
-_DOCKER_PROXY_CHECKED = False
-_DOCKER_PROXY_ALIVE = None
+PROXY = os.environ.get('HTTP_PROXY') or os.environ.get('HTTPS_PROXY') or 'http://127.0.0.1:7890'
+_MIHOMO_CHECKED = False
+_MIHOMO_ALIVE = None
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
 MAX_ITEMS = 20
 SEARCH_DOMAINS = ('top_headlines', 'foreign_china')
@@ -70,24 +70,24 @@ def _decode(raw: bytes) -> str | None:
 
 
 def _proxy_alive() -> bool:
-    """检测 Docker 内部代理是否可达，不可达则直连"""
-    global _DOCKER_PROXY_CHECKED, _DOCKER_PROXY_ALIVE
-    if _DOCKER_PROXY_CHECKED:
-        return _DOCKER_PROXY_ALIVE
-    _DOCKER_PROXY_CHECKED = True
+    """检测米霍姆代理是否可达（127.0.0.1:7890），不可达则直连"""
+    global _MIHOMO_CHECKED, _MIHOMO_ALIVE
+    if _MIHOMO_CHECKED:
+        return _MIHOMO_ALIVE
+    _MIHOMO_CHECKED = True
     try:
         import socket
-        host, port = 'host.docker.internal', 7897
+        host, port = '127.0.0.1', 7890
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(2)
         result = s.connect_ex((host, port))
         s.close()
-        _DOCKER_PROXY_ALIVE = (result == 0)
-        if not _DOCKER_PROXY_ALIVE:
-            log.info('host.docker.internal:7897 不可达，直连抓取')
-        return _DOCKER_PROXY_ALIVE
+        _MIHOMO_ALIVE = (result == 0)
+        if not _MIHOMO_ALIVE:
+            log.info('127.0.0.1:7890 不可达，直连抓取')
+        return _MIHOMO_ALIVE
     except Exception:
-        _DOCKER_PROXY_ALIVE = False
+        _MIHOMO_ALIVE = False
         return False
 
 

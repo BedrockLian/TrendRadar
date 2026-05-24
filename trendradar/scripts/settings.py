@@ -35,11 +35,11 @@ DOMAIN_LABELS = {
 }
 
 MAX_PER_DOMAIN: dict[str, int] = {
-    'top_headlines': 10,
-    'tech': 15,
-    'economy': 14,
-    'gaming': 12,
-    'foreign_china': 14,
+    'top_headlines': 6,
+    'tech': 7,
+    'economy': 6,
+    'gaming': 6,
+    'foreign_china': 5,
 }
 
 DOMAIN_EMOJI = {
@@ -50,7 +50,7 @@ DOMAIN_EMOJI = {
 SLOT_NAMES = {'morning': '早报', 'noon': '午间速递', 'evening': '今日回顾'}
 
 DAILY_LIMIT = 80
-BRIEFING_RATIO = {'morning': 24, 'noon': 32, 'evening': 24}
+BRIEFING_RATIO = {'morning': 30, 'noon': 30, 'evening': 20}
 
 # ── 文件命名模板（C3 解耦） ────────────────────────────────────────
 def raw_path(date_str: str) -> Path:
@@ -93,6 +93,31 @@ RSSHUB_CONCURRENT = 12
 EXTERNAL_CONCURRENT = 20
 TIMEOUT_SEC = 6
 FETCH_RETRIES = 3
+
+## 代理配置（米霍姆）
+PROXY_URL = os.environ.get('TRENDRADAR_PROXY', 'http://127.0.0.1:7890')
+
+# 不需要代理的源 URL 前缀/模式（国内中转）
+DOMESTIC_PROXY_PATTERNS = (
+    'plink.anyfeeder.com',  # 国内 RSS 中转
+    '.cn',                   # 国内域名
+    '.com.cn',
+    'bbc.co.uk',             # BBC 直连可达，代理节点屏蔽 BBC
+    'bbci.co.uk',            # BBC RSS feed 域名
+)
+
+def needs_proxy(feed_url: str) -> bool:
+    """判断 RSS 源是否需要走代理。外媒直连源/RSSHub 走代理，国内中转直连。"""
+    url_lower = feed_url.lower()
+    # localhost:1200 是 RSSHub，本身不能直达外媒，需代理
+    if 'localhost:1200' in url_lower:
+        return True
+    # 国内中转/国内域名 → 直连
+    for pattern in DOMESTIC_PROXY_PATTERNS:
+        if pattern in url_lower:
+            return False
+    # 其余外网域名 → 走代理
+    return True
 
 ## API 调用
 API_CALL_TIMEOUT = 60

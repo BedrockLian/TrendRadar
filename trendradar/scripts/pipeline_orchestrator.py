@@ -127,10 +127,9 @@ def main():
         push_id = args.push_id
         dedup_flag = "--dedup" if push_id != "morning" else ""
     else:
-        push_id, error = detect_push_id()
-        dedup_flag = ""
-        if error:
-            print(json.dumps({"status": "silent", "reason": error}, ensure_ascii=False))
+        push_id, dedup_flag = detect_push_id()
+        if push_id is None:
+            print(json.dumps({"status": "silent", "reason": dedup_flag}, ensure_ascii=False))
             return 0
 
     stats["push_id"] = push_id
