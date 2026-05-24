@@ -1,11 +1,11 @@
 # render_markdown.py — 纯脚本渲染器
 
 ## 位置
-`/home/asus/.hermes/trendradar/scripts/render_markdown.py`
+`~/.hermes/trendradar/scripts/render_markdown.py`
 
 ## 用途
-替代 `render_markdown.py`（已删除），从 curated JSON 直接拼接 Markdown 简报。
-**cron 引用必须用此脚本名**，不可回退到已删除的旧名。
+从 curated JSON 直接拼接 Markdown 简报，格式硬编码永远一致。
+cron pipeline 必须引用 `render_markdown.py`（旧名 `render_briefing.py` 已删除）。
 
 ## 优点
 - **速度**：~0s（vs LLM ~9s）
@@ -15,7 +15,7 @@
 
 ## 用法
 ```bash
-cd /home/asus/.hermes/trendradar
+cd ~/.hermes/trendradar
 /usr/local/bin/python3.14t scripts/render_markdown.py --push-id evening 2>/dev/null
 ```
 stdout = 完整 Markdown 简报，兼容 `fragment_push.py`。

@@ -2,7 +2,8 @@
 
 ## 周报采集
 ```bash
-python3 /home/asus/.hermes/trendradar/scripts/collect_weekly_reports.py --weeks 4
+# 该脚本未实现，改用以下方式聚合：
+# 遍历近4周 curated JSON，按域名汇总统计
 ```
 输出 JSON: `weekly_reports[]` + `month_stats`
 
@@ -14,8 +15,8 @@ SELECT date(created_at) day, COUNT(*) n FROM heat_tracker WHERE created_at >= da
 
 ## 精选统计
 ```bash
-ls /home/asus/.hermes/trendradar/data/curated_*_202605*.json | wc -l
-for f in /home/asus/.hermes/trendradar/data/curated_*_202605*.json; do
+ls ~/.hermes/trendradar/data/curated_*_202605*.json | wc -l
+for f in ~/.hermes/trendradar/data/curated_*_202605*.json; do
   python3 -c "import json;d=json.load(open('$f'));print('$f',d.get('total',0))"
 done
 ```
@@ -26,7 +27,7 @@ python3 -c "
 import json,glob
 domains=['top_headlines','foreign_china','tech','economy','gaming']
 counts={d:0 for d in domains}
-for f in sorted(glob.glob('/home/asus/.hermes/trendradar/data/curated_*_202605*.json')):
+for f in sorted(glob.glob('~/.hermes/trendradar/data/curated_*_202605*.json')):
     d=json.load(open(f))
     for domain in domains: counts[domain]+=len(d.get(domain,[]))
 print('分布:',counts,'总计:',sum(counts.values()))

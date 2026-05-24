@@ -8,7 +8,7 @@
 
 **检测：**
 ```bash
-cd /home/asus/.hermes/trendradar
+cd ~/.hermes/trendradar
 python3 -c 'import json; d=json.load(open("data/curated_{slot}_{date}.json")); short=[(sec,a.get("title","")[:50],len((a.get("summary","") or "").strip())) for sec in ["tech","economy","gaming","foreign_china","top_headlines"] for a in d.get(sec,[]) if len((a.get("summary","") or "").strip()) < 20]; print(f"{len(short)} 条短摘要"); [print(f"  [{s[0]}] {s[2]}字 | {s[1]}") for s in short]'
 ```
 

@@ -1,7 +1,7 @@
 # aggregate_monthly.py
 
 ```bash
-python3 /home/asus/.hermes/skills/yuanbao/monthly-trend-report/scripts/aggregate_monthly.py
+python3 ~/.hermes/trendradar/scripts/aggregate_monthly.py
 ```
 
 输出示例:
