@@ -7,6 +7,11 @@
 ## 目录
 
 1. [前置要求](#1-前置要求)
+   1. [Hermes Agent](#11-hermes-agent)
+   2. [Python 3.14t](#12-python-314t免费线程版)
+   3. [企业微信机器人](#13-企业微信机器人)
+   4. [API Key](#14-api-key)
+   5. [代理配置（外媒数据源必需）](#15-代理配置外媒数据源必需)
 2. [克隆仓库](#2-克隆仓库)
 3. [安装依赖](#3-安装依赖)
 4. [环境配置](#4-环境配置)
@@ -61,6 +66,153 @@ export DEEPSEEK_API_KEY="sk-xxxxxxxxxxxxxxxx"
 ```
 
 也支持通过 `.env` 文件加载（见 [4. 环境配置](#4-环境配置)）。
+
+### 1.5 代理配置（外媒数据源必需）
+
+TrendRadar 的部分 RSS 源（路透社、BBC、纽约时报、卫报等）被 GFW 封锁，直连无法访问。系统内置 **自动代理分流** 机制：国内源直连，外媒源走代理。
+
+#### 1.5.1 安装 Mihomo（Clash Meta）
+
+推荐使用 Mihomo（Clash Meta）作为代理客户端。WSL/Linux amd64 安装：
+
+```bash
+# 下载 Mihomo
+MIHOMO_VER=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases/latest | grep tag_name | cut -d'"' -f4)
+wget "https://github.com/MetaCubeX/mihomo/releases/download/${MIHOMO_VER}/mihomo-linux-amd64-${MIHOMO_VER}.gz"
+gunzip mihomo-linux-amd64-${MIHOMO_VER}.gz
+chmod +x mihomo-linux-amd64-${MIHOMO_VER}
+mv mihomo-linux-amd64-${MIHOMO_VER} ~/.local/bin/mihomo
+```
+
+#### 1.5.2 配置订阅
+
+创建配置目录并放入订阅配置文件：
+
+```bash
+mkdir -p ~/.config/mihomo
+# 将你的订阅配置文件写入 ~/.config/mihomo/config.yaml
+# 订阅链接通常可通过 curl 下载后 base64 解码获得
+curl -sL "你的订阅链接" | base64 -d > /tmp/sub_decode.txt
+# 使用转换工具或手动将代理节点写入 config.yaml
+```
+
+最小配置示例 (`~/.config/mihomo/config.yaml`)：
+
+```yaml
+port: 7890
+socks-port: 7891
+allow-lan: true
+bind-address: "0.0.0.0"
+mode: rule
+log-level: warning
+external-controller: 127.0.0.1:9090
+dns:
+  enable: true
+  ipv6: false
+  enhanced-mode: fake-ip
+  # ... DNS 配置
+proxies:
+  # ... 你的代理节点列表
+proxy-groups:
+  # ... 策略组
+rules:
+  # ... 路由规则
+```
+
+> **注意**：`allow-lan: true` 和 `bind-address: "0.0.0.0"` 是必需的——TrendRadar 的 RSSHub Docker 容器需要从容器网络访问 Mihomo。
+
+#### 1.5.3 注册 Systemd 服务
+
+```bash
+mkdir -p ~/.config/systemd/user
+cat > ~/.config/systemd/user/mihomo.service << 'EOF'
+[Unit]
+Description=Mihomo (Clash Meta) proxy
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/mihomo -d %h/.config/mihomo/
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=default.target
+EOF
+
+systemctl --user daemon-reload
+systemctl --user enable --now mihomo.service
+systemctl --user status mihomo.service
+```
+
+验证代理可用：
+
+```bash
+curl -x http://127.0.0.1:7890 https://www.google.com
+# 预期: HTTP 200/302（Google 可访问）
+```
+
+#### 1.5.4 TrendRadar 自动分流
+
+TrendRadar 的 `scripts/settings.py` 内置 `needs_proxy()` 函数：
+
+- **直连**：`plink.anyfeeder.com`（国内中转）、`.cn` 域名
+- **代理**：外媒直连 RSS（BBC/NYT/Guardian/SCMP 等）、RSSHub 路由（`localhost:1200`）
+- **特殊**：BBC 被代理节点屏蔽，自动降级为直连
+
+无需额外配置，代理地址默认为 `http://127.0.0.1:7890`，可通过环境变量 `TRENDRADAR_PROXY` 覆盖。
+
+#### 1.5.5 RSSHub 容器代理（可选）
+
+如果使用了 RSSHub 本地实例来获取外媒 RSS，需要给 RSSHub 容器配置代理。推荐使用 `undici.EnvHttpProxyAgent` 方案（Node.js 原生支持）：
+
+```dockerfile
+FROM diygod/rsshub:latest
+RUN apt-get update && apt-get install -y ca-certificates
+COPY proxy-fix.mjs /app/proxy-fix.mjs
+```
+
+配合启动命令：
+```bash
+docker run -d --name rsshub \
+  -p 1200:1200 \
+  -e HTTP_PROXY=http://host.docker.internal:7890 \
+  -e HTTPS_PROXY=http://host.docker.internal:7890 \
+  -e NODE_OPTIONS="--max-http-header-size=32768 --import /app/proxy-fix.mjs" \
+  rsshub-image \
+  dumb-init -- node --max-http-header-size=32768 --import /app/proxy-fix.mjs dist/index.mjs
+```
+
+`proxy-fix.mjs` 内容：
+```javascript
+import undici from 'undici';
+const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+if (proxyUrl) {
+  const agent = new undici.EnvHttpProxyAgent();
+  globalThis[Symbol.for('undici.globalDispatcher.1')] = agent;
+}
+```
+
+#### 1.5.6 代理排障
+
+```bash
+# 1. Mihomo 是否运行
+systemctl --user status mihomo.service
+
+# 2. 端口监听
+ss -tlnp | grep 7890
+
+# 3. 测试代理
+curl -x http://127.0.0.1:7890 https://www.google.com
+
+# 4. TrendRadar 代理判断
+cd ~/.hermes/trendradar
+python3 -c "from scripts.settings import needs_proxy; print(needs_proxy('https://feeds.bbci.co.uk/news/rss.xml'))"
+
+# 5. 抓取时查看分流日志（fetch_feeds 输出）
+python3 -m scripts.fetch_feeds --push-id morning | grep 'FETCH'
+# 输出示例: [FETCH] 41源（直连 9 + 代理 32）
+```
 
 ---
 
@@ -552,6 +704,8 @@ git push
 |------|------|
 | 日报无推送 | 运行体检 → 检查 `PYTHONPATH` → 确认 API key 有效 |
 | 推送内容为空 | 检查 RSS 源连通性 → 检查 `sources.json` 是否存在 |
+| 外媒源内容缺失 | `systemctl --user status mihomo` 检查代理 → `curl -x http://127.0.0.1:7890 https://www.google.com` 测试 |
+| RSSHub 路由超时 | `docker logs rsshub --tail 20` 检查错误 → 确认容器已配置 proxy-fix.mjs |
 | 数据库异常 | 删除 `data/fingerprints.db` → 重新初始化 |
 | import 错误 | `export PYTHONPATH=/home/asus/.hermes` |
 | cron 不触发 | `hermes cron list` 检查状态 → 确认 Hermes 网关运行中 |
