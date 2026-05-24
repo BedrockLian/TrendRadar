@@ -93,8 +93,20 @@ def detect_source_lang(text: str) -> str:
     return 'English'
 
 
-def is_english_summary(text: str) -> bool:
-    """A summary is considered English if <50% of its chars are Chinese CJK."""
+def needs_translation(text: str) -> bool:
+    """Determine if text needs translation to Chinese.
+    
+    Returns True if:
+    1. Text contains Japanese kana (Hiragana/Katakana) — regardless of CJK ratio
+    2. Chinese CJK character ratio is < 50% (English or mixed text)
+    False for purely Chinese text (CJK ratio >= 50% and no kana).
+    """
+    if not text:
+        return False
+    # Japanese text: contains Hiragana or Katakana
+    if _has_japanese_kana(text):
+        return True
+    # English or other: low CJK ratio
     return cjk_ratio(text) < 0.5
 
 
@@ -340,8 +352,8 @@ def _load_and_scan(push_id: str) -> tuple[dict, list, Path]:
             if has_title_cn and has_summary_cn:
                 continue
 
-            needs_title = not has_title_cn and title and is_english_summary(title)
-            needs_summary = not has_summary_cn and summary and is_english_summary(summary)
+            needs_title = not has_title_cn and title and needs_translation(title)
+            needs_summary = not has_summary_cn and summary and needs_translation(summary)
 
             if needs_title or needs_summary:
                 items_to_translate.append((domain, idx, item, title, summary, needs_title, needs_summary))
