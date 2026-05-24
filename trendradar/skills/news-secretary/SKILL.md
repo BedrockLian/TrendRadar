@@ -98,6 +98,7 @@ timeline.yaml → push_slot_detect → push_prepare(RSS+blog+AC分类)
 | `references/free-threaded-build.md` | python3.14t 编译/安装/zstd降级 |
 | `references/render-markdown-failures.md` | render_markdown.py 故障模式速查（日期/数据结构/空文件） |
 | `references/cron-audit.md` | Cron 全量审计清单（技能/脚本/path 六项检查） |
+| `references/ai-translate-cjk-detection.md` | ai_translate 日语 CJK 检测修复 + detect_source_lang |
 
 ## 兴趣偏好
 `config/ai_interests.yaml` — 正面+2分，排除=0分过滤。CLI: `python3 scripts/interest_cli.py {list,add,remove,exclude}`。
@@ -150,6 +151,9 @@ FRAGMENTS=$(echo "$BRIEFING" | /usr/local/bin/python3.14t scripts/fragment_push.
 - Trap 25: `references/` 目录在 workdir 不存在——skill 里 `cat references/xxx.md` 会失败。定期 `hermes cron list` 检查后确认 `ls ~/.hermes/trendradar/references/` 非空
 - Trap 26: Cron prompt 引用已删除的辅助脚本（`blind_spot_audit.py` / `aggregate_monthly.py`）——新创建后记得同步到仓库并确认 cron workdir 可见
 - Trap 27: `render_markdown.py` 日期格式不匹配——curated 文件名为 `%Y%m%d`，显示用 `%Y-%m-%d`。修改脚本的 `today` 变量必须区分 file 和 display 两个版本
+- Trap 28: `ai_translate.py` 的 `_is_cjk()` 把平假名/片假名算作 CJK——日语条目 CJK 比率 > 50%，`needs_translation()` 返回 False 导致未翻译。修复：kana 检测 + `detect_source_lang()`。见 `references/ai-translate-cjk-detection.md`
+- Trap 29: Cron context 下 `send_message` 工具不可用——agent 回退到 LLM 重新生成简报内容，导致翻译丢失/格式跑偏。修复：cron prompt 最后一步说「send_message 不可用时，直接输出 BRIEFING 变量内容（render_markdown.py 的 stdout），不要 LLM 重新生成」
+- Trap 30: Cron prompt 步骤 7 说「返回 [SILENT] 表示已投递」——误导 agent 以为投递成功了但实际上没发出去。修复：删掉 [SILENT] 要求，改为「send_message 可用时投递后返回 [SILENT]，不可用时输出 BRIEFING」
 
 ## Cron 全量审计清单（定期执行）
 
