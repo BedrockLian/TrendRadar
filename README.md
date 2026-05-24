@@ -148,4 +148,4 @@ cd trendradar && pytest tests/ -v --timeout 15
 
 ## 许可证
 
-MIT 见[LICENSE](LICENSE)
+MIT，见[LICENSE](LICENSE)。
