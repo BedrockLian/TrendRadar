@@ -75,7 +75,7 @@ pipeline_orchestrator.py（一键6阶段）
 | **6 个 skill** | `news-secretary`, `self-healing`, `performance-optimizer`, `system-config`, `weekly-report`, `monthly-report` | skill 是 Agent 指令集，脱离 Hermes 无意义 |
 | **WeCom 投递** | cron final response → Gateway auto-delivery | 脱离 Hermes 无法接收推送 |
 | **晚间深度分析** | `delegate_task` 3×Pro 子 Agent 并行 | 晚报无深度分析板块 |
-| **周报/月报 Pro 分析** | `delegate_task` + `deep-research-cli` 六步协议 | 周报/月报降级为纯数据聚合 |
+| **周报/月报 Pro 分析** | `delegate_task` + `deep-research-cli` 六步协议 | 无深度研判，仅数据聚合 |
 | **KV 缓存共享** | Hermes KV cache（3 日报共池） | Flash API 缓存不跨 session |
 | **自动体检** | cron no_agent 模式 + health_check 脚本 | health_check.py 可单独跑，但无人接收告警 |
 | **看门狗** | cron no_agent 模式 + delivery_watchdog | 推送失败无兜底告警 |
