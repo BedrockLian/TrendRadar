@@ -541,6 +541,16 @@
       "enabled": true,
       "feed_url": "https://www3.nhk.or.jp/rss/news/cat4.xml",
       "authority": 3
+    },
+    {
+      "id": "koreaherald",
+      "name": "Korea Herald",
+      "platform": "koreaherald",
+      "type": "rss",
+      "category": "news",
+      "enabled": true,
+      "feed_url": "https://www.koreaherald.com/rss/newsAll",
+      "authority": 3
     }
   ],
   "exploration_sources": [],
