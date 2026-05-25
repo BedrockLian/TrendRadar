@@ -75,3 +75,42 @@ cd ~/.hermes && python3 scripts/trendradar_health_check.py | grep -c pipeline
 hermes cron list
 # 然后编辑 ~/.hermes/scripts/trendradar_health_check.py 中的 CRON_JOBS
 ```
+
+## 8. 维护脚本 `runtests()` 解释器不匹配 + 缺乏 PYTHONPATH + 失败不 exit(1)
+
+`trendradar_maintenance.py` 的 `runtests()` 长期使用系统 `python3`（而非管线 python3.14t），且未设置 `PYTHONPATH`。虽因 cwd 下存在 `__init__.py` 使当前导入结构能工作，但：
+  - 与健康检查约定不一致（健康检查所有子进程统一走 `$PYTHON` / python3.14t）
+  - 若将来 `TRENDRADAR_HOME` 不再作为包根目录（如改用 `pip install -e`），测试会静默失败
+
+**另外两个问题**：
+  - 烟雾测试失败仅 `print(stderr)` → no_agent 模式不检查 stderr，报警被吞
+  - 备份列表中有 `push_log.json` 和 `preferences.json` 两个已不存在的文件（仅靠 `src.exists()` 静默跳过，为死代码）
+
+**修复（2026-05-24 完成）**:
+
+```python
+# runtests() 改用管线 Python + PYTHONPATH
+pipeline_python = os.environ.get('PYTHON', '/usr/local/bin/python3.14t')
+if not os.access(pipeline_python, os.X_OK):
+    pipeline_python = sys.executable
+penv = os.environ.copy()
+penv['PYTHONPATH'] = str(TRENDRADAR_HOME.parent)
+result = subprocess.run(
+    [pipeline_python, '-m', 'pytest', 'tests/', ...],
+    cwd=str(TRENDRADAR_HOME), env=penv,
+)
+
+# 失败时 exit(1) 确保 no_agent 推送
+if not runtests():
+    print('[WARNING] 烟雾测试未通过，但备份和清理已完成')
+    sys.exit(1)
+```
+
+**教训**: 修复一类脚本的解释器问题时，必须平行检查同项目的所有 C 级脚本（所有 no_agent cron 脚本）。2026-05-24 之前只有健康检查修复了解释器，maintenance 脚本遗漏了。
+
+**验证**:
+```bash
+# 维护脚本全量跑一次
+python3 ~/.hermes/scripts/trendradar_maintenance.py
+# 预期输出摘要行 + 烟雾测试通过（无 WARNING）
+```

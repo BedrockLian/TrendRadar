@@ -24,21 +24,9 @@ pipeline_orchestrator.py（v2.8.0 — 一键7阶段）
   → 输出 JSON: {status, fragments, briefing, stats, needs_deep_analysis}
 ```
 
-LLM 运行编排器，解析 `fragments` 数组投递。编排器不可用时走 cron prompt 中的 fallback 手动管线。
+LLM 运行编排器，解析 `fragments` 数组投递。编排器不可用时走 cron prompt 中的 fallback 手动管线。自动特性详见 `references/pipeline.md`。
 
-### 自动特性（v6.5.0）
-
-- **SILENT 闭环**：无新条目时自动删除 curated/fetch 中间文件，`fragments=[]` 显式空数组，防止 Agent 画蛇添足。
-- **UTF-8 字节分片**：`fragment_push.py` 严格 3800 字节/片 (WeCom 4096 硬限制)，段落→句子→硬切三级递降，防静默截断。
-- **并行翻译+抓取**：阶段③ `ThreadPoolExecutor` 真并行 `ai_translate ∥ batch_fetch`。
-- **SSOT 自描述**：`--list-steps` 输出管道步骤 JSON，Agent 启动前动态读取而非依赖 Skill 中手动维护的步骤。
-- **启动自检**：`--check-version` 校验所有依赖脚本存在，缺件触发 `EXIT_CONFIG_ERROR`。
-- **Storage 统一接入**：`record_fingerprints.py` / `heat_tracker.py` 通过 `Storage.db()` 统一 WAL 连接，消除 raw `sqlite3.connect()`。
-- **迁移回滚**：`migrations/runner.py` 支持 `down(target_version)`，每条 `.sql` 迁移文件须带 `-- down: <SQL>` 回滚注释。
-
-简报由 `render_markdown.py` 纯脚本生成，Agent 不修改内容。
-
-**cron prompt 同步警告**：修改此 skill 后必须单独更新 cron prompt（`cronjob action=update job_id=90a2866775df prompt=...`）。prompt 独立于 skill 内容，不会自动同步。
+简报由 `render_markdown.py` 纯脚本生成，Agent 不修改内容。cron prompt 修改后需同步更新。
 
 ## 翻译管线（关键！）
 
@@ -77,22 +65,17 @@ export PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GI
 
 | 文件 | 何时读 |
 |------|--------|
-| `references/cron-sendmessage-fallback.md` | cron context 下投递机制：auto-delivery 协议 |
-| `references/translation-pipeline-sync.md` | 翻译管线：title_cn偏好 + 来源检测 + 文件优先级 |
-| `references/sources-management.md` | RSS 源发现与添加（BBC/NYT/NPR/NHK 模式） |
-| `references/traps.md` | 已知陷阱全集（30 条） |
-| `references/pipeline.md` | 管线 v2.8.0 全量文档（性能/故障恢复/自动特性） |
-| `references/pitfalls-utf8-bytes.md` | UTF-8 字节计数陷阱：`_find_last` 修复 |
-| `references/cron-operations.md` | Cron 运维：审计清单 + 技能名校验 |
-| `references/render-format.md` | 简报输出格式（空行铁律/链接/emoji） |
-| `references/deep-analysis-format.md` | 深度分析协议 + 知识图谱（--context 实体提取） |
-| `references/pipeline-pitfalls.md` | 管线运维陷阱全集 |
+| `references/pipeline.md` | 管线全量文档（性能/故障恢复/自动特性） |
 | `references/cron-prompt-canonical.md` | 日报 cron prompt 标准文本 |
-| `scripts/render_markdown.py` | **格式契约** — docstring 顶部 7 条铁律 |
-| `scripts/sanity_check.py` | **发布前拦截器** — 禁语/死链/敏感词/HTML残留扫描 |
-| `references/cron-prompt-canonical.md` | 日报 cron prompt 标准文本，skill 修改后同步 prompt 时直接用 |
-| `scripts/render_markdown.py` | **格式契约** — docstring 顶部 7 条铁律，修改格式必须先改它 |
-| `references/fragment-push-byte-splitting.md` | 字节级分片技术：UTF-8 计数 + 三级递降 + `_find_last` 字节-vs-字符陷阱 |
+| `references/cron-sendmessage-fallback.md` | cron context 下投递机制 |
+| `references/traps.md` | 已知陷阱全集 |
+| `references/translation-pipeline-sync.md` | 翻译管线：title_cn + 来源检测 + 文件优先级 |
+| `references/pipeline-pitfalls.md` | 管线运维陷阱 |
+| `references/sources-management.md` | RSS 源发现与添加 |
+| `references/render-format.md` | 简报输出格式 |
+| `references/deep-analysis-format.md` | 深度分析协议 + 知识图谱 |
+| `scripts/render_markdown.py` | 格式契约 docstring |
+| `scripts/sanity_check.py` | 发布前拦截器 |
 
 ## 兴趣偏好
 `config/ai_interests.yaml` — 正面+2分，排除=0分过滤。CLI: `python3 scripts/interest_cli.py {list,add,remove,exclude}`。
