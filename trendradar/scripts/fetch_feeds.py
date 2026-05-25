@@ -128,7 +128,6 @@ async def fetch_all(push_id: str = '') -> dict:
     # 按类型分配 Semaphore，外网源走代理
     sems = {True: asyncio.Semaphore(RSSHUB_CONCURRENT),
             False: asyncio.Semaphore(EXTERNAL_CONCURRENT)}
-    connector = aiohttp.TCPConnector(limit=40, limit_per_host=10)
 
     # 分流：国内源直连，外媒源走米霍姆代理
     direct_sources = [(n, u, r, fd) for n, u, r, fd in sources if not needs_proxy(u)]
@@ -136,25 +135,32 @@ async def fetch_all(push_id: str = '') -> dict:
     print(f'[FETCH] {len(sources)}源（直连 {len(direct_sources)} + 代理 {len(proxy_sources)}）')
 
     async def _fetch_batch(source_group: list, session):
-        async with asyncio.TaskGroup() as tg:
-            tasks = {n: tg.create_task(_fetch_one(session, n, u, r, sems[r], fd))
-                     for n, u, r, fd in source_group}
+        tasks = []
+        names = []
+        for n, u, r, fd in source_group:
+            tasks.append(_fetch_one(session, n, u, r, sems[r], fd))
+            names.append(n)
+        raw_results = await asyncio.gather(*tasks, return_exceptions=True)
         result: dict[str, list] = {}
-        for name, task in tasks.items():
-            try:
-                n, items = task.result()
-                result[n] = items
-            except Exception as e:
-                log.error(f'{name}: {e}')
+        for name, outcome in zip(names, raw_results):
+            if isinstance(outcome, Exception):
+                log.error(f'{name}: {outcome.__class__.__name__}: {outcome}')
+                result[name] = []
+            elif isinstance(outcome, tuple) and len(outcome) == 2:
+                result[outcome[0]] = outcome[1]
+            else:
+                result[name] = outcome if isinstance(outcome, list) else []
         return result
 
-    # 直连 session
-    async with aiohttp.ClientSession(connector=connector,
+    # 直连 batch
+    direct_conn = aiohttp.TCPConnector(limit=40, limit_per_host=10)
+    async with aiohttp.ClientSession(connector=direct_conn,
                                      headers={'User-Agent': USER_AGENT}) as direct_session:
         direct_results = await _fetch_batch(direct_sources, direct_session)
 
-    # 代理 session
-    async with aiohttp.ClientSession(connector=connector,
+    # 代理 batch — 用独立 connector，避免 session 关闭污染共享连接池
+    proxy_conn = aiohttp.TCPConnector(limit=40, limit_per_host=10)
+    async with aiohttp.ClientSession(connector=proxy_conn,
                                      headers={'User-Agent': USER_AGENT},
                                      proxy=PROXY_URL) as proxy_session:
         proxy_results = await _fetch_batch(proxy_sources, proxy_session)
