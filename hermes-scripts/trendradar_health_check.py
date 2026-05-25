@@ -83,7 +83,7 @@ def check_scripts():
 def check_config():
     """关键配置存在 + 内容可用"""
     # YAML 配置文件
-    for name in ['timeline.yaml', 'ai_interests.yaml', 'translate.yaml']:
+    for name in ['timeline.yaml', 'ai_interests.yaml']:
         p = TR / 'config' / name
         if not p.exists():
             fail(f'config/{name}', 'WARN', '文件缺失')

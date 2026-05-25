@@ -238,7 +238,7 @@ TrendRadar 通过本地 RSSHub 实例（`http://localhost:1200`，Docker: `diygo
    path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n')
    ```
 
-4. 如果外媒源需翻译，同步更新 `config/translate.yaml` 的 `sources:` 列表。
+4. 如果外媒源需翻译，同步更新 `data/sources.json` 中各源的 `language` 字段。
 
 5. 运行 `fetch_feeds` 测试：
    ```bash
