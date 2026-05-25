@@ -31,8 +31,8 @@ LLM 输出 "Now let me" / "Here is" 等过程描述会被推送到 WeCom。cron 
 - **C 扩展缺失**：`_zstd`/`feedparser` 需 `python3.14t -m pip install zstandard feedparser`
 - **PYTHONPATH 缺失**：cron prompt 必须 `export PYTHONPATH=/home/asus/.hermes`，否则 `ModuleNotFoundError: No module named 'trendradar'`。pyproject.toml 的 `[tool.pdm]` 配置对子 shell 无效。
 
-## ~~10. translate.yaml 源名与 sources.json 不同步~~（已淘汰）
-翻译语言字段已嵌入 sources.json，translate.yaml 已删除，不再存在不同步问题。
+## 10. translate.yaml 源名与 sources.json 不同步
+重构 sources.json 时 translate.yaml 的旧源名不会自动失效——翻译静默跳过无报错。
 **修复**：改 sources.json 后跑 `pytest tests/ -k translate_config`。
 
 ## 11. 游戏源误分"外媒看华" [已修复]

@@ -315,7 +315,7 @@ def _load_and_scan(push_id: str) -> tuple[dict, list, Path]:
             if has_title_cn and has_summary_cn:
                 continue
 
-            # Determine source language by platform (from sources.json)
+            # Determine source language by platform (from translate.yaml)
             source_lang = get_source_lang(item.get('source_platform', ''))
 
             # Only translate if we know the source language
