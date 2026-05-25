@@ -10,7 +10,8 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/ifanr",
-      "authority": 2
+      "authority": 2,
+      "language": "zh"
     },
     {
       "id": "huxiu",
@@ -20,7 +21,8 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/huxiu",
-      "authority": 3
+      "authority": 3,
+      "language": "zh"
     },
     {
       "id": "gcores",
@@ -30,7 +32,8 @@
       "category": "game",
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/gcores",
-      "authority": 2
+      "authority": 2,
+      "language": "zh"
     },
     {
       "id": "thepaper",
@@ -40,7 +43,8 @@
       "category": "news",
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/thepaper",
-      "authority": 3
+      "authority": 3,
+      "language": "zh"
     },
     {
       "id": "zaobao_china",
@@ -50,7 +54,8 @@
       "category": "news",
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/zaobao/realtime/china",
-      "authority": 1
+      "authority": 1,
+      "language": "zh"
     },
     {
       "id": "zaobao_world",
@@ -60,7 +65,8 @@
       "category": "news",
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/zaobao/realtime/world",
-      "authority": 1
+      "authority": 1,
+      "language": "zh"
     },
     {
       "id": "chinanews",
@@ -71,7 +77,8 @@
       "enabled": true,
       "feed_url": "http://localhost:1200/chinanews",
       "desc": "国家级新闻通讯社（通过本地RSSHub）",
-      "authority": 3
+      "authority": 3,
+      "language": "zh"
     },
     {
       "id": "banyuetan",
@@ -82,7 +89,8 @@
       "enabled": true,
       "feed_url": "http://localhost:1200/banyuetan",
       "desc": "党政民生深度（通过本地RSSHub）",
-      "authority": 3
+      "authority": 3,
+      "language": "zh"
     },
     {
       "id": "reuters_business",
@@ -92,7 +100,8 @@
       "category": "economy",
       "enabled": true,
       "feed_url": "http://localhost:1200/reuters/business",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "reuters_tech",
@@ -102,7 +111,8 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "http://localhost:1200/reuters/technology",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "tmtpost",
@@ -112,7 +122,8 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/tmtpost",
-      "authority": 3
+      "authority": 3,
+      "language": "zh"
     },
     {
       "id": "gamelook",
@@ -122,7 +133,8 @@
       "category": "game",
       "enabled": true,
       "feed_url": "http://www.gamelook.com.cn/rss",
-      "authority": 2
+      "authority": 2,
+      "language": "zh"
     },
     {
       "id": "gamersky",
@@ -133,7 +145,8 @@
       "enabled": true,
       "feed_url": "http://localhost:1200/gamersky/news",
       "desc": "综合游戏新闻（通过本地RSSHub）",
-      "authority": 2
+      "authority": 2,
+      "language": "zh"
     },
     {
       "id": "chuapp",
@@ -144,7 +157,8 @@
       "enabled": true,
       "feed_url": "http://localhost:1200/chuapp",
       "desc": "游戏文化深度（通过本地RSSHub）",
-      "authority": 3
+      "authority": 3,
+      "language": "zh"
     },
     {
       "id": "theverge_games",
@@ -154,7 +168,8 @@
       "category": "game",
       "enabled": true,
       "feed_url": "https://www.theverge.com/rss/games/index.xml",
-      "authority": 1
+      "authority": 1,
+      "language": "en"
     },
     {
       "id": "gamesindustry",
@@ -164,7 +179,8 @@
       "category": "game",
       "enabled": true,
       "feed_url": "https://www.gamesindustry.biz/feed",
-      "authority": 1
+      "authority": 1,
+      "language": "en"
     },
     {
       "id": "arstechnica",
@@ -174,7 +190,8 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/arstechnica",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "techcrunch",
@@ -184,7 +201,8 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/techcrunch",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "videogameschronicle",
@@ -195,7 +213,8 @@
       "enabled": true,
       "feed_url": "https://www.videogameschronicle.com/feed/",
       "desc": "专注业界新闻与报道",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "pcgamer",
@@ -207,7 +226,8 @@
       "feed_url": "https://www.pcgamer.com/rss/",
       "desc": "PC游戏权威媒体",
       "disabled_reason": "GFW blocked, consistently times out",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "rockpapershotgun",
@@ -219,7 +239,8 @@
       "feed_url": "https://www.rockpapershotgun.com/feed",
       "desc": "专注PC游戏，长文评论",
       "disabled_reason": "GFW blocked, consistently times out",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "eurogamer",
@@ -231,7 +252,8 @@
       "feed_url": "https://www.eurogamer.net/?format=rss",
       "desc": "欧洲领先游戏媒体，深度评测",
       "disabled_reason": "GFW blocked, consistently times out",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "nintendoeverything",
@@ -242,7 +264,8 @@
       "enabled": true,
       "feed_url": "https://nintendoeverything.com/rss",
       "desc": "任天堂游戏新闻专精",
-      "authority": 2
+      "authority": 2,
+      "language": "en"
     },
     {
       "id": "aftermath",
@@ -253,7 +276,8 @@
       "enabled": true,
       "feed_url": "https://aftermath.site/rss",
       "desc": "游戏文化深度媒体",
-      "authority": 2
+      "authority": 2,
+      "language": "en"
     },
     {
       "id": "automaton",
@@ -263,7 +287,8 @@
       "category": "game",
       "enabled": true,
       "feed_url": "https://automaton-media.com/en/feed/",
-      "authority": 2
+      "authority": 2,
+      "language": "en"
     },
     {
       "id": "reuters_china",
@@ -273,7 +298,8 @@
       "category": "news",
       "enabled": true,
       "feed_url": "http://localhost:1200/reuters/world/china",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "bbc_business",
@@ -283,7 +309,8 @@
       "category": "economy",
       "enabled": true,
       "feed_url": "https://feeds.bbci.co.uk/news/business/rss.xml",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "bbc_technology",
@@ -293,7 +320,8 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://feeds.bbci.co.uk/news/technology/rss.xml",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "nytimes_world",
@@ -303,7 +331,8 @@
       "category": "news",
       "enabled": true,
       "feed_url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "nytimes_technology",
@@ -313,7 +342,8 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "scmp_china",
@@ -323,7 +353,8 @@
       "category": "news",
       "enabled": true,
       "feed_url": "https://www.scmp.com/rss/4/feed",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "guardian_technology",
@@ -334,7 +365,8 @@
       "enabled": true,
       "feed_url": "https://www.theguardian.com/uk/technology/rss",
       "desc": "英国卫报科技板块，深度报道",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "guardian_business",
@@ -345,7 +377,8 @@
       "enabled": true,
       "feed_url": "https://www.theguardian.com/uk/business/rss",
       "desc": "英国卫报商务板块，民生经济视角",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "nikkei_asia",
@@ -356,7 +389,8 @@
       "enabled": true,
       "feed_url": "http://localhost:1200/nikkei/asia",
       "desc": "日经亚洲版，亚洲商业与政治（通过本地RSSHub）",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "4gamer",
@@ -367,7 +401,8 @@
       "enabled": true,
       "feed_url": "https://www.4gamer.net/rss/index.xml",
       "desc": "日本最大游戏新闻站（RDF格式）",
-      "authority": 3
+      "authority": 3,
+      "language": "ja"
     },
     {
       "id": "inside_games",
@@ -378,7 +413,8 @@
       "enabled": true,
       "feed_url": "https://www.inside-games.jp/rss20/index.rdf",
       "desc": "日本综合游戏信息站",
-      "authority": 2
+      "authority": 2,
+      "language": "ja"
     },
     {
       "id": "nhk_business",
@@ -389,7 +425,8 @@
       "enabled": true,
       "feed_url": "https://www3.nhk.or.jp/rss/news/cat6.xml",
       "desc": "日本NHK商业经济新闻（日文）",
-      "authority": 3
+      "authority": 3,
+      "language": "ja"
     },
     {
       "id": "japantimes",
@@ -400,7 +437,8 @@
       "enabled": true,
       "feed_url": "https://www.japantimes.co.jp/feed/",
       "desc": "日本英文新闻，偏外交/政治/中日关系",
-      "authority": 2
+      "authority": 2,
+      "language": "en"
     },
     {
       "id": "sspai",
@@ -410,7 +448,8 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "http://localhost:1200/sspai/index",
-      "authority": 2
+      "authority": 2,
+      "language": "zh"
     },
     {
       "id": "rfi",
@@ -420,7 +459,8 @@
       "category": "news",
       "enabled": true,
       "feed_url": "https://feedx.net/rss/rfi.xml",
-      "authority": 2
+      "authority": 2,
+      "language": "zh"
     },
     {
       "id": "kyodo",
@@ -430,7 +470,8 @@
       "category": "news",
       "enabled": true,
       "feed_url": "https://feedx.net/rss/kyodo.xml",
-      "authority": 2
+      "authority": 2,
+      "language": "zh"
     },
     {
       "id": "bbc_china",
@@ -440,7 +481,8 @@
       "category": "foreign_china",
       "enabled": true,
       "feed_url": "https://feeds.bbci.co.uk/news/world/asia/china/rss.xml",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "bbc_world",
@@ -450,7 +492,8 @@
       "category": "foreign_china",
       "enabled": true,
       "feed_url": "https://feeds.bbci.co.uk/news/world/rss.xml",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "bbc_science",
@@ -460,7 +503,8 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "nytimes_business",
@@ -470,7 +514,8 @@
       "category": "economy",
       "enabled": true,
       "feed_url": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "nytimes_science",
@@ -480,7 +525,8 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://rss.nytimes.com/services/xml/rss/nyt/Science.xml",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "npr_world",
@@ -490,7 +536,8 @@
       "category": "foreign_china",
       "enabled": true,
       "feed_url": "https://feeds.npr.org/1004/rss.xml",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "npr_business",
@@ -500,7 +547,8 @@
       "category": "economy",
       "enabled": true,
       "feed_url": "https://feeds.npr.org/1006/rss.xml",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "npr_science",
@@ -510,7 +558,8 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://feeds.npr.org/1007/rss.xml",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "nhk_science",
@@ -520,7 +569,8 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://www3.nhk.or.jp/rss/news/cat3.xml",
-      "authority": 3
+      "authority": 3,
+      "language": "ja"
     },
     {
       "id": "nhk_economy",
@@ -530,7 +580,8 @@
       "category": "economy",
       "enabled": true,
       "feed_url": "https://www3.nhk.or.jp/rss/news/cat5.xml",
-      "authority": 3
+      "authority": 3,
+      "language": "ja"
     },
     {
       "id": "nhk_politics",
@@ -540,7 +591,8 @@
       "category": "news",
       "enabled": true,
       "feed_url": "https://www3.nhk.or.jp/rss/news/cat4.xml",
-      "authority": 3
+      "authority": 3,
+      "language": "ja"
     },
     {
       "id": "koreaherald",
@@ -550,7 +602,8 @@
       "category": "news",
       "enabled": true,
       "feed_url": "https://www.koreaherald.com/rss/newsAll",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     },
     {
       "id": "reuters_world",
@@ -560,7 +613,8 @@
       "category": "foreign_china",
       "enabled": true,
       "feed_url": "http://localhost:1200/reuters/world",
-      "authority": 3
+      "authority": 3,
+      "language": "en"
     }
   ],
   "exploration_sources": [],

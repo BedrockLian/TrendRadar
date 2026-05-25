@@ -5,13 +5,12 @@ ai_translate.py — Batch-translate English/Japanese RSS summaries to Chinese us
 Reads curated_{slot}.json, classifies items by source_platform (not content heuristics),
 batch-translates via DeepSeek API, and writes 'title_cn'/'summary_cn' fields back.
 
-Language detection is driven by config/translate.yaml — add/edit source keywords there,
-not in this file.
+Language detection is driven by data/sources.json — each source entry has a
+`language` field ("zh"/"en"/"ja"). The `platform` field values are extracted
+at import time for matching against item source_platform.
 
-Concurrency: Uses aiohttp for async HTTP. When items_to_translate > BATCH_SIZE,
-multiple batches run in parallel via asyncio.gather (bounded by semaphore).
-
-Usage: python3 ai_translate.py --push-id morning|noon|evening
+Add/edit sources in data/sources.json with the correct language field;
+do NOT maintain a separate language mapping file (translate.yaml is obsolete).
 """
 import json
 import os
@@ -22,47 +21,67 @@ from functools import lru_cache
 from pathlib import Path
 
 import aiohttp
-import yaml
 
 from trendradar.scripts.settings import get_data_dir
 DATA_DIR = get_data_dir()
 
 
-# ── Source language classification (from config/translate.yaml) ──────────────
-# Not content-based — determined by source_platform matching.
-# Edit translate.yaml to add/remove sources; do NOT hardcode lists here.
+# ── Source language classification (from data/sources.json) ──────────────────
+# Each source entry has a `language` field ("zh"/"en"/"ja").
+# The `platform` field values are extracted per language for substring matching.
+# Do NOT maintain a separate mapping file — sources.json is the single truth.
 
-_CONFIG_PATH = Path(__file__).resolve().parent.parent / 'config' / 'translate.yaml'
+_SOURCES_PATH = Path(__file__).resolve().parent.parent / 'data' / 'sources.json'
 
-def _build_language_sets() -> tuple[frozenset, frozenset]:
-    """Read translate.yaml and build (english_kw, japanese_kw) frozensets."""
-    if not _CONFIG_PATH.exists():
+def _load_source_languages() -> tuple[frozenset, frozenset]:
+    """Read sources.json and build (en_keywords, ja_keywords) frozensets.
+
+    Uses both `platform` (short: 'bbc') and `name` (full: 'BBC 商务') from
+    entries where language is "en" or "ja". Short platforms match compound
+    source_platform values like 'BBC 商务+BBC 科技'.
+    """
+    if not _SOURCES_PATH.exists():
         return frozenset(), frozenset()
     try:
-        with open(_CONFIG_PATH) as f:
-            cfg = yaml.safe_load(f)
-        tc = cfg.get('translate', {})
-        en = frozenset(kw.lower().strip() for kw in tc.get('english', []))
-        ja = frozenset(kw.lower().strip() for kw in tc.get('japanese', []))
-        return en, ja
+        with open(_SOURCES_PATH) as f:
+            cfg = json.load(f)
+        en = set()
+        ja = set()
+        def _scan(obj):
+            if isinstance(obj, dict):
+                lang = obj.get('language', '')
+                if lang in ('en', 'ja'):
+                    name = str(obj.get('name', '')).lower().strip()
+                    plat = str(obj.get('platform', '')).lower().strip()
+                    if name:
+                        (en if lang == 'en' else ja).add(name)
+                    if plat:
+                        (en if lang == 'en' else ja).add(plat)
+                for v in obj.values():
+                    _scan(v)
+            elif isinstance(obj, list):
+                for item in obj:
+                    _scan(item)
+        _scan(cfg)
+        return frozenset(en), frozenset(ja)
     except Exception:
         return frozenset(), frozenset()
 
 
-_ENGLISH_KEYWORDS, _JAPANESE_KEYWORDS = _build_language_sets()
+_EN_PLATFORMS, _JA_PLATFORMS = _load_source_languages()
 
 
 def get_source_lang(source_platform: str) -> str | None:
     """Return 'English', 'Japanese', or None (skip — Chinese or unknown).
     
-    Matched by substring: kw in source_platform.lower().
-    Japanese keywords checked first (NHK could contain English keywords too).
+    Matched by substring: platform in source_platform.lower().
+    Japanese keywords checked first (NHK could contain English keyword too).
     """
     plat = source_platform.lower().strip()
-    for kw in _JAPANESE_KEYWORDS:
+    for kw in _JA_PLATFORMS:
         if kw in plat:
             return 'Japanese'
-    for kw in _ENGLISH_KEYWORDS:
+    for kw in _EN_PLATFORMS:
         if kw in plat:
             return 'English'
     return None
