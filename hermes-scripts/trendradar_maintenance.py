@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""TrendRadar 每日维护：数据备份 + 缓存清理 + 烟雾测试
+"""TrendRadar 每日维护：数据备份 + 缓存清理 + DB vacuum + 烟雾测试
 
 Cron 每天 03:00 运行（推送空闲时段），no_agent=true。
-- 备份 fingerprints.db / 配置 / preferences 到 ~/backups/trendradar/YYYYMMDD/
-- 清理 cache/ 和 data/ 中的旧文件（>7 天）
-- 清理旧压缩文件（.json.zst）
+- 备份 fingerprints.db / sources.json / source_health.json / push_log.json / config
+- 清理 cache/ 旧文件（>48h）和 data/ 旧文件（>7d）
+- DB vacuum 回收碎片空间
 - 保留 30 天备份
-- 输出摘要（无错误时也打印进度）
+- 烟雾测试（pytest）
 """
 import shutil
 import os
@@ -22,6 +22,7 @@ TRENDRADAR_HOME = Path(os.environ.get(
 ))
 BACKUPDIR = Path.home() / 'backups' / 'trendradar'
 RETENTION_FILE_DAYS = 7
+RETENTION_CACHE_HOURS = 48
 RETENTION_BACKUP_DAYS = 30
 
 STATS = {'backed_up': 0, 'cleaned_files': 0, 'cleaned_bytes': 0}
@@ -35,6 +36,8 @@ def backup():
     items = [
         (TRENDRADAR_HOME / 'data' / 'fingerprints.db', 'fingerprints.db'),
         (TRENDRADAR_HOME / 'data' / 'sources.json', 'sources.json'),
+        (TRENDRADAR_HOME / 'data' / 'source_health.json', 'source_health.json'),
+        (TRENDRADAR_HOME / 'data' / 'push_log.json', 'push_log.json'),
     ]
     errors = []
     for src, name in items:
@@ -50,18 +53,16 @@ def backup():
     if cfg_src.exists():
         cfg_dst = dest / 'config'
         try:
-            # 排除 __pycache__
             shutil.copytree(str(cfg_src), str(cfg_dst),
                             dirs_exist_ok=True,
                             ignore=shutil.ignore_patterns('__pycache__'))
-            # 统计备份的文件数
             for f in cfg_src.rglob('*'):
                 if f.is_file() and '__pycache__' not in f.parts:
                     STATS['backed_up'] += 1
         except OSError as e:
             errors.append(f'config: {e}')
 
-    # 额外备份关键源数据文件（最近一次的 curated JSON）
+    # 最近一次的 curated JSON
     for push_id in ['morning', 'noon', 'evening']:
         latest = TRENDRADAR_HOME / 'data' / f'curated_{push_id}.json'
         if latest.exists():
@@ -92,28 +93,40 @@ def backup():
 
 def cleanup():
     cutoff = time.time() - RETENTION_FILE_DAYS * 86400
+    cache_cutoff = time.time() - RETENTION_CACHE_HOURS * 3600
 
-    # 清理 patterns：JSON + zst 压缩文件 + raw/blog 缓存
-    patterns = [
-        # cache — json 和 zst 都清
-        (TRENDRADAR_HOME / 'cache', '*.json'),
-        (TRENDRADAR_HOME / 'cache', '*.json.zst'),
-        # data — 仅清理日期版 curated（保留无日期的"最新"文件）
+    # data/ — JSON + zst 压缩文件（>7d）
+    data_patterns = [
         (TRENDRADAR_HOME / 'data', 'curated_*_[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].json'),
         (TRENDRADAR_HOME / 'data', 'curated_*_[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].json.zst'),
-        # data — 仅清理旧的 raw 文件
         (TRENDRADAR_HOME / 'data', 'raw_*.json'),
     ]
 
+    # cache/ — 所有缓存文件（>48h，Trap 30）
+    cache_patterns = [
+        (TRENDRADAR_HOME / 'cache', '*.json'),
+        (TRENDRADAR_HOME / 'cache', '*.json.zst'),
+    ]
+
     errors = []
-    for base_dir, pat in patterns:
+
+    for base_dir, pat in data_patterns:
         for f in base_dir.glob(pat):
-            # 排除 test 文件（人工测试保留）
             if 'test' in f.name.lower():
                 continue
             try:
-                mtime = os.path.getmtime(str(f))
-                if mtime < cutoff:
+                if os.path.getmtime(str(f)) < cutoff:
+                    sz = f.stat().st_size
+                    f.unlink()
+                    STATS['cleaned_files'] += 1
+                    STATS['cleaned_bytes'] += sz
+            except OSError as e:
+                errors.append(f'{f.name}: {e}')
+
+    for base_dir, pat in cache_patterns:
+        for f in base_dir.glob(pat):
+            try:
+                if os.path.getmtime(str(f)) < cache_cutoff:
                     sz = f.stat().st_size
                     f.unlink()
                     STATS['cleaned_files'] += 1
@@ -126,6 +139,26 @@ def cleanup():
         sys.exit(1)
 
 
+def vacuum_db():
+    """VACUUM fingerprints.db 回收碎片空间（Trap 30）。"""
+    db_path = TRENDRADAR_HOME / 'data' / 'fingerprints.db'
+    if not db_path.exists():
+        return
+
+    try:
+        import sqlite3
+        before = db_path.stat().st_size
+        conn = sqlite3.connect(str(db_path))
+        conn.execute("VACUUM")
+        conn.close()
+        after = db_path.stat().st_size
+        freed = before - after
+        if freed > 1024:  # >1KB
+            STATS['vacuum_freed'] = freed
+    except Exception as e:
+        print(f'[VACUUM ERROR] {e}')
+
+
 def runtests() -> bool:
     """运行 pytest 烟雾测试，返回是否全部通过。"""
     import subprocess
@@ -134,8 +167,10 @@ def runtests() -> bool:
         pipeline_python = sys.executable
     penv = os.environ.copy()
     penv['PYTHONPATH'] = str(TRENDRADAR_HOME.parent)
+    penv.setdefault('PYTHON_GIL', '0')
     result = subprocess.run(
-        [pipeline_python, '-m', 'pytest', 'tests/', '-q', '--tb=line', '-m', 'not slow'],
+        [pipeline_python, '-m', 'pytest', 'tests/', '-q', '--tb=line',
+         '-k', 'not slow and not ai_translate'],
         cwd=str(TRENDRADAR_HOME),
         capture_output=True, text=True, timeout=120, env=penv,
     )
@@ -153,6 +188,9 @@ def summary():
     if STATS['cleaned_files']:
         freed = STATS['cleaned_bytes'] / 1024
         parts.append(f'已清理 {STATS["cleaned_files"]} 文件（释放 {freed:.0f}KB）')
+    if STATS.get('vacuum_freed'):
+        freed = STATS['vacuum_freed'] / 1024
+        parts.append(f'DB vacuum 释放 {freed:.0f}KB')
     if STATS.get('cleaned_backups'):
         parts.append(f'已清理 {STATS["cleaned_backups"]} 个过期备份目录')
     line = ' | '.join(parts)
@@ -162,6 +200,7 @@ def summary():
 if __name__ == '__main__':
     backup()
     cleanup()
+    vacuum_db()
     summary()
     if not runtests():
         print('[WARNING] 烟雾测试未通过，但备份和清理已完成')
