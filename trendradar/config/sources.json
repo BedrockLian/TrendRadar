@@ -382,7 +382,7 @@
     },
     {
       "id": "nhk_business",
-      "name": "NHK ビジネス",
+      "name": "NHK 商业",
       "platform": "nhk",
       "type": "rss",
       "category": "economy",
