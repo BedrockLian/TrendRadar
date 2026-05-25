@@ -58,16 +58,15 @@ LLM 运行编排器，解析 `fragments` 数组投递。编排器不可用时走
 
 **重要：每条分析作为独立 final response 分别输出，不得与简报正文拼接在一起。** 简报走 step 3, 分析走 step 4, 互不干扰。
 
-## 输出规范（已固化 — 格式契约在 `render_markdown.py` docstring）
+## 输出规范（脚本固化 + `sanity_check.py` 拦截）
 
-简报和深度分析由纯脚本（`render_markdown.py` / `render_deep_analysis.py`）生成，Agent 只做透传：
+简报和深度分析由纯脚本生成，Agent 只做透传。`sanity_check.py` 在发布前自动扫描禁语/死链/敏感词/HTML残留。
 
-1. **不加工内容** — 输出 briefing 字段内容本身，不加任何前缀/后缀/说明文字（如"所有分析已完成""以下是今日晚报""Orchestrator completed with status ok, push_id=noon"等）。脚本输出的已经是完整 Markdown，直接透传即可。
-2. **链接格式** — `[【媒体名】](url)`，不加"查看原文"前缀。用户明确拒绝 `[查看原文](url)【来源】` 格式（2026-05-25）。
-3. **深度分析独立投递** — 晚间 3 条深度分析各自作为单独 final response 输出，不得拼接在简报末尾，不得与其他分析合并。
-4. **空行铁律** — 板块标题后 `\n\n\n`，条目间 `\n\n\n`，条目内部标题→摘要→链接各 `\n\n`。全文无 `---`/`***` 横线。
-5. **严禁 LLM 改写** — 简报和分析内容由脚本生成，Agent 不得修改、摘要、重排或添加解释性文字。
-6. **格式契约** — 完整 7 条规则写在 `render_markdown.py` 的模块 docstring 中，任何格式修改必须先更新契约。
+1. **透传简报** — 输出 JSON `briefing` 字段内容本身。`sanity_check.py` 自动拦截 "As an AI language model" / "Here is your report" 等禁语。
+2. **链接格式** — `[【媒体名】](url)`，不加"查看原文"前缀。
+3. **深度分析独立投递** — 晚间 3 条深度分析各自作为单独 final response 输出。
+4. **空行铁律** — 板块标题后 `\n\n\n`，条目间 `\n\n\n`，全文无 `---`/`***` 横线。
+5. **格式契约** — 完整规则在 `render_markdown.py` 模块 docstring 中，修改格式必须先更新契约。
 
 ## 运行时
 ```bash

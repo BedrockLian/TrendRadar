@@ -1,7 +1,7 @@
 ---
 name: performance-optimizer
 slug: performance-optimizer
-version: 2.3.0
+version: 2.4.0
 description: 渐进优化 TrendRadar 日报质量与推送偏好。每日 21:15 自愈式收敛调优。
 author: Hermes Agent
 tags: [trendradar, quality, push-preference, self-healing]
@@ -27,20 +27,33 @@ metadata:
 
 ## 推送偏好协议
 
-**基准**: `settings.py` 的 `BRIEFING_RATIO`（早24/午32/晚24）和 `DAILY_LIMIT=80`。5 板块: top_headlines/foreign_china/tech/economy/gaming。
+**基准**: `settings.py` 的 `BRIEFING_RATIO`（早30/午30/晚20）和 `DAILY_LIMIT=80`。5 板块: top_headlines/foreign_china/tech/economy/gaming。
 
 **偏差检测**: 总量±30%→偏差；板块连续多天<3条→饿死；同源连续首位→垄断；单源≥40%→来源集中。饿死检测需同时看来源数，即使数量达标也可能"来源脆弱型饱和"。
 
 **交互**: 列出偏差+选项 → 问"怎么调"。
 
-## 通用规则
+## 输出规范
 
-- **输出**: 直接报告，禁止自述。两维度都达标→`[SILENT]`
-- **数据采集**: cron output + 脚本打点 + quality scripts
+1. **直接输出报告**（`sanity_check.py` 自动拦截前缀后缀）。报告标题以 `📊 TrendRadar 优化报告 ·` 开头即可。
+2. 两维度都达标→ `[SILENT]`
+
+## "全修"模式
+
+用户回复"全修"时：**全部建议一起执行**，不逐项确认。
+使用 `todo` 工具并行推进 4 项，修改后验证语法通过，一次性告知变更汇总。
+用户回复编号（如"修1和3"）时：只执行指定的项。
 
 ## 已验证修复
 
 详见 `references/fix-recipes.md`：短摘要扩写、tech 上限调整、tirith 关闭、foreign_china 扩充。
+
+## 参数沿革
+
+| 时间 | BRIEFING_RATIO | MAX_PER_DOMAIN (合计) | 变动原因 |
+|------|---------------|----------------------|----------|
+| v6.0 | 24/32/24 | 65 | 初始值 |
+| v6.1 | 30/30/20 | 30 (6+7+6+6+5) | 推送量偏差 +108%, 用户全修后收紧。新增 per-slot 截断逻辑在 curate_all(), foreign_china 加 10 词 |
 
 ## 参考
 
