@@ -215,6 +215,10 @@ def _classify_items(raw: list) -> tuple[list, list, list]:
     GAME_SRC = _game_sources()
     SRC_DOMAIN = _source_domain()
     ALL_SRC_CAT = _all_source_category()
+    # False positive patterns for game keyword matching
+    _GAME_FALSE_POSITIVES = frozenset({'改变游戏规则'})
+    # Also skip game classification if the only game keyword match is '索尼' in a music context
+    _is_sony_music = lambda t: '索尼' in t and '音乐' in t
     headline, remaining, foreign_china = [], [], []
     for item in raw:
         text = f"{item.get('title', '')} {item.get('summary', '')}"
@@ -225,7 +229,11 @@ def _classify_items(raw: list) -> tuple[list, list, list]:
         if src_is_foreign and china_hit and not any(sp in plat for sp in GAME_SRC):
             item['_likely_domain'] = 'foreign_china'
             foreign_china.append(item)
-        elif any(sp in plat for sp in GAME_SRC) or has_keyword_match(text, 'game', KW['game']):
+        elif any(sp in plat for sp in GAME_SRC) or (
+            has_keyword_match(text, 'game', KW['game'])
+            and not has_keyword_match(text, 'game', _GAME_FALSE_POSITIVES)
+            and not (_is_sony_music(text) and not any(sp in plat for sp in GAME_SRC))
+        ):
             item['_likely_domain'] = 'gaming'
             remaining.append(item)
         elif has_keyword_match(text, 'junk', KW['junk']):
