@@ -76,7 +76,7 @@ def _format_item(idx, item, push_id):
     if summary:
         lines.append(summary)
 
-    link = f"[查看原文]({url})【{source}】" if url and source else ""
+    link = f"[【{source}】]({url})" if url and source else ""
     if link:
         lines.append(link)
 
