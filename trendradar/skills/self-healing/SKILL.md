@@ -13,27 +13,28 @@ metadata:
 ## 运行
 Cron 每日 15:00 跑 `trendradar_health_check.py` (no_agent=true)。有异常推送 WeCom，健康静默。
 
-## 检查项（17项）
+## 检查项（18项）
 
 | # | 函数 | 检查 | 自动修复 |
 |---|------|------|---------|
-| 1 | check_db | fingerprints 表 | ✅ migrate() |
-| 2 | check_db | heat_tracker 表 | ✅ migrate() |
-| 3 | check_db | 数据库非 0 字节 | ✅ 删除空壳 |
-| 4 | check_scripts | 18 个核心脚本存在 | ❌ |
-| 5 | check_config | timeline/ai_interests/sources(keywords+language字段)/keywords.py | ❌ |
-| 6 | check_settings_constants | DOMAINS/DOMAIN_LABELS/BRIEFING_RATIO 等 | ❌ |
-| 7 | check_cron | 7 个 job ID 全部注册 | ❌ |
-| 8 | check_gateway | IPC socket + hermes wecom 进程 | ❌ |
-| 9 | check_data_freshness | curated < 15h | ❌ |
-| 10 | check_api | 外网可达（DeepSeek + httpbin） | ❌ |
-| 11 | check_stale_processes | 所有 cron job ID 的滞留进程 | ❌ |
-| 12 | check_memory_size | MEMORY/USER 使用率 (>75% 预警, >90% 告警) | ❌ |
-| 13 | check_push_log_backpressure | push_log.json 体积 (100KB/1MB 阈值) | ❌ |
+| 1 | check_db | fingerprints/heat_tracker 表 + WAL 模式 | ✅ migrate() |
+| 2 | check_db | 数据库非 0 字节 | ✅ 删除空壳 |
+| 3 | check_scripts | 21 个核心脚本存在（含 sanity_check/blind_spot/aggregate） | ❌ |
+| 4 | check_config | timeline/ai_interests/sources/source_health/keywords.py | ❌ |
+| 5 | check_settings_constants | DOMAINS/DOMAIN_LABELS/BRIEFING_RATIO 等 | ❌ |
+| 6 | check_cron | 7 个 job ID 全部注册 | ❌ |
+| 7 | check_gateway | IPC socket + hermes wecom 进程 | ❌ |
+| 8 | check_data_freshness | curated < 15h | ❌ |
+| 9 | check_api | 外网可达（DeepSeek + httpbin） | ❌ |
+| 10 | check_stale_processes | 所有 cron job ID 的滞留进程 | ❌ |
+| 11 | check_memory_size | MEMORY/USER 使用率 (>75% 预警, >90% 告警) | ❌ |
+| 12 | check_push_log_backpressure | push_log.json 体积 (100KB/1MB 阈值) | ❌ |
+| 13 | check_sanity_interceptor | sanity_check.py 就位检查（拦截器可用性） | ❌ |
 | 14 | check_pipeline | slot_detect+RSS 连通+导入+步骤完整性 | ❌ |
 | 15 | _check_system_resources | 磁盘使用率 (≥90% 告警) | ❌ |
-| 16 | check_mihomo | 米霍姆代理可达性 (127.0.0.1:7890) — 影响外媒 RSS 采集 | ❌ |
+| 16 | check_mihomo | 米霍姆代理可达性 (127.0.0.1:7890) | ❌ |
 | 17 | check_blind_spot | 板块覆盖率盲点：连续 3 天 domain 覆盖率 <10% 触发告警 | ❌ |
+| 18 | check_db (Storage) | DB 连接通过 Storage.db() 统一接入，验证 WAL | ✅ |
 
 ## 7 个 cron job ID
 
