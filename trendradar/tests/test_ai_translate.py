@@ -109,21 +109,26 @@ class TestIsForeignChinaSource:
 
 
 class TestTranslateConfigConsistency:
-    """C8: translate.yaml 与 sources.json 交叉校验"""
+    """C8: sources.json 语言字段完整性"""
 
-    def test_all_translate_sources_exist(self):
-        """translate.yaml 所列源名必须在 sources.json 中存在"""
-        import yaml, json
+    def test_all_sources_have_language(self):
+        """所有 source 条目必须有 language 字段"""
+        import json
         from pathlib import Path
         TR = Path(os.environ.get('TRENDRADAR_HOME', Path.home() / '.hermes' / 'trendradar'))
-        tpath = TR / 'config' / 'translate.yaml'
         spath = TR / 'data' / 'sources.json'
         if not spath.exists():
             pytest.skip('sources.json not available in test environment')
-        config = yaml.safe_load(tpath.read_text())
         sources_data = json.loads(spath.read_text())
-        source_names = {s['name'] for s in sources_data.get('data_sources', [])}
-        for src in config['translate']['sources']:
-            assert src in source_names, f'翻译源 "{src}" 在 sources.json 中不存在'
-        for src in config['translate']['japanese_sources']:
-            assert src in source_names, f'日文源 "{src}" 在 sources.json 中不存在'
+        def _check(obj):
+            if isinstance(obj, dict) and 'name' in obj and 'feed_url' in obj:
+                assert 'language' in obj, f'source has no language field'
+                assert obj['language'] in ('zh', 'en', 'ja'), f'source has invalid language: {obj["language"]}'
+                return
+            if isinstance(obj, dict):
+                for v in obj.values():
+                    _check(v)
+            elif isinstance(obj, list):
+                for item in obj:
+                    _check(item)
+        _check(sources_data)

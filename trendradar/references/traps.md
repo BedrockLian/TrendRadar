@@ -9,7 +9,7 @@
 非晚间误触发时子代理消耗 50 calls 后崩溃。**修复**：仅 evening 时段调用。
 
 ## 3. 英文摘要残留
-外媒摘要必须翻译中文。**修复**：`config/translate.yaml` 定义的 + 未列出的英文源一律翻译。
+外媒摘要必须翻译中文。**修复**：`data/sources.json` 中 `language` 字段定义翻译规则。
 
 ## 4. WeCom 分片丢失
 >4000 字符 WeCom 静默截断。按板块分片，片间 1.5s。delegate_task 结果独立投递。cron 中通过 final response 自动投递，非 send_message。
