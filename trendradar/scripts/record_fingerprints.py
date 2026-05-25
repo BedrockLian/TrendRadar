@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 from trendradar.scripts.settings import get_logger
 log = get_logger('record-fingerprints')
-"""记录本次推送指纹到 DB，供后续时段去重。"""
-import json, sys, sqlite3
+"""记录本次推送指纹到 DB，供后续时段去重。通过 Storage 统一接入 DB。"""
+import json, sys
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
 from trendradar.scripts.heat_tracker import make_fingerprint
+from trendradar.scripts.storage import Storage
 
 CST = timezone(timedelta(hours=8))
 from trendradar.scripts.settings import get_data_dir, DOMAINS
 DATA_DIR = get_data_dir()
-DB_PATH = DATA_DIR / 'fingerprints.db'
+DB_NAME = 'fingerprints.db'
+
+# 统一 Storage 实例（整个 trendradar 进程共享）
+_store = Storage(DATA_DIR)
 
 
 def record(push_id: str):
@@ -36,43 +40,45 @@ def record(push_id: str):
 
     run_id = curated.get('run_id', '')
 
-    with sqlite3.connect(str(DB_PATH)) as conn:
-        before = conn.execute("SELECT COUNT(*) FROM fingerprints").fetchone()[0]
+    # 通过 Storage 统一接入 DB（自动 WAL + busy_timeout）
+    conn = _store.db(DB_NAME)
 
-        # 确保 run_id 列存在
-        try:
-            conn.execute("ALTER TABLE fingerprints ADD COLUMN run_id TEXT DEFAULT ''")
-        except sqlite3.OperationalError:
-            pass  # 列已存在
+    before = conn.execute("SELECT COUNT(*) FROM fingerprints").fetchone()[0]
 
-        batch = []
-        for domain in DOMAINS:
-            for item in curated.get(domain, []):
-                title = item.get('title', '')
-                if not title:
-                    continue
-                batch.append((
-                    make_fingerprint(title, item.get('url', '')),
-                    title[:200],
-                    (item.get('summary', '') or '')[:200],
-                    (item.get('source_platform', '') or '')[:50],
-                    (item.get('url', '') or '')[:200],
-                    push_id,
-                    push_time,
-                    push_time,
-                    run_id,
-                ))
+    # 确保 run_id 列存在
+    try:
+        conn.execute("ALTER TABLE fingerprints ADD COLUMN run_id TEXT DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass  # 列已存在
 
-        conn.execute("BEGIN")
-        try:
-            conn.executemany('''INSERT OR IGNORE INTO fingerprints
-                (fingerprint, title, summary, source_platform, url, push_id, push_time, created_at, run_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', batch)
-            conn.commit()
-        except Exception:
-            conn.execute("ROLLBACK")
-            raise
-        after = conn.execute("SELECT COUNT(*) FROM fingerprints").fetchone()[0]
+    batch = []
+    for domain in DOMAINS:
+        for item in curated.get(domain, []):
+            title = item.get('title', '')
+            if not title:
+                continue
+            batch.append((
+                make_fingerprint(title, item.get('url', '')),
+                title[:200],
+                (item.get('summary', '') or '')[:200],
+                (item.get('source_platform', '') or '')[:50],
+                (item.get('url', '') or '')[:200],
+                push_id,
+                push_time,
+                push_time,
+                run_id,
+            ))
+
+    conn.execute("BEGIN")
+    try:
+        conn.executemany('''INSERT OR IGNORE INTO fingerprints
+            (fingerprint, title, summary, source_platform, url, push_id, push_time, created_at, run_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', batch)
+        conn.commit()
+    except Exception:
+        conn.execute("ROLLBACK")
+        raise
+    after = conn.execute("SELECT COUNT(*) FROM fingerprints").fetchone()[0]
 
     log.info(f'{push_id}: +{after - before} 条（共 {after} 条）')
 

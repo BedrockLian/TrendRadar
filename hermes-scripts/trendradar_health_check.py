@@ -345,6 +345,52 @@ def check_pipeline():
     _check_system_resources()
 
 
+def check_blind_spot():
+    """板块覆盖率盲点检测 — 连续 3 天 domain 覆盖率 <10% 触发告警。
+    
+    调用 blind_spot_audit.py --json 获取机器可读的覆盖率数据，
+    如果任何板块连续 3 天低于阈值，输出 WARN。
+    """
+    pipeline_python = os.environ.get('PYTHON', '/usr/local/bin/python3.14t')
+    if not os.access(pipeline_python, os.X_OK):
+        pipeline_python = sys.executable
+
+    audit_script = SCRIPTS / 'blind_spot_audit.py'
+    if not audit_script.exists():
+        fail('blind_spot', 'WARN', 'blind_spot_audit.py 脚本缺失')
+        return
+
+    try:
+        env = os.environ.copy()
+        env['PYTHONPATH'] = str(TR.parent)
+        env.setdefault('PYTHON_GIL', '0')
+        r = subprocess.run(
+            [pipeline_python, str(audit_script), '--days', '3', '--json',
+             '--coverage-threshold', '10'],
+            capture_output=True, text=True, timeout=30, env=env,
+        )
+        if r.returncode != 0:
+            fail('blind_spot', 'WARN', f'盲点审计执行失败: {r.stderr[:100]}')
+            return
+
+        result = json.loads(r.stdout)
+        low_domains = result.get('low_coverage_domains', [])
+        warnings = result.get('warnings', [])
+
+        if low_domains:
+            for d in low_domains:
+                pct = result['coverage'].get(d, {}).get('percentage', '?')
+                fail('blind_spot', 'WARN',
+                     f'板块 {d} 近 3 天覆盖率仅 {pct}%（低于 10% 阈值）'
+                     f' — 该领域 RSS 源可能大面积失效')
+    except json.JSONDecodeError:
+        fail('blind_spot', 'WARN', f'盲点审计输出非 JSON: {r.stdout[:100]}')
+    except subprocess.TimeoutExpired:
+        fail('blind_spot', 'WARN', '盲点审计执行超时')
+    except Exception as e:
+        fail('blind_spot', 'WARN', f'盲点审计异常: {e}')
+
+
 def _check_system_resources():
     """系统资源占用 — 仅 info"""
     try:
@@ -404,6 +450,7 @@ def run_checks():
     check_stale_processes()
     check_memory_size()
     check_push_log_backpressure()
+    check_blind_spot()
     check_pipeline()
 
 

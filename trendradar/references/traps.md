@@ -124,3 +124,8 @@ subprocess.run([pipeline_python, ...], env=penv)
 **影响**：自动重连始终成功（≤2.3s），推送丢失概率低。但 Gateway 崩溃信号（推送丢失）需要靠看门狗区分 WebSocket 断连和 Gateway 崩溃。
 **信号**：`agent.log` 中 `WebSocket error` + 紧跟 `Reconnected` 即为正常 flapping。仅 `Reconnected` 缺失才考虑 Gateway 崩溃。
 **修复**：环境正常现象。`delivery_watchdog.py` 已兼容此模式，不会因短暂断连误报。
+
+## 30. 缓存文件过期未清理 [发现 2026-05-25]
+`remove_older_than()` 仅清理 data/ 目录的匹配文件。但 `cache/` 目录下的 RSS 原始缓存和 fetch 快照不受此管控，可能无限堆积。
+**信号**：`cache/` 目录文件数持续增长，磁盘空间缓慢下降。
+**修复**：维护脚本 `trendradar_maintenance.py` 应增加对 `cache/*.json` 的过期清理（保留 48h）。Storage.vacuum() 每周清理 DB 碎片。

@@ -35,3 +35,5 @@ CREATE INDEX IF NOT EXISTS idx_fp_url ON fingerprints(url);
 CREATE INDEX IF NOT EXISTS idx_heat_status ON heat_tracker(status);
 CREATE INDEX IF NOT EXISTS idx_heat_last_seen ON heat_tracker(last_seen);
 CREATE INDEX IF NOT EXISTS idx_heat_platform_count ON heat_tracker(platform_count);
+
+-- down: DROP TABLE IF EXISTS heat_tracker; DROP TABLE IF EXISTS fingerprints;

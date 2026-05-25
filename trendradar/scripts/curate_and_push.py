@@ -149,16 +149,99 @@ def _all_source_category() -> dict[str, str]:
     return {s['name']: s.get('category', '') for s in _sources()}
 
 
+# ── 来源惩罚表（盲点审计 → curator 权重反馈） ──────────────────
+_penalty_map: dict[str, float] = {}
+
+
+def load_penalty_file(path: str):
+    """Load source penalty JSON from blind_spot_audit --output-penalty.
+    
+    Format: {"overrepresented_sources": [{"source": "bbc", "penalty_factor": 0.75}, ...]}
+    """
+    global _penalty_map
+    try:
+        data = json.loads(Path(path).read_text())
+        for entry in data.get('overrepresented_sources', []):
+            src = entry.get('source', '').lower().strip()
+            factor = entry.get('penalty_factor', 1.0)
+            if src:
+                _penalty_map[src] = factor
+    except Exception:
+        pass
+
+
+def _get_source_penalty(platform: str) -> float:
+    """Get penalty factor for a source platform (1.0 = no penalty)."""
+    if not _penalty_map:
+        return 1.0
+    plat = platform.lower().strip()
+    for src, factor in _penalty_map.items():
+        if src in plat or plat in src:
+            return factor
+    return 1.0
+
+
+# ── source_health.json 消费（负反馈学习环） ─────────────────
+_source_health: dict[str, dict] = {}
+
+
+def load_source_health(path: str = None):
+    """Load source_health.json for dynamic authority adjustment.
+    
+    Sources with status='failing' get authority penalized (x0.3).
+    Sources with status='degrading' get authority penalized (x0.7).
+    """
+    global _source_health
+    if path is None:
+        path = DATA_DIR / 'source_health.json'
+    try:
+        data = json.loads(Path(path).read_text())
+        _source_health = data.get('sources', {})
+    except Exception:
+        pass
+
+
+def _get_health_penalty(platform: str) -> float:
+    """Get authority penalty based on source health score."""
+    if not _source_health:
+        return 1.0
+    plat = platform.lower().strip()
+    for src, health in _source_health.items():
+        if src.lower() in plat or plat in src.lower():
+            status = health.get('status', 'healthy')
+            if status == 'failing':
+                return 0.3   # 70% authority reduction
+            elif status == 'degrading':
+                return 0.7   # 30% authority reduction
+            score = health.get('health_score', 60)
+            if score < 30:
+                return 0.5
+            return 1.0
+    return 1.0
+
+
 def _score(item: dict, domain: str = 'tech') -> dict:
-    """综合评分：清晰度 + 权威度 + 时效性 + 唯一性 + 热度。
+    """综合评分：清晰度 + 权威度 + 时效性 + 唯一性 + 热度 + 来源惩罚。
 
     Returns: {'total': int, 'pass': bool} — total >= MIN_SCORE 且 recency > 0 为 pass。
+    
+    外部来源惩罚通过 --penalty-file 传入，由盲点审计产出。
     """
     title, platform, url = item.get('title', ''), item.get('source_platform', ''), item.get('url', '')
     clarity = 1 if (any(c in title for c in '?？') or len(title) < 10) else 2 if len(title) > 40 else 3
     base = next((v for k, v in _authority().items() if k in platform), 1)
     econ_match = platform in _econ_boost() or platform in _econ_extra()
     authority = base + (1 if domain == 'economy' and econ_match else 0)
+    
+    # 外部来源惩罚（盲点审计 → 权重反馈）
+    penalty_factor = _get_source_penalty(platform)
+    if penalty_factor < 1.0:
+        authority = max(1, int(authority * penalty_factor))
+    
+    # 健康评分惩罚（负反馈学习环 → 自动淘汰低质量源）
+    health_penalty = _get_health_penalty(platform)
+    if health_penalty < 1.0:
+        authority = max(1, int(authority * health_penalty))
     try:
         ts = item.get('timestamp', '')
         if len(ts) > 15 and ts[10] == 'T':
@@ -189,7 +272,11 @@ def _score(item: dict, domain: str = 'tech') -> dict:
 
 
 def _curate_domain(items: list, domain: str) -> list:
-    """单 domain 精选排序（过滤空摘要条目，博客除外）"""
+    """单 domain 精选排序（过滤空摘要条目，博客除外）。
+    
+    多样性惩罚：同一来源在最终结果中超过 3 条后，后续条目权重减半，
+    防止单一来源霸榜。
+    """
     domain_items = [i for i in items
                     if i.get('_likely_domain') == domain
                     and not i.get('_drop')
@@ -201,7 +288,33 @@ def _curate_domain(items: list, domain: str) -> list:
         if s['pass']:
             curated.append(item)
     curated.sort(key=lambda x: (x['_curator_scores']['total'], x.get('_heat', {}).get('heat_score', 0)), reverse=True)
-    result = curated[:MAX_PER_DOMAIN.get(domain, 15)]
+    
+    # 来源多样性惩罚：同源 > 3 条时权重减半
+    result = []
+    source_counts: dict[str, int] = {}
+    MAX_SAME_SOURCE = 3
+    PENALTY_FACTOR = 0.5
+    
+    for item in curated:
+        src = (item.get('source_platform', '') or '').split('+')[0].strip().lower()
+        if src:
+            count = source_counts.get(src, 0)
+            if count >= MAX_SAME_SOURCE:
+                # 权重减半但不丢弃 — 仍可能作为 low-priority 条目
+                item['_curator_scores']['total'] = int(
+                    item['_curator_scores']['total'] * PENALTY_FACTOR
+                )
+                item['_diversity_penalized'] = True
+            source_counts[src] = count + 1
+        
+        # 按（可能已惩罚的）分数排序插入
+        result.append(item)
+    
+    # 按最终分数重新排序
+    result.sort(key=lambda x: x['_curator_scores']['total'], reverse=True)
+    
+    max_n = MAX_PER_DOMAIN.get(domain, 15)
+    result = result[:max_n]
     for i, item in enumerate(result):
         item['_needs_search'] = i < len(result) * 0.6
     return result

@@ -17,6 +17,7 @@ import os
 import sys
 import re
 import asyncio
+import random
 from functools import lru_cache
 from pathlib import Path
 
@@ -97,6 +98,16 @@ MODEL = get_model()
 BATCH_SIZE = 20
 MAX_CONCURRENT_BATCHES = 5
 
+# ── Exponential Backoff 熔断配置 ────────────────────────────────────────────
+# 针对 Trap 28: DeepSeek openresty 流中断 (RemoteProtocolError)
+RETRY_BASE_DELAY = 2.0        # 初始等待秒数
+RETRY_MAX_DELAY = 30.0        # 上限秒数
+RETRY_JITTER = 0.5            # ±50% 随机抖动
+RETRY_MAX_ATTEMPTS = 4        # 最多 5 次尝试 (初始 + 4 次重试)
+CIRCUIT_BREAKER_THRESHOLD = 3  # 连续 3 个 batch 失败 → 熔断，跳过剩余
+
+_translate_failures = 0        # 模块级熔断计数器
+
 _TRANSLATE_TEMPLATE = Template("""You are a professional translator. Translate the following $source_lang news items
 into concise, natural Chinese.
 Each item contains a TITLE and a SUMMARY.
@@ -119,9 +130,16 @@ async def _make_request(
     session: aiohttp.ClientSession,
     api_key: str,
     messages: list,
-    max_retries: int = 2,
 ) -> dict:
-    """Send a single API request with retries on failure. Uses shared aiohttp session."""
+    """Send a single API request with exponential backoff + jitter retry.
+
+    Retry strategy:
+    - Base delay 2s, doubles each retry (2→4→8→16→30s capped)
+    - ±50% random jitter to avoid thundering herd
+    - Max 5 total attempts (initial + 4 retries)
+    - On RemoteProtocolError (Trap 28 — DeepSeek stream drop), retries with
+      increased timeout budget
+    """
     payload = {
         "model": MODEL,
         "messages": messages,
@@ -132,10 +150,13 @@ async def _make_request(
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}",
     }
-    timeout = aiohttp.ClientTimeout(total=120)
 
     last_error = None
-    for attempt in range(max_retries + 1):
+    for attempt in range(RETRY_MAX_ATTEMPTS + 1):
+        # Increase timeout on retries (stream drops may need longer)
+        timeout_seconds = 120 + (attempt * 30)
+        timeout = aiohttp.ClientTimeout(total=timeout_seconds)
+
         try:
             async with session.post(
                 API_ENDPOINT, json=payload, headers=headers, timeout=timeout
@@ -143,17 +164,31 @@ async def _make_request(
                 return await resp.json()
         except (aiohttp.ClientError, asyncio.TimeoutError, json.JSONDecodeError) as e:
             last_error = e
-            if attempt < max_retries:
-                wait = 2 ** attempt
+            if attempt < RETRY_MAX_ATTEMPTS:
+                delay = min(RETRY_BASE_DELAY * (2 ** attempt), RETRY_MAX_DELAY)
+                jitter = delay * RETRY_JITTER * (random.random() * 2 - 1)
+                delay += jitter
                 print(
-                    f"[TRANSLATE] API error (attempt {attempt+1}/{max_retries+1}), "
-                    f"retrying in {wait}s: {e}",
+                    f"[TRANSLATE] API error (attempt {attempt+1}/{RETRY_MAX_ATTEMPTS+1}), "
+                    f"retrying in {delay:.1f}s: {e}",
                     file=sys.stderr,
                 )
-                await asyncio.sleep(wait)
+                await asyncio.sleep(delay)
+
     if last_error is None:
         raise RuntimeError("_make_request failed but no error was captured")
     raise last_error
+
+
+def circuit_broken() -> bool:
+    """Check if circuit breaker is open (too many consecutive failures)."""
+    return _translate_failures >= CIRCUIT_BREAKER_THRESHOLD
+
+
+def reset_circuit():
+    """Reset circuit breaker counter."""
+    global _translate_failures
+    _translate_failures = 0
 
 
 async def batch_translate(
@@ -241,7 +276,16 @@ async def _batch_translate_all(
     async def translate_one_batch(
         batch, pairs, batch_start
     ) -> tuple[list, list | None, Exception | None]:
+        global _translate_failures
         try:
+            # Circuit breaker check
+            if circuit_broken():
+                print(
+                    f"[TRANSLATE] ⚡ 熔断触发 — 连续 {CIRCUIT_BREAKER_THRESHOLD} 个 batch 失败，"
+                    f"跳过剩余批次",
+                    file=sys.stderr,
+                )
+                return (batch, None, RuntimeError("Circuit breaker open"))
             translations = await batch_translate(session, pairs, api_key, source_lang)
             batch_end = batch_start + len(batch)
             print(
@@ -249,10 +293,13 @@ async def _batch_translate_all(
                 f"translated {len(batch)} items",
                 file=sys.stderr,
             )
+            _translate_failures = 0  # 成功后重置熔断计数
             return (batch, translations, None)
         except Exception as e:
+            _translate_failures += 1
             print(
-                f"[TRANSLATE] Batch translation failed: {e}",
+                f"[TRANSLATE] Batch translation failed ({_translate_failures}/"
+                f"{CIRCUIT_BREAKER_THRESHOLD} strikes): {e}",
                 file=sys.stderr,
             )
             return (batch, None, e)

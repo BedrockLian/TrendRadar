@@ -13,30 +13,45 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, List, Tuple
 
 from trendradar.scripts.settings import get_data_dir
+from trendradar.scripts.storage import Storage
 
 from functools import lru_cache
 
 CST = timezone(timedelta(hours=8))
 DB_PATH = str(get_data_dir() / 'fingerprints.db')
+_STORE = Storage(get_data_dir())  # 统一存储入口
 _INITIALIZED = False
 _local = threading.local()  # per-thread connection storage
 
 
 def _configure_connection(conn: sqlite3.Connection):
-    """PRAGMA 优化：WAL 模式 + 读写加速。"""
+    """PRAGMA 优化：WAL 模式 + 读写加速。
+    
+    核心 PRAGMA 与 Storage.db() 保持一致，per-thread 连接额外设置
+    mmap_size 优化大事务性能。
+    """
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA synchronous=NORMAL")
-    conn.execute("PRAGMA cache_size=-8000")       # 32MB
+    conn.execute("PRAGMA cache_size=-8000")       # 8MB
     conn.execute("PRAGMA mmap_size=268435456")    # 256MB
     conn.execute("PRAGMA busy_timeout=5000")
 
 
 def get_db() -> sqlite3.Connection:
-    """获取 per-thread 持久连接（WAL 优化，线程安全）。"""
+    """获取 per-thread 持久连接（WAL 优化，线程安全）。
+    
+    首次连接通过 Storage.db() 建立（统一 WAL + busy_timeout），
+    后续复用 per-thread 连接池以提升性能。
+    """
     if not hasattr(_local, 'conn') or _local.conn is None:
-        _local.conn = sqlite3.connect(DB_PATH)
-        _local.conn.row_factory = sqlite3.Row
-        _configure_connection(_local.conn)
+        # 优先通过 Storage 统一入口建立连接
+        try:
+            _local.conn = _STORE.db('fingerprints.db', row_factory=sqlite3.Row)
+        except Exception:
+            # 兜底：直接连接（兼容测试/非标准部署）
+            _local.conn = sqlite3.connect(DB_PATH)
+            _local.conn.row_factory = sqlite3.Row
+            _configure_connection(_local.conn)
     _ensure_indexes(_local.conn)
     return _local.conn
 

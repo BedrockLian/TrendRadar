@@ -30,6 +30,8 @@ import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+from trendradar.scripts.exitcodes import EXIT_CONFIG_ERROR
+
 CST = timezone(timedelta(hours=8))
 PYTHON = os.environ.get("PYTHON", "/usr/local/bin/python3.14t")
 PYTHON_GIL = os.environ.get("PYTHON_GIL", "0")
@@ -41,6 +43,69 @@ DATA_DIR = TREND_DIR / "data"
 _ENV = os.environ.copy()
 _ENV["PYTHONPATH"] = str(TREND_DIR.parent)  # /home/asus/.hermes
 _ENV["PYTHON_GIL"] = PYTHON_GIL
+
+# Pipeline version — must stay in sync with corresponding SKILL.md version
+__version__ = "2.8.0"
+
+
+def _cleanup_silent(push_id: str):
+    """Physically remove intermediate files for a silenced push.
+    
+    Prevents Agent from seeing stale fragment data and "画蛇添足".
+    Called on NO_SLOT, empty briefing, or EXIT_NO_CONTENT conditions.
+    """
+    today = datetime.now(CST).strftime('%Y%m%d')
+    patterns = [
+        (DATA_DIR / f"curated_{push_id}.json"),
+        (DATA_DIR / f"curated_{push_id}_{today}.json"),
+    ]
+    removed = []
+    for p in patterns:
+        if p.exists():
+            try:
+                p.unlink()
+                removed.append(str(p.name))
+            except OSError:
+                pass
+    if removed:
+        print(f"[SILENT] Cleaned up: {', '.join(removed)}", file=sys.stderr)
+
+
+def _write_push_log(push_id: str, result: dict, errors: list):
+    """Write push outcome to push_log.json for delivery failure tracking.
+    
+    Records: push_id, timestamp, status, fragment_count, error_count.
+    Used by delivery_watchdog to detect partial-delivery failures.
+    """
+    log_path = DATA_DIR / "push_log.json"
+    try:
+        if log_path.exists():
+            log = json.loads(log_path.read_text())
+            if not isinstance(log, list):
+                log = []
+        else:
+            log = []
+
+        entry = {
+            "push_id": push_id,
+            "timestamp": datetime.now(CST).isoformat(),
+            "status": result.get("status", "unknown"),
+            "fragment_count": len(result.get("fragments", [])),
+            "error_count": len(errors),
+            "errors": errors[:5] if errors else [],  # truncate
+            "total_items": result.get("stats", {}).get("total_items", 0),
+            "elapsed": result.get("stats", {}).get("total_elapsed", 0),
+        }
+        log.append(entry)
+
+        # Keep last 100 entries
+        if len(log) > 100:
+            log = log[-100:]
+
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        log_path.write_text(json.dumps(log, ensure_ascii=False, indent=2))
+    except Exception:
+        pass  # Best effort — don't let logging crash the pipeline
 
 
 def _run(cmd: list, timeout: int = 300, capture: bool = True) -> dict:
@@ -92,6 +157,72 @@ def detect_push_id() -> tuple:
     return push_id, dedup
 
 
+def list_pipeline_steps() -> dict:
+    """Return the canonical pipeline step definitions (SSOT for Agent consumption).
+
+    Instead of manually maintaining steps in SKILL.md, the Agent should call
+    `pipeline_orchestrator.py --list-steps` at startup to discover available steps.
+
+    Returns a JSON-serializable dict with step_number, name, command, and description.
+    """
+    return {
+        "version": __version__,
+        "python": PYTHON,
+        "steps": [
+            {"number": 0, "name": "slot_detect", "script": "push_slot_detect.py",
+             "description": "Detect current push slot from timeline.yaml"},
+            {"number": 1, "name": "push_prepare", "script": "push_prepare.py",
+             "description": "Fetch RSS feeds + curate top items (fetch + curate)"},
+            {"number": 2, "name": "track_events", "script": "track_events.py",
+             "description": "Track event continuity (morning only)"},
+            {"number": 3, "name": "parallel", "scripts": ["ai_translate.py", "batch_fetch.py"],
+             "description": "Parallel: translate foreign articles + fetch full text",
+             "parallel": True},
+            {"number": 4, "name": "render_markdown", "script": "render_markdown.py",
+             "description": "Render curated items to WeCom markdown"},
+            {"number": 5, "name": "fragment_push", "script": "fragment_push.py",
+             "description": "Split markdown into WeCom-safe byte-counted fragments"},
+            {"number": 6, "name": "record_fingerprints", "script": "record_fingerprints.py",
+             "description": "Record item fingerprints for cross-slot dedup"},
+        ],
+    }
+
+
+def verify_version() -> dict:
+    """Lightweight self-check: verify all referenced scripts exist and are importable.
+
+    Returns {ok: bool, errors: [str]}.
+    """
+    errors = []
+    scripts = [
+        "push_slot_detect.py", "push_prepare.py", "ai_translate.py",
+        "batch_fetch.py", "render_markdown.py", "fragment_push.py",
+        "record_fingerprints.py",
+    ]
+    for script in scripts:
+        p = SCRIPTS_DIR / script
+        if not p.exists():
+            errors.append(f"Missing script: {p}")
+    return {"ok": len(errors) == 0, "errors": errors}
+
+
+def version_check_and_exit():
+    """Perform self-check on startup. Exit with EXIT_CONFIG_ERROR if scripts missing.
+
+    Called when --check-version is passed, or as a pre-flight before main().
+    """
+    result = verify_version()
+    if not result["ok"]:
+        print(json.dumps({
+            "status": "error",
+            "exit_code": EXIT_CONFIG_ERROR,
+            "reason": "version_check_failed",
+            "errors": result["errors"],
+        }, ensure_ascii=False), file=sys.stderr)
+        sys.exit(EXIT_CONFIG_ERROR)
+    return result
+
+
 def run_stage(name: str, cmd: list, timeout: int = 300) -> dict:
     """Run a pipeline stage with timing."""
     print(f"[{datetime.now(CST).strftime('%H:%M:%S')}] ⏳ {name}...", file=sys.stderr)
@@ -112,7 +243,35 @@ def main():
     parser.add_argument("--push-id", help="强制指定时段 (morning/noon/evening)，跳过自动检测")
     parser.add_argument("--skip-fetch", action="store_true", help="跳过 fetch（使用已有缓存）")
     parser.add_argument("--output", choices=["json", "text"], default="json", help="输出格式")
+    parser.add_argument("--list-steps", action="store_true",
+                        help="输出管道步骤定义（SSOT，供 Agent 动态读取）")
+    parser.add_argument("--check-version", action="store_true",
+                        help="启动前自检：校验所有依赖脚本是否存在")
     args = parser.parse_args()
+
+    # ── Special modes (no pipeline execution) ──────────────────
+    if args.list_steps:
+        print(json.dumps(list_pipeline_steps(), ensure_ascii=False, indent=2))
+        return 0
+
+    if args.check_version:
+        version_check_and_exit()
+        print(json.dumps({"status": "ok", "version": __version__}, ensure_ascii=False))
+        return 0
+
+    # ── Step 0: Auto-migrate database ─────────────────────────
+    # Ensure DB schema is up-to-date before any operation.
+    # Prevents sqlite3.OperationalError from stale schema.
+    try:
+        from trendradar.migrations.runner import migrate
+        db_path = DATA_DIR / "fingerprints.db"
+        if db_path.exists():
+            ver = migrate(db_path)
+            if ver > 0:
+                print(f"[PIPELINE] DB schema v{ver}", file=sys.stderr)
+    except Exception as e:
+        print(f"[PIPELINE] ⚠️ DB migration skipped: {e}", file=sys.stderr)
+        # Non-fatal — continue with existing schema
 
     errors = []
     stats = {
@@ -129,7 +288,12 @@ def main():
     else:
         push_id, dedup_flag = detect_push_id()
         if push_id is None:
-            print(json.dumps({"status": "silent", "reason": dedup_flag}, ensure_ascii=False))
+            _cleanup_silent(dedup_flag.split(":")[-1].strip() if ":" in dedup_flag else "unknown")
+            print(json.dumps({
+                "status": "silent",
+                "reason": dedup_flag,
+                "fragments": [],  # 显式空数组，防止 Agent 画蛇添足
+            }, ensure_ascii=False))
             return 0
 
     stats["push_id"] = push_id
@@ -201,7 +365,20 @@ def main():
 
     # Check for empty briefing (no items)
     if not briefing or "共 0 条" in briefing or "[SILENT]" in briefing:
-        print(json.dumps({"status": "silent", "reason": "no new items", "push_id": push_id}, ensure_ascii=False))
+        _cleanup_silent(push_id)
+        # Also clean up any partial fetch/curate artifacts
+        for pattern in [f"fetch_*{push_id}*.json", f"curated_{push_id}*.json"]:
+            for f in DATA_DIR.glob(pattern):
+                try:
+                    f.unlink()
+                except OSError:
+                    pass
+        print(json.dumps({
+            "status": "silent",
+            "reason": "no new items",
+            "push_id": push_id,
+            "fragments": [],  # 显式空数组，防止 Agent 画蛇添足
+        }, ensure_ascii=False))
         return 0
 
     # ── Stage 5: Fragment ──────────────────────────────────────
@@ -269,6 +446,9 @@ def main():
         "needs_deep_analysis": push_id == "evening",
         "curated_path": str(DATA_DIR / f"curated_{push_id}_{datetime.now(CST).strftime('%Y%m%d')}.json"),
     }
+
+    # ── Record push outcome log (for delivery failure tracking) ─
+    _write_push_log(push_id, result, errors)
 
     if args.output == "text":
         print(briefing)

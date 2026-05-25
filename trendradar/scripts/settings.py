@@ -8,6 +8,27 @@ from functools import lru_cache
 
 TRENDRADAR_HOME = Path(os.environ.get('TRENDRADAR_HOME', Path.home() / '.hermes' / 'trendradar'))
 
+# ── 环境锁：Python 3.14t 必须禁用 GIL ────────────────────────────
+def _check_gil():
+    """检查是否在 free-threaded Python (3.14t) 下正确运行。
+    
+    若检测到 3.14t 但 PYTHON_GIL != 0，输出警告到 stderr。
+    不阻止运行——仅作为诊断提示（部分 C 扩展未声明 GIL 豁免时需要）。
+    """
+    if hasattr(sys, '_is_gil_enabled') and not sys._is_gil_enabled():
+        return  # GIL 已禁用，正常
+    if '3.14' in sys.version and 'free-threading' not in sys.version.lower():
+        gil = os.environ.get('PYTHON_GIL', '')
+        if gil != '0':
+            import warnings
+            warnings.warn(
+                f"PYTHON_GIL={gil or '(unset)'} — 3.14t 建议 export PYTHON_GIL=0 "
+                "以启用 free-threading 并发性能。",
+                RuntimeWarning,
+            )
+
+_check_gil()
+
 
 @lru_cache()
 def get_data_dir() -> Path:
