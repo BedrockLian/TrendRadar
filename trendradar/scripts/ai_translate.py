@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """
-ai_translate.py — Batch-translate English RSS summaries to Chinese using AI.
+ai_translate.py — Batch-translate English/Japanese RSS summaries to Chinese using AI.
 
-Reads curated_{slot}.json, detects English summaries (<50% CJK characters),
-batch-translates them via DeepSeek API, and writes 'summary_cn' fields back.
+Reads curated_{slot}.json, classifies items by source_platform (not content heuristics),
+batch-translates via DeepSeek API, and writes 'title_cn'/'summary_cn' fields back.
+
+Language detection is driven by config/translate.yaml — add/edit source keywords there,
+not in this file.
 
 Concurrency: Uses aiohttp for async HTTP. When items_to_translate > BATCH_SIZE,
 multiple batches run in parallel via asyncio.gather (bounded by semaphore).
@@ -19,92 +22,50 @@ from functools import lru_cache
 from pathlib import Path
 
 import aiohttp
+import yaml
 
 from trendradar.scripts.settings import get_data_dir
 DATA_DIR = get_data_dir()
 
-# ── CJK detection ────────────────────────────────────────────────────────────
 
-def _is_cjk(c: str) -> bool:
-    """True if c is a CJK Unified Ideograph (Chinese hanzi / Japanese kanji / Korean hanja).
-    Hiragana (0x3040-0x309F), Katakana (0x30A0-0x30FF), and Hangul (0xAC00-0xD7AF)
-    are excluded — they are distinct scripts that should trigger translation.
-    """
-    cp = ord(c)
-    # CJK Symbols & Punctuation (0x3000-0x303F) — include fullwidth punctuation
-    if 0x3000 <= cp <= 0x303F:
-        return True
-    # Hiragana (0x3040-0x309F) and Katakana (0x30A0-0x30FF) — Japanese, NOT CJK
-    if 0x3040 <= cp <= 0x30FF:
-        return False
-    # CJK Unified Ideographs (0x4E00-0x9FFF) + Ext A (0x3400-0x4DBF)
-    if 0x3400 <= cp <= 0x9FFF:
-        return True
-    # CJK Compatibility Ideographs
-    if 0xF900 <= cp <= 0xFAFF:
-        return True
-    # Fullwidth forms (punctuation, Latin)
-    if 0xFF00 <= cp <= 0xFFEF:
-        return True
-    # CJK Extension B, C, D, E, Compatibility Supplement
-    if cp < 0x20000:
-        return False
-    return (0x20000 <= cp <= 0x2CEAF or 0x2F800 <= cp <= 0x2FA1F)
+# ── Source language classification (from config/translate.yaml) ──────────────
+# Not content-based — determined by source_platform matching.
+# Edit translate.yaml to add/remove sources; do NOT hardcode lists here.
+
+_CONFIG_PATH = Path(__file__).resolve().parent.parent / 'config' / 'translate.yaml'
+
+def _build_language_sets() -> tuple[frozenset, frozenset]:
+    """Read translate.yaml and build (english_kw, japanese_kw) frozensets."""
+    if not _CONFIG_PATH.exists():
+        return frozenset(), frozenset()
+    try:
+        with open(_CONFIG_PATH) as f:
+            cfg = yaml.safe_load(f)
+        tc = cfg.get('translate', {})
+        en = frozenset(kw.lower().strip() for kw in tc.get('english', []))
+        ja = frozenset(kw.lower().strip() for kw in tc.get('japanese', []))
+        return en, ja
+    except Exception:
+        return frozenset(), frozenset()
 
 
-@lru_cache(maxsize=2048)
-def cjk_ratio(text: str) -> float:
-    """Return fraction of non-whitespace characters that are CJK."""
-    if not text:
-        return 0.0
-    chars = [c for c in text if not c.isspace()]
-    if not chars:
-        return 0.0
-    return sum(1 for c in chars if _is_cjk(c)) / len(chars)
+_ENGLISH_KEYWORDS, _JAPANESE_KEYWORDS = _build_language_sets()
 
 
-def _has_japanese_kana(text: str) -> bool:
-    """Detect Japanese text by looking for Hiragana (0x3040-0x309F) or Katakana (0x30A0-0x30FF)."""
-    return any('぀' <= c <= 'ゟ' or '゠' <= c <= 'ヿ' for c in text)
-
-
-def detect_source_lang(text: str) -> str:
-    """Detect source language: 'Japanese' if has kana, else 'English'."""
-    if _has_japanese_kana(text):
-        return 'Japanese'
-    return 'English'
-
-
-def needs_translation(text: str) -> bool:
-    """Determine if text needs translation to Chinese.
+def get_source_lang(source_platform: str) -> str | None:
+    """Return 'English', 'Japanese', or None (skip — Chinese or unknown).
     
-    Returns True if:
-    1. Text contains Japanese kana (Hiragana/Katakana) — regardless of CJK ratio
-    2. Chinese CJK character ratio is < 50% (English or mixed text)
-    False for purely Chinese text (CJK ratio >= 50% and no kana).
+    Matched by substring: kw in source_platform.lower().
+    Japanese keywords checked first (NHK could contain English keywords too).
     """
-    if not text:
-        return False
-    # Japanese text: contains Hiragana or Katakana
-    if _has_japanese_kana(text):
-        return True
-    # English or other: low CJK ratio
-    return cjk_ratio(text) < 0.5
-
-
-# ── Source matching ──────────────────────────────────────────────────────────
-
-# Sources known to produce English content about China (foreign_china domain).
-# Matched case-insensitively against source_platform.
-_FOREIGN_CHINA_KEYWORDS = [
-    'bbc', 'nytimes', 'reuters', 'guardian', 'scmp',
-    '纽约时报', '卫报', '南华早报', '路透社',
-]
-
-
-def is_foreign_china_source(source_platform: str) -> bool:
-    plat_lower = source_platform.lower()
-    return any(kw in plat_lower for kw in _FOREIGN_CHINA_KEYWORDS)
+    plat = source_platform.lower().strip()
+    for kw in _JAPANESE_KEYWORDS:
+        if kw in plat:
+            return 'Japanese'
+    for kw in _ENGLISH_KEYWORDS:
+        if kw in plat:
+            return 'English'
+    return None
 
 
 # ── Translation API ──────────────────────────────────────────────────────────
@@ -244,13 +205,14 @@ async def _batch_translate_all(
 ) -> list:
     """Translate all items using concurrent batches when > BATCH_SIZE items.
 
-    items_to_translate: list of (domain, idx, item, title, summary, needs_title, needs_summary)
-    Returns a list of (batch_items, translations_or_None, error_or_None) tuples.    """
+    items_to_translate: list of (domain, idx, item, title, summary, needs_title, needs_summary, source_lang)
+    Returns a list of (batch_items, translations_or_None, error_or_None) tuples.
+    """
     # Split into batches
     batches = []
     # Determine source language from first item
     source_lang = items_to_translate[0][7] if items_to_translate else 'English'
-    
+
     for batch_start in range(0, len(items_to_translate), BATCH_SIZE):
         batch = items_to_translate[batch_start:batch_start + BATCH_SIZE]
         # Build (title, summary) pairs for translation
@@ -297,11 +259,13 @@ async def _batch_translate_all(
 
 # ── Main processing ──────────────────────────────────────────────────────────
 
+
 def _load_and_scan(push_id: str) -> tuple[dict, list, Path]:
     """Load curated JSON and scan for items needing translation.
     Returns (data, items_to_translate, curated_path).
-    Each item is (domain, idx, item, title, summary).
-    Prefers dated file (YYYYMMDD) to match render_markdown.py priority."""
+    Each item is (domain, idx, item, title, summary, needs_title, needs_summary, source_lang).
+    Prefers dated file (YYYYMMDD) to match render_markdown.py priority.
+    """
     from datetime import datetime, timezone, timedelta
     CST = timezone(timedelta(hours=8))
     today_file = datetime.now(CST).strftime('%Y%m%d')
@@ -332,22 +296,17 @@ def _load_and_scan(push_id: str) -> tuple[dict, list, Path]:
             if has_title_cn and has_summary_cn:
                 continue
 
-            needs_title = not has_title_cn and title and needs_translation(title)
-            needs_summary = not has_summary_cn and summary and needs_translation(summary)
+            # Determine source language by platform (from translate.yaml)
+            source_lang = get_source_lang(item.get('source_platform', ''))
+
+            # Only translate if we know the source language
+            needs_title = not has_title_cn and title and bool(source_lang)
+            needs_summary = not has_summary_cn and summary and bool(source_lang)
 
             if needs_title or needs_summary:
-                                # Determine source language by platform
-                plat = item.get('source_platform', '').lower()
-                source_lang = None
-                for kw in ['nhk', 'nhk ビジネス', '4gamer']:
-                    if kw in plat: source_lang = 'Japanese'; break
-                if not source_lang:
-                    for kw in ['bbc', 'reuters', 'nytimes', 'guardian', 'techcrunch',
-                               '路透社', '纽约时报', '卫报', 'ars technica', 'pc gamer',
-                               'nintendo everything', 'eurogamer', 'video games chronicle',
-                               'npr', 'koreaherald', 'nikkei']:
-                         if kw in plat: source_lang = 'English'; break
-                items_to_translate.append((domain, idx, item, title, summary, needs_title, needs_summary, source_lang))
+                items_to_translate.append(
+                    (domain, idx, item, title, summary, needs_title, needs_summary, source_lang)
+                )
 
     return data, items_to_translate, curated_path
 
@@ -368,7 +327,8 @@ def _write_back(data: dict, curated_path: Path, push_id: str):
 
 async def process_curated(push_id: str) -> dict:
     """Load curated JSON, translate English titles+summaries, and save back.
-    Split into _load_and_scan / _batch_translate / _write_back."""
+    Split into _load_and_scan / _batch_translate / _write_back.
+    """
     data, items_to_translate, curated_path = _load_and_scan(push_id)
 
     if not items_to_translate:
@@ -405,7 +365,7 @@ async def process_curated(push_id: str) -> dict:
     for batch, translations, error in batch_results:
         if error:
             continue
-        # batch: list of (domain, idx, item, title, summary, needs_title, needs_summary)
+        # batch: list of (domain, idx, item, title, summary, needs_title, needs_summary, source_lang)
         # translations: list of (title_cn, summary_cn) tuples
         for entry, (title_cn, summary_cn) in zip(batch, translations, strict=True):
             domain, idx, item, title, summary, needs_title, needs_summary, _source_lang = entry

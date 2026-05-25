@@ -1,47 +1,42 @@
 # AI 翻译配置
-# 控制哪些源需要翻译
+# ai_translate.py 在启动时读取此文件构建语言分类 frozenset。
+# 匹配规则：kw in source_platform.lower() — 子串匹配，不区分大小写。
+# 因此用短关键字（如 bbc）即可覆盖所有同源变体（bbc 商务, bbc 科技, bbc 商务+bbc 科技）。
 
 translate:
   enabled: true
   target_language: zh-CN
 
-  # 需要翻译的英文源（源名必须与 sources.json 的 name 字段一致）
-  sources:
-    - BBC 商务
-    - BBC 科技
-    - 纽约时报·世界
-    - 纽约时报·科技
-    - 卫报·科技
-    - 卫报·商务
-    - 南华早报
-    - 路透社·商业
-    - 路透社·中国
-    - 路透社·科技
-    - Ars Technica
-    - TechCrunch
-    - The Verge·游戏
-    - PC Gamer
-    - Eurogamer
-    - Rock Paper Shotgun
-    - Video Games Chronicle
-    - GamesIndustry.biz
-    - Aftermath
-    - Automaton West
-    - Nintendo Everything
-    - Japan Times
-    - Inside Games
-    - NHK ビジネス
-
-  # 不需要翻译的源（已含中文）
-  exclude:
-    - 华尔街见闻
+  # 英文源关键字（匹配 source_platform 的子串）
+  english:
+    - bbc
+    - reuters
+    - 路透社
+    - nytimes
+    - 纽约时报
+    - guardian
+    - 卫报
+    - techcrunch
+    - ars technica
+    - the verge
+    - pc gamer
+    - nintendo everything
+    - eurogamer
+    - video games chronicle
+    - rock paper shotgun
+    - gamesindustry
+    - aftermath
+    - automaton
+    - npr
+    - koreaherald
+    - nikkei
     - 日经亚洲
-    - FT 中文网
+    - japan times
+    - inside games
+    - scmp
+    - 南华早报
 
-  # 日文源翻译
-  translate_japanese: true
-  japanese_sources:
-    - 4Gamer
-    - Japan Times
-    - Inside Games
-    - NHK ビジネス
+  # 日文源关键字
+  japanese:
+    - nhk
+    - 4gamer
