@@ -47,23 +47,28 @@ pipeline_orchestrator.py（一键6阶段）
 
 ## 功能
 
-- **编排器一键管线** — `pipeline_orchestrator.py` 替代 10 步手动操作，6 阶段自动编排，输出 JSON 结果
-- **多源异步抓取** — aiohttp 异步并发，两级连接池（RSSHub + 外网直连）
+- **编排器一键管线** — `pipeline_orchestrator.py` v2.8.0，7 阶段自动编排，含 SSOT 自描述 + 启动自检 + SILENT 闭环 + auto-migrate
+- **多源异步抓取** — aiohttp 异步并发，两级连接池（RSSHub + 外网直连），IO 预取支持
 - **AC 自动机分类** — 505 关键词 × 6 域，frozenset O(1) 查找，比线性匹配快 4.4×
+- **UTF-8 字节分片** — `fragment_push.py` 三级递降拆分（段落→句子→硬切），3800B 严格限制防 WeCom 静默截断
 - **纯脚本渲染** — `render_markdown.py` 从 curated JSON 直接拼接，~0s，零 token 成本，格式硬编码永远一致
 - **auto-delivery 投递** — cron 中 `send_message` 已弃用，全部通过 final response 系统自动投递 WeCom
-- **日报推送** — 早/午/晚三段 Flash 管线，晚间附加 3×Pro 深度分析
+- **日报推送** — 早/午/晚三段 Flash 管线，晚间附加 3×Pro 深度分析 + 知识图谱历史关联
 - **周报研判** — 每周一 Pro 模型深度趋势分析，含信息茧房突围
-- **月报分析** — 每月初全景复盘，聚合 4 周数据 + heat_tracker Top10
-- **兴趣偏好评分** — `config/ai_interests.yaml` 定义正面+2分/排除过滤，CLI 管理
+- **月报分析** — 每月初全景复盘，聚合 4 周数据 + heat_tracker Top10 + 兴趣漂移检测
+- **兴趣偏好评分** — `config/ai_interests.yaml` 定义正面+2分/排除过滤，CLI 管理 + `--suggest-interests` 自动校准
+- **来源多样性保护** — 同源 >3 条权重减半 + source_health 负反馈学习环自动淘汰低质源
 - **指纹去重** — MD5 截断指纹，48h 滑动窗口
 - **热度追踪** — SQLite 持久化，跨周期频次/平台/持续时间
-- **数据库迁移** — 轻量 SQLite 迁移引擎（`migrations/runner.py`），schema 版本化管理
+- **数据库迁移** — 轻量 SQLite 迁移引擎（`migrations/runner.py`），含 up/down 回滚
+- **Storage 统一接入** — 全模块通过 `Storage.db()` 连接池接入，强制 WAL + busy_timeout
 - **结构化日志** — 统一 logging 工厂，`[timestamp] [LEVEL] [module]` 格式
 - **退出码协议** — 脚本按 `exitcodes.py` 返回 0/2/3/10/11/12/99，Agent 依码决策
-- **自动体检** — 每日 15:00 自检 DB/配置/API/Gateway/全链路，异常推送
+- **API 熔断退避** — 翻译层指数退避 2→30s + jitter + 连续 3 失败熔断
+- **发布前拦截器** — `sanity_check.py` 禁语扫描/死链检测/敏感词脱敏
+- **自动体检** — 每日 15:00 17 项自检（含盲点审计），异常推送
 - **推送质量优化** — 每日 21:15 评分 + 偏好收敛调优
-- **推送降级看门狗** — 每日 3 次巡检 WeCom IPC socket + 投递错误检测
+- **推送看门狗** — 每日 3 次巡检 WeCom IPC socket + 投递错误检测 + push_log 原子性追踪
 
 ## Hermes Agent 要求
 
@@ -88,37 +93,41 @@ pipeline_orchestrator.py（一键6阶段）
 TrendRadar/
 ├── trendradar/              # 核心 Python 包
 │   ├── scripts/             #   管线/工具脚本
-│   │   ├── pipeline_orchestrator.py     # 一键编排器（6阶段自动管线）
+│   │   ├── pipeline_orchestrator.py     # 一键编排器 v2.8.0（7阶段自动管线）
 │   │   ├── push_prepare.py             # fetch + curation 编排
 │   │   ├── fetch_feeds.py              # 多 RSS 异步抓取
-│   │   ├── curate_and_push.py          # 5 域并行精选
-│   │   ├── ai_translate.py             # AI 批量翻译
+│   │   ├── curate_and_push.py          # 5 域并行精选 + 多样性惩罚
+│   │   ├── ai_translate.py             # AI 批量翻译 + 熔断退避
 │   │   ├── batch_fetch.py              # 10 并发全文抓取
 │   │   ├── render_markdown.py          # 纯脚本 Markdown 渲染
-│   │   ├── render_deep_analysis.py     # Pro 深度分析格式化
-│   │   ├── fragment_push.py            # WeCom 分片
-│   │   ├── record_fingerprints.py      # 指纹记录
+│   │   ├── render_deep_analysis.py     # Pro 深度分析 + 知识图谱
+│   │   ├── fragment_push.py            # UTF-8 字节计数分片
+│   │   ├── sanity_check.py             # 发布前拦截器
+│   │   ├── blind_spot_audit.py         # 信息茧房盲点检测
+│   │   ├── aggregate_monthly.py        # 月度统计 + 兴趣漂移
+│   │   ├── record_fingerprints.py      # 指纹记录（Storage）
 │   │   ├── track_events.py             # 跨日事件追踪
 │   │   ├── heat_tracker.py             # 热度追踪引擎
-│   │   └── ... (settings, common, exitcodes, 等)
+│   │   └── ... (settings, storage, common, exitcodes, 等)
 │   ├── config/              #   关键词/时段/翻译/兴趣配置
-│   ├── migrations/          #   SQLite 数据库迁移引擎
+│   ├── migrations/          #   SQLite 数据库迁移引擎（up + down 回滚）
 │   ├── skills/              #   Hermes Agent 技能定义（6个）
-│   │   ├── news-secretary/           # 日报推送（核心，v6.0）
-│   │   ├── self-healing/             # 自动体检/自修复（v3.0）
-│   │   ├── performance-optimizer/    # 推送质量优化（v2.3）
-│   │   ├── system-config/            # 系统配置速查（v2.0）
-│   │   ├── weekly-report/            # 周报深度研判（v2.2）
-│   │   └── monthly-report/           # 月报全景分析（v2.2）
+│   │   ├── news-secretary/           # 日报推送（核心，v6.5.0）
+│   │   ├── self-healing/             # 自动体检/自修复（v3.3.0）
+│   │   ├── performance-optimizer/    # 推送质量优化（v2.3.0）
+│   │   ├── system-config/            # 系统配置速查
+│   │   ├── weekly-report/            # 周报深度研判
+│   │   └── monthly-report/           # 月报全景分析
 │   ├── references/           #   运行时参考文档
-│   ├── tests/               #   92 个测试用例
+│   ├── tests/               #   测试用例
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
 │   └── pyproject.toml
 ├── hermes-scripts/           # 自动体检/维护/看门狗脚本
-│   ├── trendradar_health_check.py     # 每日自动体检（15项检查）
+│   ├── trendradar_health_check.py     # 每日自动体检（17项检查）
 │   ├── trendradar_maintenance.py      # 每日备份清理
 │   └── delivery_watchdog.py           # 推送降级看门狗
+├── one-key-setup.sh          # 一条龙部署脚本
 ├── .gitignore
 ├── LICENSE
 ├── README.md
@@ -128,22 +137,27 @@ TrendRadar/
 ## 快速开始
 
 ```bash
-# 1. 安装依赖
+# 一条龙部署（推荐）
+curl -sSL https://raw.githubusercontent.com/BedrockLian/TrendRadar/main/one-key-setup.sh | bash
+
+# 或手动安装
 cd trendradar && pip install -e ".[dev]"
 
-# 2. 配置环境变量
+# 配置 API Key
 export DEEPSEEK_API_KEY="sk-xxx"
 
-# 3. 初始化数据库
+# 初始化数据库
 python3 -c "from scripts.settings import ensure_db_migrated; ensure_db_migrated()"
 
-# 4. 手动跑一次日报（编排器模式）
+# 手动跑一次日报
 export PYTHONPATH=/home/asus/.hermes PYTHON_GIL=0
 python3.14t scripts/pipeline_orchestrator.py --push-id morning --output text
 
-# 5. 或分步跑
-python3 scripts/push_prepare.py --push-id morning
-python3 scripts/render_markdown.py --push-id morning
+# 查看管道步骤（SSOT 自描述）
+python3.14t scripts/pipeline_orchestrator.py --list-steps
+
+# 启动前自检
+python3.14t scripts/pipeline_orchestrator.py --check-version
 ```
 
 ## 测试
