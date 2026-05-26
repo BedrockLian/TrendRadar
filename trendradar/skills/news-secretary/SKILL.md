@@ -74,7 +74,7 @@ export PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GI
 | `references/traps.md` | 已知陷阱全集 |
 | `references/translation-pipeline-sync.md` | 翻译管线：title_cn + 来源检测 + 文件优先级 |
 | `references/pipeline-pitfalls.md` | 管线运维陷阱 |
-| `references/sources-management.md` | RSS 源发现与添加 |
+| `../../references/sources-management.md` | RSS 源发现与添加 |
 | `references/render-format.md` | 简报输出格式 |
 | `references/deep-analysis-format.md` | 深度分析协议 + 知识图谱 |
 | `scripts/render_markdown.py` | 格式契约 docstring |

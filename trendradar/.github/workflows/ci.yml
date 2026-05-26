@@ -36,3 +36,37 @@ jobs:
       - name: Full tests (allow failures for slow)
         run: pytest trendradar/tests/ -v --timeout 30
         continue-on-error: true
+
+  check-references:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check references consistency
+        run: |
+          python3 -c "
+          import hashlib, sys
+          from pathlib import Path
+
+          root = Path('trendradar/references')
+          mismatches = []
+
+          for skill_refs in Path('trendradar/skills').glob('*/references'):
+              for f in skill_refs.glob('*.md'):
+                  root_f = root / f.name
+                  if root_f.exists():
+                      h1 = hashlib.md5(root_f.read_bytes()).hexdigest()
+                      h2 = hashlib.md5(f.read_bytes()).hexdigest()
+                      if h1 != h2:
+                          mismatches.append(f'{root_f} ({h1[:8]}) != {f} ({h2[:8]})')
+
+          if mismatches:
+              print('ERROR: Skill references/ 与根 references/ 内容不一致:')
+              for m in mismatches:
+                  print(f'  {m}')
+              print()
+              print('修复方法: cp trendradar/references/<file> trendradar/skills/<skill>/references/<file>')
+              sys.exit(1)
+          else:
+              print('OK: 所有同名 references 文件内容一致')
+          "

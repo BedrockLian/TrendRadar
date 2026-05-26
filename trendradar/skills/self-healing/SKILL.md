@@ -72,6 +72,6 @@ cd ~/TrendRadar/trendradar && PYTHONPATH=/home/asus/TrendRadar /usr/local/bin/py
 | `references/migration-mechanism.md` | 迁移引擎架构 |
 | `references/migration-rollback.md` | 迁移回滚约定 |
 | `references/migration-idempotency-bug.md` | 迁移幂等性 Bug |
-| `references/sources-management.md` | 信息源管理 |
+| `../../references/sources-management.md` | 信息源管理 |
 | `references/smoke-test-maintenance.md` | 烟雾测试维护：常见失败模式 + 修复方法 |
 | `references/cache-cleanup.md` | 缓存清理规程 |
