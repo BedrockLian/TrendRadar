@@ -330,14 +330,24 @@ def _load_and_scan(push_id: str) -> tuple[dict, list, Path]:
     """Load curated JSON and scan for items needing translation.
     Returns (data, items_to_translate, curated_path).
     Each item is (domain, idx, item, title, summary, needs_title, needs_summary, source_lang).
-    Prefers dated file (YYYYMMDD) to match render_markdown.py priority.
+    Prefers today's dated file → latest dated file → generic fallback.
     """
     from datetime import datetime, timezone, timedelta
     CST = timezone(timedelta(hours=8))
     today_file = datetime.now(CST).strftime('%Y%m%d')
+    
+    # 1) Today's dated file (pipeline may have run earlier today)
     curated_path = DATA_DIR / f'curated_{push_id}_{today_file}.json'
     if not curated_path.exists():
-        curated_path = DATA_DIR / f'curated_{push_id}.json'
+        # 2) Most recent dated file (yesterday's pipeline, not yet re-run)
+        dated_files = sorted(
+            DATA_DIR.glob(f'curated_{push_id}_[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].json'),
+            key=lambda p: p.name, reverse=True
+        )
+        if dated_files:
+            curated_path = dated_files[0]
+        else:
+            curated_path = DATA_DIR / f'curated_{push_id}.json'
     if not curated_path.exists():
         print(
             f"[TRANSLATE] No curated file found for push-id '{push_id}'",
