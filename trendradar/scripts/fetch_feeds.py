@@ -262,7 +262,7 @@ def _preclassify(items: list) -> list:
             item['_likely_domain'] = 'gaming'
         elif cat in ('tech', 'economy'):
             item['_likely_domain'] = cat
-        elif cat == 'news':
+        elif cat in ('news', 'foreign_china'):
             item['_likely_domain'] = 'top_headlines'
         else:
             item['_likely_domain'] = 'other'
