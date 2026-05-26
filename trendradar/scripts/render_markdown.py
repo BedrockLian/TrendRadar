@@ -128,10 +128,17 @@ def main():
     today_file = datetime.now(CST).strftime('%Y%m%d')
 
     # Load curated JSON
-    # Try dated file first, then fall back to non-dated
+    # Try today's dated file → latest dated file → generic fallback
     curated_path = DATA_DIR / f'curated_{push_id}_{today_file}.json'
     if not curated_path.exists():
-        curated_path = DATA_DIR / f'curated_{push_id}.json'
+        dated_files = sorted(
+            DATA_DIR.glob(f'curated_{push_id}_[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].json'),
+            key=lambda p: p.name, reverse=True
+        )
+        if dated_files:
+            curated_path = dated_files[0]
+        else:
+            curated_path = DATA_DIR / f'curated_{push_id}.json'
     if not curated_path.exists():
         log.error(f"Curated file not found: {curated_path}")
         sys.exit(1)
