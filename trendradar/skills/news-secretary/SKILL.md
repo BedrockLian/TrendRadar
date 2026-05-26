@@ -79,7 +79,7 @@ export PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GI
 | `references/deep-analysis-format.md` | 深度分析协议 + 知识图谱 |
 | `scripts/render_markdown.py` | 格式契约 docstring |
 | `scripts/sanity_check.py` | 发布前拦截器 |
-| `references/fragment-push-byte-splitting.md` | 字节级分片：策略 + 陷阱 |
+| `../../references/fragment-byte-splitting.md` | 字节级分片：策略 + 陷阱 |
 
 ## 兴趣偏好
 `config/ai_interests.yaml` — 正面+2分，排除=0分过滤。CLI: `python3 scripts/interest_cli.py {list,add,remove,exclude}`。
