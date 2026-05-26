@@ -231,11 +231,25 @@ def _source_category_map() -> dict[str, str]:
 
 
 def _preclassify(items: list) -> list:
-    """预分类：关键词 + 源 category 兜底。"""
+    """预分类：关键词 + 源 category 兜底 + 源级覆盖。"""
     G, T, E = _kw_sets()
     src_cat = _source_category_map()
     domains = [(G, 'gaming'), (T, 'tech'), (E, 'economy')]
+    
+    # 源级域覆盖 — 特定源固定分配到某个域（不参与关键词匹配）
+    SOURCE_DOMAIN_OVERRIDE = {
+        '日经亚洲': 'foreign_china',
+    }
+    
     for item in items:
+        platform = item.get('source_platform', '')
+        
+        # 源级覆盖优先
+        override = SOURCE_DOMAIN_OVERRIDE.get(platform)
+        if override:
+            item['_likely_domain'] = override
+            continue
+        
         text = f"{item.get('title', '')} {item.get('summary', '')}"
         domain = next((d for kw, d in domains
                        if has_keyword_match_ci(text, d, kw)), None)
@@ -243,7 +257,7 @@ def _preclassify(items: list) -> list:
             item['_likely_domain'] = domain
             continue
         # 关键词未命中 → 按源 category 兜底
-        cat = src_cat.get(item.get('source_platform', ''), '')
+        cat = src_cat.get(platform, '')
         if cat == 'game':
             item['_likely_domain'] = 'gaming'
         elif cat in ('tech', 'economy'):
