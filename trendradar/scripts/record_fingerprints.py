@@ -2,7 +2,7 @@
 from trendradar.scripts.settings import get_logger
 log = get_logger('record-fingerprints')
 """记录本次推送指纹到 DB，供后续时段去重。通过 Storage 统一接入 DB。"""
-import json, sys
+import json, sys, sqlite3
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 

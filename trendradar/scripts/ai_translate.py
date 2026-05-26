@@ -32,7 +32,7 @@ DATA_DIR = get_data_dir()
 # The `platform` field values are extracted per language for substring matching.
 # Do NOT maintain a separate mapping file — sources.json is the single truth.
 
-_SOURCES_PATH = Path(__file__).resolve().parent.parent / 'data' / 'sources.json'
+_SOURCES_PATH = DATA_DIR / 'sources.json'
 
 def _load_source_languages() -> tuple[frozenset, frozenset]:
     """Read sources.json and build (en_keywords, ja_keywords) frozensets.
