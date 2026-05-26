@@ -29,6 +29,34 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
+# ── 编排器前言剥离 — 清理编排器注入的状态行 ────────────────
+ORCHESTRATOR_PREAMBLE_PATTERNS = [
+    r'^Orchestrator completed.*$',
+    r'^push_id\s*[:=].*$',
+    r'^DB schema v\d+',
+    r'^\[PIPELINE\].*$',
+    r'^\[SILENT\].*$',
+    r'^Outputting the briefing.*$',
+    r'^-{3,}\s*$',
+]
+
+
+def strip_orchestrator_preamble(text: str) -> str:
+    """Remove orchestrator status lines injected before the briefing.
+    
+    Agent cron pipelines sometimes prepend status lines (e.g. "Orchestrator
+    completed with status ok") that are safe to strip before content checks.
+    """
+    lines = text.split('\n')
+    cleaned = []
+    for line in lines:
+        stripped = line.strip()
+        if any(re.match(p, stripped) for p in ORCHESTRATOR_PREAMBLE_PATTERNS):
+            continue
+        cleaned.append(line)
+    return '\n'.join(cleaned)
+
+
 # ── 禁语表 — 任何一条命中 → EXIT_FATAL ──────────────────────
 BANNED_PHRASES = [
     "As an AI language model",
@@ -160,6 +188,9 @@ def main():
     if not text.strip():
         print(json.dumps({"pass": True, "warnings": []}, ensure_ascii=False))
         return 0
+
+    # Strip orchestrator preamble before content checks
+    text = strip_orchestrator_preamble(text)
 
     issues = []
     warnings = []

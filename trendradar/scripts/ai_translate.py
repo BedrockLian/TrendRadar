@@ -261,66 +261,76 @@ async def _batch_translate_all(
 
     items_to_translate: list of (domain, idx, item, title, summary, needs_title, needs_summary, source_lang)
     Returns a list of (batch_items, translations_or_None, error_or_None) tuples.
+    
+    Items are grouped by source_lang to prevent language mixing (e.g. Japanese items
+    translated with English prompt).
     """
-    # Split into batches
-    batches = []
-    # Determine source language from first item
-    source_lang = items_to_translate[0][7] if items_to_translate else 'English'
+    # Group by source_lang to keep language-specific prompts correct
+    groups: dict[str, list] = {}
+    for item in items_to_translate:
+        lang = item[7] or 'English'
+        groups.setdefault(lang, []).append(item)
 
-    for batch_start in range(0, len(items_to_translate), BATCH_SIZE):
-        batch = items_to_translate[batch_start:batch_start + BATCH_SIZE]
-        # Build (title, summary) pairs for translation
-        pairs = [(item[3], item[4]) for item in batch]  # (title, summary)
-        batches.append((batch, pairs, batch_start))
+    all_results = []
+    for lang, group_items in groups.items():
+        # Build batches within this language group
+        batches = []
+        for batch_start in range(0, len(group_items), BATCH_SIZE):
+            batch = group_items[batch_start:batch_start + BATCH_SIZE]
+            pairs = [(item[3], item[4]) for item in batch]
+            batches.append((batch, pairs, batch_start, lang))
 
-    async def translate_one_batch(
-        batch, pairs, batch_start
-    ) -> tuple[list, list | None, Exception | None]:
-        global _translate_failures
-        try:
-            # Circuit breaker check
-            if circuit_broken():
+        async def translate_one_batch(
+            batch, pairs, batch_start, source_lang
+        ) -> tuple[list, list | None, Exception | None]:
+            global _translate_failures
+            try:
+                if circuit_broken():
+                    print(
+                        f"[TRANSLATE] ⚡ 熔断触发 — 连续 {CIRCUIT_BREAKER_THRESHOLD} 个 batch 失败，"
+                        f"跳过剩余批次",
+                        file=sys.stderr,
+                    )
+                    return (batch, None, RuntimeError("Circuit breaker open"))
+                translations = await batch_translate(session, pairs, api_key, source_lang)
+                batch_end = batch_start + len(batch)
+                total = len(items_to_translate)
                 print(
-                    f"[TRANSLATE] ⚡ 熔断触发 — 连续 {CIRCUIT_BREAKER_THRESHOLD} 个 batch 失败，"
-                    f"跳过剩余批次",
+                    f"[TRANSLATE] Batch {batch_start+1}-{batch_end}/{total} "
+                    f"({source_lang}): translated {len(batch)} items",
                     file=sys.stderr,
                 )
-                return (batch, None, RuntimeError("Circuit breaker open"))
-            translations = await batch_translate(session, pairs, api_key, source_lang)
-            batch_end = batch_start + len(batch)
-            print(
-                f"[TRANSLATE] Batch {batch_start+1}-{batch_end}/{len(items_to_translate)}: "
-                f"translated {len(batch)} items",
-                file=sys.stderr,
-            )
-            _translate_failures = 0  # 成功后重置熔断计数
-            return (batch, translations, None)
-        except Exception as e:
-            _translate_failures += 1
-            print(
-                f"[TRANSLATE] Batch translation failed ({_translate_failures}/"
-                f"{CIRCUIT_BREAKER_THRESHOLD} strikes): {e}",
-                file=sys.stderr,
-            )
-            return (batch, None, e)
+                _translate_failures = 0
+                return (batch, translations, None)
+            except Exception as e:
+                _translate_failures += 1
+                print(
+                    f"[TRANSLATE] Batch translation failed ({_translate_failures}/"
+                    f"{CIRCUIT_BREAKER_THRESHOLD} strikes): {e}",
+                    file=sys.stderr,
+                )
+                return (batch, None, e)
 
-    # If only one batch, no need for semaphore/gather overhead
-    if len(batches) == 1:
-        batch, pairs, batch_start = batches[0]
-        result = await translate_one_batch(batch, pairs, batch_start)
-        return [result]
+        # If only one batch in this group, no semaphore overhead
+        if len(batches) == 1:
+            batch, pairs, batch_start, lang = batches[0]
+            result = await translate_one_batch(batch, pairs, batch_start, lang)
+            all_results.append(result)
+            continue
 
-    # Multiple batches: run concurrently with a semaphore bound
-    semaphore = asyncio.Semaphore(MAX_CONCURRENT_BATCHES)
+        # Multiple batches: run concurrently with semaphore
+        semaphore = asyncio.Semaphore(MAX_CONCURRENT_BATCHES)
 
-    async def bounded_translate(batch, pairs, batch_start):
-        async with semaphore:
-            return await translate_one_batch(batch, pairs, batch_start)
+        async def bounded_translate(batch, pairs, batch_start, source_lang):
+            async with semaphore:
+                return await translate_one_batch(batch, pairs, batch_start, source_lang)
 
-    results = await asyncio.gather(*[
-        bounded_translate(b, p, bs) for b, p, bs in batches
-    ])
-    return list(results)
+        results = await asyncio.gather(*[
+            bounded_translate(b, p, bs, l) for b, p, bs, l in batches
+        ])
+        all_results.extend(results)
+
+    return all_results
 
 
 # ── Main processing ──────────────────────────────────────────────────────────

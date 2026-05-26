@@ -169,7 +169,7 @@ def split_fragments(markdown: str) -> list[str]:
     last_section = sections[-1]
     last_section_lines = last_section.split('\n')
     for i in range(len(last_section_lines) - 1, -1, -1):
-        if last_section_lines[i].strip().startswith('**📋 共'):
+        if last_section_lines[i].strip().startswith('📌 *共') or last_section_lines[i].strip().startswith('**📋 共'):
             footer = last_section_lines.pop(i).strip()
             sections[-1] = '\n'.join(last_section_lines).strip()
             break

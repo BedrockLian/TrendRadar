@@ -27,8 +27,18 @@ def ensure_raw_exists(push_id: str):
     if raw_path.exists():
         age_hours = (datetime.now(CST) - datetime.fromtimestamp(raw_path.stat().st_mtime, tz=CST)).total_seconds() / 3600
         if age_hours < 4:
-            cache_valid = True
-            log.info(f"HIT raw_{today}.json (龄{age_hours:.1f}h, {raw_path.stat().st_size:,} bytes)")
+            # Quality gate: if previous fetch was degraded, force refresh
+            try:
+                cached = json.loads(raw_path.read_text())
+                item_count = len(cached.get('items', []))
+                if item_count < 50:
+                    log.warning(f"raw_{today}.json low quality ({item_count} items < 50), forcing refresh")
+                else:
+                    cache_valid = True
+                    log.info(f"HIT raw_{today}.json (龄{age_hours:.1f}h, {raw_path.stat().st_size:,} bytes, {item_count} items)")
+            except Exception:
+                cache_valid = True  # parse failure → trust cache to avoid blocking
+                log.info(f"HIT raw_{today}.json (龄{age_hours:.1f}h, {raw_path.stat().st_size:,} bytes)")
     
     if cache_valid:
         return
@@ -129,7 +139,8 @@ def run_curation(push_id: str) -> dict:
     set_run_id_ctx(run_id)  # Python 3.14: auto-propagates to child threads
     log.info(f'RUN_ID={run_id}')
     out_path = DATA_DIR / f'curated_{push_id}.json'
-    write_compressed(out_path, result)
+    from trendradar.scripts.settings import atomic_write_json
+    atomic_write_json(out_path, result)
     # 同时保存带日期后缀的副本，供 track_events 跨日比对
     dated_path = DATA_DIR / f'curated_{push_id}_{datetime.now(CST).strftime("%Y%m%d")}.json'
     from trendradar.scripts.settings import atomic_write_json
