@@ -1,3 +1,5 @@
+<!-- version: 2.8.0 | last-reviewed: 2026-05-26 -->
+
 # sources.json 格式 (v2.0)
 
 位置: `~/.hermes/trendradar/data/sources.json`
@@ -17,7 +19,7 @@
 | id | str | 唯一标识 |
 | name | str | 显示名称 |
 | type | str | rss / blog / hotlist |
-| url | str | 源地址 |
+| feed_url | str | RSS 源地址 |
 | category | str | news / tech / economy / game / foreign |
 | enabled | bool | 是否启用 |
 | language | str | zh / en / ja |

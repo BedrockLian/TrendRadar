@@ -1,3 +1,5 @@
+<!-- version: 2.8.0 | last-reviewed: 2026-05-26 -->
+
 # render_markdown.py — 纯脚本渲染器
 
 ## 位置

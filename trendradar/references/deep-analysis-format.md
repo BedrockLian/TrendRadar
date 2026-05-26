@@ -1,3 +1,5 @@
+<!-- version: 2.8.0 | last-reviewed: 2026-05-26 -->
+
 # 深度分析格式化（render_deep_analysis.py）
 
 > Pro 子 agent 产出分析文本后，经 `render_deep_analysis.py` 格式化再推送 WeCom。
@@ -110,3 +112,7 @@ Spotify的AI策略是反面案例：算法推荐被AI无限扩充内容供给，
 | 机会 | 💡 |
 | 观点 | 💭 |
 | 启示 | ✨ |
+
+## 已知限制
+- 对 LLM 输出的段落实体识别依赖关键词匹配，非常规关键词的短标题不会自动加 emoji
+- 不进行重写/润色，仅做格式清洗

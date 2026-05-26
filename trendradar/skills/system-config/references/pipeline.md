@@ -1,3 +1,5 @@
+<!-- version: 2.8.0 | last-reviewed: 2026-05-26 -->
+
 # Pipeline — TrendRadar 日报推送管线
 
 v2.8.0 起使用 `pipeline_orchestrator.py` 一键编排。`0 9,12,21 * * *`。

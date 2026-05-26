@@ -1,3 +1,5 @@
+<!-- version: 2.8.0 | last-reviewed: 2026-05-26 -->
+
 # 管线运维陷阱（2026-05-25 累积）
 
 ## 1. fetch_feeds 共用 TCPConnector 崩溃

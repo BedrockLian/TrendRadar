@@ -1,11 +1,13 @@
+<!-- version: 2.8.0 | last-reviewed: 2026-05-26 -->
+
 # 分类管线架构
 
 ## 双关键词集陷阱
 
 | 位置 | 变量 | 作用 | 词数 |
 |------|------|------|------|
-| `fetch_feeds.py:184` | `_kw_sets()` | fetch 预分类 | ~130（子集） |
-| `curate_and_push.py:70` | `_kw()` | curate 主分类 | ~276（全集） |
+| `fetch_feeds.py::_kw_sets()` | — | fetch 预分类 | ~130（子集） |
+| `curate_and_push.py::_config()` | — | curate 主分类 | ~505（全集） |
 
 `_preclassify()` 将 `_likely_domain` 写入 raw JSON。不同步则 raw JSON 大量 `other`。**改 `_kw()` 必须同步更新 `_kw_sets()`**。
 

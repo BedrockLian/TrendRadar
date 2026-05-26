@@ -1,4 +1,10 @@
+<!-- version: 2.8.0 | last-reviewed: 2026-05-26 -->
+
 # ai_translate 翻译检测进化史
+
+> ⚠️ **本文档记录了翻译检测的历史演进**。当前代码已不再使用硬编码 frozenset，
+> 改为从 `sources.json` 的 `language` 字段动态加载（`_load_source_languages()`）。
+> 最终方案见 `translation-pipeline-sync.md`。
 
 ## 背景
 

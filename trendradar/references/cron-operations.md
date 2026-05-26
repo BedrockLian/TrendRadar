@@ -1,3 +1,5 @@
+<!-- version: 2.8.0 | last-reviewed: 2026-05-26 -->
+
 # Cron Operations & Nightly Checklist
 
 ## Cron Skill-Name Triple Consistency

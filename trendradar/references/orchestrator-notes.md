@@ -1,3 +1,5 @@
+<!-- version: 2.8.0 | last-reviewed: 2026-05-26 -->
+
 # 编排器可靠性注意事项
 
 ## fragment_push 输出解析

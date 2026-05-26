@@ -1,3 +1,5 @@
+<!-- version: 2.8.0 | last-reviewed: 2026-05-26 -->
+
 # fix-recipes.md — 已验证的质量问题修复脚本
 
 > 配合 `performance-optimizer` skill 使用。每条修复模式均已验证，可直接执行。
@@ -12,7 +14,7 @@
 
 ## 2. tech 板块过度集中
 
-**检测**：tech ≥ 16 条。**修复**：`scripts/settings.py` 中 `MAX_PER_DOMAIN['tech']` 从 18 降至 15。
+**检测**：tech ≥ 16 条。**修复**：`scripts/settings.py` 中 `MAX_PER_DOMAIN['tech']` 从 18 降至 7（当前值，可调范围 5-10）。
 
 ## 3. foreign_china 板块过少
 

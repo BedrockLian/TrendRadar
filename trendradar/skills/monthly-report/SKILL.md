@@ -1,7 +1,7 @@
 ---
 name: monthly-report
 slug: monthly-report
-version: 2.2.0
+version: 2.3.0
 description: 每月初推送月度趋势研究报告。聚合四周数据+深度搜索验证。
 author: Hermes Agent
 metadata:
@@ -18,8 +18,12 @@ cron 每月 1 日 09:00 (Pro, job `0b14c67429ba`)，或手动。
 
 ### 1. 数据源（三层聚合）
 ① 近 4 周周报（叙事骨架）
-② `scripts/aggregate_monthly.py` 月度统计（量化支撑）
+② `scripts/aggregate_monthly.py --days 32 --suggest-interests`（量化统计 + 兴趣漂移建议）
 ③ `deep-research-cli` 六步协议深度搜索，≤10 次 web_search
+
+**兴趣漂移检测**：`--suggest-interests` 分析近 30 天标题高频词对比当前 `ai_interests.yaml`，输出建议新增/删除的关键词。
+
+**量化统计输出**：JSON 含板块分布、来源排名、兴趣漂移建议。
 
 ### 2. 报告结构
 ```
@@ -42,6 +46,4 @@ cron 每月 1 日 09:00 (Pro, job `0b14c67429ba`)，或手动。
 | 文件 | 内容 |
 |------|------|
 | `references/monthly-template.md` | 完整模板 |
-| `references/monthly-queries.md` | 聚合查询示例 |
-| `references/aggregate-usage.md` | aggregate_monthly.py 指南 |
 | `references/render-format.md` | 简报格式规范 |

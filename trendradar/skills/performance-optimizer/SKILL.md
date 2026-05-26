@@ -21,7 +21,7 @@ metadata:
 
 **单源集中度预警**: ≥40% 即使未达扣分线也应标注塌缩风险。
 
-**杠杆**: MIN_SCORE(5-8,±1)、MAX_PER_DOMAIN(±2)、blog recency(1-3,±1)、关键词(±5词)、白名单(增/删)。详见 `references/param-tables.md`。
+**杠杆**: MIN_SCORE(5-8,±1)、MAX_PER_DOMAIN(±2)、blog recency(1-3,±1)、关键词(±5词)、白名单(增/删)。\n\n### 质量参数\n\n| 参数 | 文件 | 范围 | 步长 |\n|------|------|------|------|\n| `MIN_SCORE` | curate_and_push.py | 5-8 | ±1 |\n| `MAX_PER_DOMAIN['top_headlines']` | curate_and_push.py | 8-15 | ±2 |\n| `MAX_PER_DOMAIN['tech']` | curate_and_push.py | 5-10 | ±2 |\n| blog recency 保底 | curate_and_push.py `_score()` | 1-3 | ±1 |\n\n### 推送参数\n\n| 参数 | 文件 | 范围 | 步长 |\n|------|------|------|------|\n| `MAX_PER_DOMAIN` | curate_and_push.py | ±3 | +1/-1 |\n| `_kw()` 关键词集 | curate_and_push.py | — | ±5词 |\n| slot 时间 | cron job | 06:00-23:00 | ±1h |
 
 **交互**: 评分<85 → 列出扣分项+建议 → 问修哪个(编号/all/跳过)。单参数调整，3轮无改善→收敛，跳过 7 天恢复。
 
@@ -60,5 +60,4 @@ metadata:
 | 文件 | 内容 |
 |------|------|
 | `references/fix-recipes.md` | 已验证修复脚本和验证命令 |
-| `references/param-tables.md` | 参数调整范围与步长 |
 | `references/render-format.md` | 简报格式规范 |

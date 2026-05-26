@@ -1,3 +1,5 @@
+<!-- version: 2.8.0 | last-reviewed: 2026-05-26 -->
+
 # Cron context 下投递机制：auto-delivery 协议
 
 > `send_message` 在 cron context 中**不可用**。所有投递通过 final response auto-delivery 完成。

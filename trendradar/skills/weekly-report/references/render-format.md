@@ -1,3 +1,5 @@
+<!-- version: 2.8.0 | last-reviewed: 2026-05-26 -->
+
 # 简报渲染格式规范
 
 > 本格式同时作为 **格式契约** 固化在 `scripts/render_markdown.py` 的 docstring 中。

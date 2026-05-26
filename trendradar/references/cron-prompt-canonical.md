@@ -1,3 +1,5 @@
+<!-- version: 2.8.0 | last-reviewed: 2026-05-26 -->
+
 # 日报 cron prompt（标准版）
 每次修改 news-secretary skill 后，必须同时更新 cron prompt（Trap 22-24, 37）。prompt 独立于 skill 内容，不会自动同步。
 

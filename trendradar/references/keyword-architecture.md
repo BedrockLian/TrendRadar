@@ -1,3 +1,5 @@
+<!-- version: 2.8.0 | last-reviewed: 2026-05-26 -->
+
 # 关键词架构（v4.7）— 505 词，6 域
 
 双位置维护：`curate_and_push.py::_kw()`（全集） / `fetch_feeds.py::_kw_sets()`（~150 词子集，仅 game/tech/economy）

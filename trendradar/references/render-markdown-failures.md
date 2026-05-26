@@ -1,3 +1,5 @@
+<!-- version: 2.8.0 | last-reviewed: 2026-05-26 -->
+
 # render_markdown.py 故障模式
 
 ## 1. 文件空/0 字节
