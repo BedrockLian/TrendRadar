@@ -95,7 +95,7 @@ from string import Template
 
 API_ENDPOINT = get_api_endpoint()
 MODEL = get_model()
-BATCH_SIZE = 20
+BATCH_SIZE = 5
 MAX_CONCURRENT_BATCHES = 5
 
 # ── Exponential Backoff 熔断配置 ────────────────────────────────────────────
