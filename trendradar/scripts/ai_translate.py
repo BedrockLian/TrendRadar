@@ -32,7 +32,7 @@ DATA_DIR = get_data_dir()
 # The `platform` field values are extracted per language for substring matching.
 # Do NOT maintain a separate mapping file — sources.json is the single truth.
 
-_SOURCES_PATH = DATA_DIR / 'sources.json'
+_SOURCES_PATH = Path(__file__).resolve().parent.parent / 'data' / 'sources.json'
 
 def _load_source_languages() -> tuple[frozenset, frozenset]:
     """Read sources.json and build (en_keywords, ja_keywords) frozensets.
@@ -95,7 +95,7 @@ from string import Template
 
 API_ENDPOINT = get_api_endpoint()
 MODEL = get_model()
-BATCH_SIZE = 5
+BATCH_SIZE = 20
 MAX_CONCURRENT_BATCHES = 5
 
 # ── Exponential Backoff 熔断配置 ────────────────────────────────────────────
@@ -330,24 +330,14 @@ def _load_and_scan(push_id: str) -> tuple[dict, list, Path]:
     """Load curated JSON and scan for items needing translation.
     Returns (data, items_to_translate, curated_path).
     Each item is (domain, idx, item, title, summary, needs_title, needs_summary, source_lang).
-    Prefers today's dated file → latest dated file → generic fallback.
+    Prefers dated file (YYYYMMDD) to match render_markdown.py priority.
     """
     from datetime import datetime, timezone, timedelta
     CST = timezone(timedelta(hours=8))
     today_file = datetime.now(CST).strftime('%Y%m%d')
-    
-    # 1) Today's dated file (pipeline may have run earlier today)
     curated_path = DATA_DIR / f'curated_{push_id}_{today_file}.json'
     if not curated_path.exists():
-        # 2) Most recent dated file (yesterday's pipeline, not yet re-run)
-        dated_files = sorted(
-            DATA_DIR.glob(f'curated_{push_id}_[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].json'),
-            key=lambda p: p.name, reverse=True
-        )
-        if dated_files:
-            curated_path = dated_files[0]
-        else:
-            curated_path = DATA_DIR / f'curated_{push_id}.json'
+        curated_path = DATA_DIR / f'curated_{push_id}.json'
     if not curated_path.exists():
         print(
             f"[TRANSLATE] No curated file found for push-id '{push_id}'",

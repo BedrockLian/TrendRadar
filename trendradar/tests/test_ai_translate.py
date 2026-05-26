@@ -1,131 +1,134 @@
 """ai_translate 烟雾测试。
 
 覆盖 pure functions (no API/network):
-  - _load_source_languages(): 从 sources.json 按 language 字段分类
-  - get_source_lang(): 来源平台 → 语言映射 (English/Japanese/None)
-  - get_system_prompt(): 翻译 prompt 模板渲染
-  - circuit_broken() / reset_circuit(): 熔断器状态
+  - _is_cjk(): CJK 字符检测
+  - cjk_ratio(): CJK 占比计算
+  - needs_translation(): 是否需要翻译（英文/日文→True，纯中文→False）
+  - is_foreign_china_source(): 外媒来源匹配
 """
 
 import pytest
-from ai_translate import (
-    _load_source_languages,
-    get_source_lang,
-    get_system_prompt,
-    circuit_broken,
-    reset_circuit,
-)
+import os
+from ai_translate import _is_cjk, cjk_ratio, needs_translation, is_foreign_china_source
 
 
-class TestLoadSourceLanguages:
-    """_load_source_languages() returns (en_keywords, ja_keywords) frozensets."""
+class TestIsCjk:
+    def test_chinese_character(self):
+        assert _is_cjk('中') is True
+        assert _is_cjk('国') is True
+        assert _is_cjk('人') is True
 
-    def test_returns_frozensets(self):
-        en, ja = _load_source_languages()
-        assert isinstance(en, frozenset)
-        assert isinstance(ja, frozenset)
+    def test_japanese_kana(self):
+        assert _is_cjk('あ') is False   # Hiragana — not CJK
+        assert _is_cjk('ア') is False   # Katakana — not CJK
 
-    def test_known_en_platforms(self):
-        """sources.json 中 language='en' 的 platform 出现在 en frozenset 中。"""
-        en, ja = _load_source_languages()
-        # 至少有 bbc, reuters 等常见英文源
-        assert 'bbc' in en or 'reuters' in en or len(en) > 0, \
-            f"Expected English platforms, got {sorted(en)[:10] if en else 'EMPTY'}"
+    def test_english_ascii(self):
+        assert _is_cjk('A') is False
+        assert _is_cjk('z') is False
+        assert _is_cjk('1') is False
 
-    def test_known_ja_platforms(self):
-        """sources.json 中 language='ja' 的 platform 出现在 ja frozenset 中。"""
-        en, ja = _load_source_languages()
-        # 至少有 nhk 等日文源
-        assert 'nhk' in ja or len(ja) > 0, \
-            f"Expected Japanese platforms, got {sorted(ja)[:10] if ja else 'EMPTY'}"
-
-    def test_en_ja_disjoint(self):
-        """同一个 platform 不应同时出现在 en 和 ja 集合。"""
-        en, ja = _load_source_languages()
-        overlap = en & ja
-        assert not overlap, f"Overlapping platforms in en & ja: {overlap}"
+    def test_punctuation(self):
+        assert _is_cjk('。') is True   # CJK full-width
+        assert _is_cjk('.') is False   # ASCII
+        assert _is_cjk('，') is True   # CJK comma
 
 
-class TestGetSourceLang:
-    """get_source_lang(source_platform) — 按 sources.json language 字段匹配。"""
+class TestCjkRatio:
+    def test_pure_chinese(self):
+        assert cjk_ratio('你好世界') == 1.0
 
-    def test_reuters_returns_english(self):
-        assert get_source_lang('Reuters') == 'English'
+    def test_pure_english(self):
+        assert cjk_ratio('Hello World') == 0.0
 
-    def test_bbc_returns_english(self):
-        assert get_source_lang('BBC News') == 'English'
-        assert get_source_lang('bbc') == 'English'
-
-    def test_nhk_returns_japanese(self):
-        assert get_source_lang('NHK') == 'Japanese'
-        assert get_source_lang('nhk ニュース') == 'Japanese'
-
-    def test_chinese_source_returns_none(self):
-        """中文源（language='zh'）不在 en/ja 中，返回 None。"""
-        assert get_source_lang('新华社') is None
-        assert get_source_lang('澎湃新闻') is None
-        assert get_source_lang('央视新闻') is None
-
-    def test_unknown_platform_returns_none(self):
-        assert get_source_lang('TotallyUnknownSource12345') is None
+    def test_mixed_content(self):
+        """混合内容：2 中文 (你好) + 6 English (ABCXYZ) = 2/8 = 0.25"""
+        r = cjk_ratio('ABC你好XYZ')
+        assert 0.2 < r < 0.3
 
     def test_empty_string(self):
-        assert get_source_lang('') is None
+        assert cjk_ratio('') == 0.0
+
+    def test_whitespace_only(self):
+        assert cjk_ratio('   \n\t  ') == 0.0
+
+    def test_chinese_with_spaces(self):
+        """空格不计入分母"""
+        assert cjk_ratio('你好 世界') == 1.0
+
+
+class TestNeedsTranslation:
+    def test_chinese_summary(self):
+        assert needs_translation('中国人工智能产业快速发展') is False
+
+    def test_english_summary(self):
+        assert needs_translation('China AI industry grows rapidly') is True
+
+    def test_boundary_50_percent(self):
+        # '中英' = 2/2 CJK = 1.0 -> False
+        assert needs_translation('中英') is False
+
+    def test_mixed_majority_english(self):
+        # 'China的AI市场' = 1 CJK / 5 total -> True
+        assert needs_translation('China的AI市场') is True
+
+    def test_japanese_with_kanji(self):
+        assert needs_translation('茂木外相 イラン外相と電話会談') is True
+
+
+class TestIsForeignChinaSource:
+    def test_bbc(self):
+        assert is_foreign_china_source('BBC News') is True
+        assert is_foreign_china_source('bbc 商务') is True
+
+    def test_reuters(self):
+        assert is_foreign_china_source('Reuters') is True
+        assert is_foreign_china_source('路透社') is True
+
+    def test_nytimes(self):
+        assert is_foreign_china_source('NYTimes') is True
+
+    def test_guardian(self):
+        assert is_foreign_china_source('The Guardian') is True
+
+    def test_scmp(self):
+        assert is_foreign_china_source('SCMP') is True
+
+    def test_domestic_source(self):
+        assert is_foreign_china_source('36氪') is False
+        assert is_foreign_china_source('新华网') is False
+        assert is_foreign_china_source('澎湃新闻') is False
 
     def test_case_insensitive(self):
-        """平台名匹配不区分大小写。"""
-        # 如果 bbc 在 en 集合中，BBc 也能匹配
-        en, _ = _load_source_languages()
-        if 'bbc' in en:
-            assert get_source_lang('BBC') == 'English'
-            assert get_source_lang('Bbc') == 'English'
+        assert is_foreign_china_source('BBC') is True
+        assert is_foreign_china_source('bbc') is True
+        assert is_foreign_china_source('Bbc') is True
 
-    def test_japanese_checked_first(self):
-        """日语关键词优先于英语（防止 NHK 被英文误匹配）。"""
-        # NHK 既是日文源，get_source_lang 应返回 Japanese
-        en, ja = _load_source_languages()
-        if 'nhk' in ja:
-            assert get_source_lang('NHK') == 'Japanese'
+    def test_partial_match(self):
+        """关键字出现在字符串中即可匹配"""
+        assert is_foreign_china_source('BBC 科技频道') is True
 
 
-class TestGetSystemPrompt:
-    """get_system_prompt(source_lang) 渲染翻译 prompt 模板。"""
+class TestTranslateConfigConsistency:
+    """C8: sources.json 语言字段完整性"""
 
-    def test_english_prompt(self):
-        prompt = get_system_prompt('English')
-        assert 'English' in prompt
-        assert 'Chinese' in prompt
-        assert 'translator' in prompt.lower()
-
-    def test_japanese_prompt(self):
-        prompt = get_system_prompt('Japanese')
-        assert 'Japanese' in prompt
-        assert 'Chinese' in prompt
-        assert 'translator' in prompt.lower()
-
-    def test_prompt_contains_rules(self):
-        prompt = get_system_prompt('English')
-        assert 'factual details' in prompt
-        assert 'journalistic' in prompt
-
-    def test_default_is_english(self):
-        prompt = get_system_prompt()
-        assert 'English' in prompt
-
-
-class TestCircuitBreaker:
-    """circuit_broken() / reset_circuit() — 熔断器状态管理。"""
-
-    def test_initial_state_not_broken(self):
-        """初始状态：熔断器未触发。"""
-        reset_circuit()
-        assert circuit_broken() is False
-
-    def test_circuit_stays_closed_after_reset(self):
-        reset_circuit()
-        assert circuit_broken() is False
-
-    def test_reset_idempotent(self):
-        reset_circuit()
-        reset_circuit()
-        assert circuit_broken() is False
+    def test_all_sources_have_language(self):
+        """所有 source 条目必须有 language 字段"""
+        import json
+        from pathlib import Path
+        TR = Path(os.environ.get('TRENDRADAR_HOME', Path.home() / '.hermes' / 'trendradar'))
+        spath = TR / 'data' / 'sources.json'
+        if not spath.exists():
+            pytest.skip('sources.json not available in test environment')
+        sources_data = json.loads(spath.read_text())
+        def _check(obj):
+            if isinstance(obj, dict) and 'name' in obj and 'feed_url' in obj:
+                assert 'language' in obj, f'source has no language field'
+                assert obj['language'] in ('zh', 'en', 'ja'), f'source has invalid language: {obj["language"]}'
+                return
+            if isinstance(obj, dict):
+                for v in obj.values():
+                    _check(v)
+            elif isinstance(obj, list):
+                for item in obj:
+                    _check(item)
+        _check(sources_data)

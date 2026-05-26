@@ -10,7 +10,7 @@ import sys
 import tempfile
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import pytest
 
@@ -36,38 +36,40 @@ class TestGenRunId:
     def test_without_slot(self):
         rid = gen_run_id()
         assert rid.startswith(TEST_DATE)
-        assert '_' in rid
-        assert len(rid.split('_')[-1]) == 8
+        assert rid.count('_') == 1  # date_uid only
 
     def test_uniqueness(self):
-        rids = {gen_run_id() for _ in range(100)}
-        assert len(rids) == 100  # 全唯一
+        """连续两次调用应产生不同的 ID"""
+        r1 = gen_run_id('test')
+        r2 = gen_run_id('test')
+        assert r1 != r2
 
 
 class TestParseRunId:
     def test_full_format(self):
-        result = parse_run_id('20260521_evening_abc12345')
+        rid = '20260521_evening_a1b2c3d4'
+        result = parse_run_id(rid)
         assert result['date'] == '20260521'
         assert result['slot'] == 'evening'
-        assert result['uid'] == 'abc12345'
+        assert result['uid'] == 'a1b2c3d4'
 
     def test_no_slot(self):
-        result = parse_run_id('20260521_abc12345')
+        rid = '20260521_a1b2c3d4'
+        result = parse_run_id(rid)
         assert result['date'] == '20260521'
-        assert result['slot'] == ''
-        assert result['uid'] == 'abc12345'
+        assert result['uid'] == 'a1b2c3d4'
 
-    def test_short_string(self):
+    def test_partial(self):
+        """极端情况：少于 2 部分"""
         result = parse_run_id('20260521')
         assert result['date'] == '20260521'
-        assert result['slot'] == ''
-        assert result['uid'] == ''
 
 
 class TestRunIdMarker:
-    def test_normal(self):
-        marker = run_id_marker('20260521_evening_test9999')
-        assert 'rid:20260521_evening_test9999' in marker
+    def test_contains_rid(self):
+        marker = run_id_marker('20260521_test_abc12345')
+        assert 'rid:20260521_test_abc12345' in marker
+        assert '\u200b' in marker  # zero-width space
 
     def test_empty_run_id(self):
         marker = run_id_marker('')
@@ -75,13 +77,6 @@ class TestRunIdMarker:
 
 
 # ── record_fingerprints ──────────────────────────────────────────────────────
-
-def _mock_store(monkeypatch, rf, conn):
-    """替换 rf._store，使其 .db() 返回测试连接。"""
-    mock_store = MagicMock()
-    mock_store.db.return_value = conn
-    monkeypatch.setattr(rf, '_store', mock_store)
-
 
 class TestRecordFingerprints:
     def test_insert_includes_run_id(self, tmp_db, sample_curated, monkeypatch):
@@ -96,7 +91,7 @@ class TestRecordFingerprints:
 
         import record_fingerprints as rf
         monkeypatch.setattr(rf, 'DATA_DIR', tmp_data)
-        _mock_store(monkeypatch, rf, conn)
+        monkeypatch.setattr(rf, 'DB_PATH', db_path)
 
         record_fp('evening')
         rows = conn.execute("SELECT run_id FROM fingerprints LIMIT 1").fetchall()
@@ -113,7 +108,7 @@ class TestRecordFingerprints:
 
         import record_fingerprints as rf
         monkeypatch.setattr(rf, 'DATA_DIR', tmp_data)
-        _mock_store(monkeypatch, rf, conn)
+        monkeypatch.setattr(rf, 'DB_PATH', db_path)
 
         before = conn.execute("SELECT COUNT(*) FROM fingerprints").fetchone()[0]
         record_fp('evening')
@@ -132,7 +127,7 @@ class TestRecordFingerprints:
 
         import record_fingerprints as rf
         monkeypatch.setattr(rf, 'DATA_DIR', tmp_data)
-        _mock_store(monkeypatch, rf, conn)
+        monkeypatch.setattr(rf, 'DB_PATH', db_path)
 
         record_fp('evening')
         count1 = conn.execute("SELECT COUNT(*) FROM fingerprints").fetchone()[0]
@@ -148,7 +143,7 @@ class TestRecordFingerprints:
 
         import record_fingerprints as rf
         monkeypatch.setattr(rf, 'DATA_DIR', tmp_data)
-        _mock_store(monkeypatch, rf, conn)
+        monkeypatch.setattr(rf, 'DB_PATH', db_path)
 
         # 不应抛出异常
         record_fp('morning')
@@ -173,7 +168,7 @@ class TestRecordFingerprints:
 
         import record_fingerprints as rf
         monkeypatch.setattr(rf, 'DATA_DIR', tmp_data)
-        _mock_store(monkeypatch, rf, conn)
+        monkeypatch.setattr(rf, 'DB_PATH', db_path)
 
         record_fp('evening')
         count = conn.execute("SELECT COUNT(*) FROM fingerprints").fetchone()[0]

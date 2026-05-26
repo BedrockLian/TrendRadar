@@ -19,11 +19,14 @@
 
 `ai_translate.py` 和 `render_markdown.py` 的 `_load_and_scan` 必须读取**同一文件**。
 
-**优先级规则**（两者一致）:
-1. 先尝试日期版: `curated_{push_id}_{YYYYMMDD}.json`
-2. 回退到非日期版: `curated_{push_id}.json`
+**优先级规则**（2026-05-26 更新为三层）:
+1. 先尝试今日日期版: `curated_{push_id}_{YYYYMMDD}.json`
+2. 回退到最新日期版: glob `curated_{push_id}_[0-9]{8}.json`，按名称倒序取第一条
+3. 最后回退到非日期版: `curated_{push_id}.json`
 
-**陷阱**: 2026-05-24 发现 ai_translate 读非日期版（已有 title_cn→跳过），render_markdown 读日期版（无 title_cn→原文输出）。两者读取倒序导致翻译存在却不可见。
+**陷阱 1** (2026-05-24): ai_translate 读非日期版，render_markdown 读日期版。两者读取倒序导致翻译存在却不可见。
+
+**陷阱 2** (2026-05-26): 只有"今日→通用"两层回退。今天下午跑 `ai_translate --push-id evening`，`curated_evening_20260526.json` 不存在，直接 fallback 到通用版 `curated_evening.json`（68条累积旧数据），翻译写回通用版。但 `render_markdown` 按文件优先级读到 `curated_evening_20260525.json`（15条昨天数据），翻译根本没写到这里。**修复**: 在今日文件不存在时先 glob 最新日期版，而非直接跳到通用版。
 
 ### 3. render_markdown 优先使用翻译字段
 

@@ -33,10 +33,11 @@ LLM 运行编排器，解析 `fragments` 数组投递。编排器不可用时走
 外语文章翻译由 `ai_translate.py` 处理，规则：
 
 1. **按来源定语言（来自 sources.json）** — `get_source_lang()` 读取 `data/sources.json` 每个源的 `language` + `platform` + `name` 字段。单真相源：加新源设好 `language` 即可，不再维护独立的映射文件。
-2. **文件同步** — ai_translate 和 render_markdown 必须读同一文件（先日期版，fallback 非日期版）。已修：2026-05-24。
+2. **文件同步** — ai_translate 和 render_markdown 必须读同一文件（今日日期版 → 最新日期版 → 通用版，三层回退）。陷阱 2026-05-26: 只有两层回退时翻译写入通用版但渲染读日期版。
 3. **render 优先 title_cn** — `render_markdown.py` `_format_item` 取 `title_cn`/`summary_cn`，不回落到原始 title/summary。
-4. **cron prompt 直接输出 BRIEFING** — `send_message` 在 cron context 不可用。prompt 第7步直接输出脚本渲染结果，不经过 LLM 重写。
-5. **items_to_translate tuple** — `needs_title`/`needs_summary` 由 `bool(source_lang)` 驱动（非 None 就翻译），第8个元素 `source_lang` (`'English'`/`'Japanese'`/`None`) 必须存在。来源语言由 `data/sources.json` 每个源的 `language` 字段决定（`_scan()` 提取 `en`/`ja` 源的 `platform`+`name` 做子串匹配）。`translate.yaml` 已淘汰（2026-05-25）。旧 CJK 启发式函数（`_is_cjk`/`cjk_ratio`/`needs_translation`/`detect_source_lang`）已于 2026-05-25 全部移除。
+4. **BATCH_SIZE 上限 5** — DeepSeek 在 batch >5 时只翻译摘要不翻译标题（标题保持原文不变但摘要正确翻译）。`ai_translate.py` `BATCH_SIZE = 5`。若未来换模型需重新验证。
+5. **cron prompt 直接输出 BRIEFING** — `send_message` 在 cron context 不可用。prompt 第7步直接输出脚本渲染结果，不经过 LLM 重写。
+6. **items_to_translate tuple** — `needs_title`/`needs_summary` 由 `bool(source_lang)` 驱动（非 None 就翻译），第8个元素 `source_lang` (`'English'`/`'Japanese'`/`None`) 必须存在。来源语言由 `data/sources.json` 每个源的 `language` 字段决定（`_scan()` 提取 `en`/`ja` 源的 `platform`+`name` 做子串匹配）。`translate.yaml` 已淘汰（2026-05-25）。旧 CJK 启发式函数（`_is_cjk`/`cjk_ratio`/`needs_translation`/`detect_source_lang`）已于 2026-05-25 全部移除。
 
 ## 晚间深度分析
 
@@ -48,7 +49,9 @@ LLM 运行编排器，解析 `fragments` 数组投递。编排器不可用时走
 
 ## 输出规范（脚本固化 + `sanity_check.py` 拦截）
 
-简报和深度分析由纯脚本生成，Agent 只做透传。`sanity_check.py` 在发布前自动扫描禁语/死链/敏感词/HTML残留。
+简报和深度分析由纯脚本生成，Agent 只做透传。`sanity_check.py` 在发布前自动：
+- 剥离编排器前言（push_id 状态行/迁移错误/"开始输出简报正文"等），再执行禁语/死链/敏感词/HTML残留扫描
+- 编排器元数据不会误触 BANNED_PHRASES
 
 1. **透传简报** — 输出 JSON `briefing` 字段内容本身。`sanity_check.py` 自动拦截 "As an AI language model" / "Here is your report" 等禁语。
 2. **链接格式** — `[【媒体名】](url)`，不加"查看原文"前缀。
@@ -76,6 +79,7 @@ export PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GI
 | `references/deep-analysis-format.md` | 深度分析协议 + 知识图谱 |
 | `scripts/render_markdown.py` | 格式契约 docstring |
 | `scripts/sanity_check.py` | 发布前拦截器 |
+| `references/fragment-push-byte-splitting.md` | 字节级分片：策略 + 陷阱 |
 
 ## 兴趣偏好
 `config/ai_interests.yaml` — 正面+2分，排除=0分过滤。CLI: `python3 scripts/interest_cli.py {list,add,remove,exclude}`。

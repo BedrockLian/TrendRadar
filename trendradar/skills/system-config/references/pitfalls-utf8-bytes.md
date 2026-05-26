@@ -1,57 +1,41 @@
-# UTF-8 字节计数陷阱：`_find_last` 修复记录
+# UTF-8 字节计数陷阱
 
-## 问题
+## `_find_last` 的 `len()` vs `bytes` 混用
 
-`fragment_push.py` 的 `_find_last()` 函数需要在一个文本中搜索分隔符（`\n\n`、`。`），
-但限制搜索范围不能超过 `MAX_BYTES`（3800 bytes）。
+**现象**：超大中文段落（"长文本"×2000）的硬切只执行 2 次就停了，残留 10459B 的 fragment 远超 3800B 限制。
 
-### 错误实现（v1）
+**根因**：
 
 ```python
-def _find_last(text: str, delimiter: str, max_bytes: int) -> int | None:
-    search_end = min(len(text), max_bytes)      # ❌ 比较 char 和 bytes
-    idx = text.rfind(delimiter, 0, search_end)
-    ...
+# ❌ 错误 — len() 是字符数，中文 3 bytes/char
+def _find_last(text, delimiter, max_bytes):
+    search_end = min(len(text), max_bytes)  # 2000 chars vs 3800 bytes → 取 2000
+    idx = text.rfind(delimiter, 0, search_end)  # 搜索了全部 2000 字符 = 6000 bytes！
 ```
 
-**Bug**: `len(text)` 返回字符数，`max_bytes` 是字节数。中文每个字符 3 bytes。
-对于 2000 个中文字符：`len(text)=2000`, `max_bytes=3800` → `search_end=2000`。
-但 2000 个中文字符 = 6000 bytes，远超 MAX_BYTES。
+`len("长文本"*2000)` = 2000 个字符。`max_bytes` = 3800 字节。`min(2000, 3800) = 2000`。但 2000 个中文字符 = 6000 字节，远超 3800B 限制。搜索窗口错误，导致超大段落未被切割。
 
-结果：`_split_overlong` 产生 >10000 bytes 的 fragment，被 WeCom 静默截断。
-
-### 修复后（v2）
+**修复**：
 
 ```python
-def _find_last(text: str, delimiter: str, max_bytes: int) -> int | None:
+# ✅ 正确 — 按字节截断再解码回字符边界
+def _find_last(text, delimiter, max_bytes):
     encoded = text.encode('utf-8')
     if len(encoded) <= max_bytes:
-        idx = text.rfind(delimiter)
-        return idx + len(delimiter) if idx != -1 else None
-
-    # 截断到 max_bytes，找到安全的字符边界
+        return text.rfind(delimiter) + len(delimiter)
     truncated = encoded[:max_bytes]
-    for trim in range(4):
+    for trim in range(4):  # max 4 bytes for a single UTF-8 char
         try:
             char_limit = len(truncated.decode('utf-8'))
             break
         except UnicodeDecodeError:
             truncated = truncated[:-1]
-    else:
-        return None
-
     idx = text.rfind(delimiter, 0, char_limit)
-    ...
+    return idx + len(delimiter) if idx != -1 else None
 ```
 
-**关键**：先用 `encode('utf-8')` 截取字节，再 `decode('utf-8')` 找到安全字符边界，
-避免截断多字节 UTF-8 序列。
+**教训**：涉及 UTF-8 字节限制时，所有长度计算必须走 `len(text.encode('utf-8'))`，不能依赖 `len(text)`。
 
-## 通用原则
+## `_split_overlong` 的迭代硬切
 
-任何时候比较 `len(text)` 和 `byte_count` 时都需要注意：
-- 英文/ASCII: `len(text) == byte_count`（1 char = 1 byte）
-- 中文: `len(text) * 3 ≈ byte_count`（1 char = 3 bytes）
-- Emoji: `len(text) * 4 ≈ byte_count`（1 char = 4 bytes）
-
-**规则**：涉及字节限制时，始终用 `len(text.encode('utf-8'))` 而非 `len(text)`。
+原始实现在 `else` 分支只有一次硬切就 `break`，导致巨型纯文本段落只切一次后残留仍超标。修复为 `while` 循环持续硬切直到每个 piece ≤ MAX_BYTES。
