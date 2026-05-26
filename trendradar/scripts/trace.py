@@ -2,16 +2,16 @@
 
 在 free-threaded（禁用 GIL）模式下，子线程自动继承 contextvars。
 push_prepare.py 中使用 set_run_id() 设置后，所有子线程无需手动传参。
+
+注意：此模块是 common.py 的兼容层，实际 ContextVar 定义在 common.py 中。
 """
 
-import contextvars
-
-current_run_id: contextvars.ContextVar[str] = contextvars.ContextVar('run_id', default='')
+from trendradar.scripts.common import current_run_id, set_run_id_ctx, get_run_id_ctx
 
 
 def set_run_id(run_id: str):
-    current_run_id.set(run_id)
+    set_run_id_ctx(run_id)
 
 
 def get_run_id() -> str:
-    return current_run_id.get()
+    return get_run_id_ctx()

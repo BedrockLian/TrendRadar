@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
+"""TrendRadar Curator — 全局重分类 + 并行精选（frozenset加速 + cache）"""
 from trendradar.scripts.settings import get_logger
 log = get_logger('curate-and-push')
-"""TrendRadar Curator — 全局重分类 + 并行精选（frozenset加速 + cache）"""
 import json, sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path

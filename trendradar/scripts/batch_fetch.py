@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-from settings import get_logger
-log = get_logger('batch-fetch')
 """批量直连抓取 — 10 并发抓取头条+外媒 URL 全文（aiohttp + curl 兜底 + 100%命中）"""
+from trendradar.scripts.settings import get_logger
+log = get_logger('batch-fetch')
 import json, sys, asyncio, subprocess, re, os
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
@@ -13,7 +13,7 @@ except ImportError:
     _HAS_CHARSET_NORMALIZER = False
 
 CST = timezone(timedelta(hours=8))
-from settings import get_data_dir, get_cache_dir, write_compressed
+from trendradar.scripts.settings import get_data_dir, get_cache_dir, write_compressed
 DATA_DIR = get_data_dir()
 CACHE_DIR = get_cache_dir()
 CONCURRENCY = 10
@@ -104,7 +104,7 @@ async def fetch_aiohttp(sem: asyncio.Semaphore, session, item: dict) -> dict | N
                     if not text or len(text) < 200: return None
                     clean = _clean_html(text)
                     return item | {'content': clean, 'chars': len(clean)} if len(clean) > 50 else None
-        except aiohttp.ClientError, asyncio.TimeoutError, OSError: return None
+        except (aiohttp.ClientError, asyncio.TimeoutError, OSError): return None
 
 
 def fetch_curl(item: dict) -> dict | None:

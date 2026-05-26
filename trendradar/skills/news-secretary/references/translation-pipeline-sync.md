@@ -1,56 +1,113 @@
-# 翻译管线：同步与检测
+# 翻译管线同步问题
 
-## 核心规则
+## 问题：翻译存在但渲染时丢失
 
-### 1. 来源平台检测（来自 sources.json）
+当用户反馈「没翻译」时，先检查 curated JSON 中是否有 `title_cn`/`summary_cn` 字段。
 
-2026-05-25: `language` 字段嵌入 `data/sources.json` 每个源条目，`ai_translate.py` 启动时读取并按 language 提取 `platform` + `name` 做子串匹配。
+### 检查步骤
 
-```python
-# sources.json 条目示例
-{"name": "BBC 商务", "platform": "bbc", "language": "en", ...}
+```bash
+cd ~/.hermes/trendradar
+python3 -c "
+import json
+d = json.load(open('data/curated_noon.json'))
+# 检查 foreign_china 等域是否有 title_cn
+for sec in ['top_headlines','foreign_china','tech','economy','gaming']:
+    for item in d.get(sec,[]):
+        src = item.get('source_platform','')
+        cn = item.get('title_cn','')
+        if 'bbc' in src.lower() or 'reuters' in src.lower() or 'nhk' in src.lower():
+            print(f\"  {'✅' if cn else '❌'} [{src}] {cn[:60] if cn else item.get('title','')[:60]}\")
+            break
+"
 ```
 
-**单真相源**：加新源只需修改 `data/sources.json`（加 RSS 条目 + 设 `language` 字段），不再维护独立语言映射文件。
+## 陷阱 31：render_markdown.py 不读 title_cn/summary_cn
 
-匹配规则：`name` + `platform` 两字段都参与匹配，`bbc` 匹配 `BBC 商务`/`BBC 科技`/`BBC 商务+BBC 科技` 等。
+**问题**：`ai_translate.py` 正确将翻译写入 `title_cn`/`summary_cn` 字段，但 `render_markdown.py` 的 `_format_item()` 只读 `item.get('title')` 和 `item.get('summary')`，忽略翻译字段。
 
-### 2. 文件优先级（关键陷阱）
+**表现**：curated JSON 中有 `title_cn`（✅ 有翻译），但渲染后的 Markdown 仍显示原文（❌ 没翻译）。
 
-`ai_translate.py` 和 `render_markdown.py` 的 `_load_and_scan` 必须读取**同一文件**。
-
-**优先级规则**（2026-05-26 更新为三层）:
-1. 先尝试今日日期版: `curated_{push_id}_{YYYYMMDD}.json`
-2. 回退到最新日期版: glob `curated_{push_id}_[0-9]{8}.json`，按名称倒序取第一条
-3. 最后回退到非日期版: `curated_{push_id}.json`
-
-**陷阱 1** (2026-05-24): ai_translate 读非日期版，render_markdown 读日期版。两者读取倒序导致翻译存在却不可见。
-
-**陷阱 2** (2026-05-26): 只有"今日→通用"两层回退。今天下午跑 `ai_translate --push-id evening`，`curated_evening_20260526.json` 不存在，直接 fallback 到通用版 `curated_evening.json`（68条累积旧数据），翻译写回通用版。但 `render_markdown` 按文件优先级读到 `curated_evening_20260525.json`（15条昨天数据），翻译根本没写到这里。**修复**: 在今日文件不存在时先 glob 最新日期版，而非直接跳到通用版。
-
-### 3. render_markdown 优先使用翻译字段
+**修复**（`_format_item()` 函数内）：
 
 ```python
+# 旧（原文优先）：
+title = _shorten(item.get('title') or '', 80)
+summary = _shorten(item.get('summary') or '', 150)
+
+# 新（翻译优先）：
 title = _shorten(item.get('title_cn') or item.get('title') or '', 80)
 summary = _shorten(item.get('summary_cn') or item.get('summary') or '', 150)
 ```
 
-总是先取 `title_cn`/`summary_cn`（翻译结果），不存在时 fallback 到原始 title/summary。
+## 陷阱 32：ai_translate 与 render_markdown 文件读取优先级不一致
 
-### 4. items_to_translate tuple 格式
+**问题**：每天 pipeline 运行时会生成两个 curated 文件：
+- `curated_noon.json`（非日期版，先创建）
+- `curated_noon_20260524.json`（日期版，后创建）
 
-`needs_title` / `needs_summary` 由 `bool(source_lang)` 驱动，不再靠 CJK 比率。
+旧版 `ai_translate.py` 的 `_load_and_scan()` 优先读非日期版，而 `render_markdown.py` 优先读日期版。当重新跑 pipeline 时：
+1. `push_prepare.py` 新建日期版（无翻译）
+2. `ai_translate.py` 读非日期版（已有翻译）→ 跳过
+3. `render_markdown.py` 读日期版（无翻译）→ 原文输出
+
+**表现**：`cat curated_noon.json | grep title_cn` 有翻译结果，但简报仍是原文。
+
+**修复**：两者都优先读日期版，fallback 到非日期版。
 
 ```python
-source_lang = get_source_lang(item.get('source_platform', ''))
-needs_title = not has_title_cn and title and bool(source_lang)
-needs_summary = not has_summary_cn and summary and bool(source_lang)
+# ai_translate.py _load_and_scan():
+today_file = datetime.now(CST).strftime('%Y%m%d')
+curated_path = DATA_DIR / f'curated_{push_id}_{today_file}.json'
+if not curated_path.exists():
+    curated_path = DATA_DIR / f'curated_{push_id}.json'
 
-items_to_translate.append((
-    domain, idx, item, title, summary,
-    needs_title, needs_summary,
-    source_lang  # 'English' | 'Japanese' | None
-))
+# render_markdown.py main() — 已用相同逻辑
+today_file = datetime.now(CST).strftime('%Y%m%d')
+curated_path = DATA_DIR / f'curated_{push_id}_{today_file}.json'
+if not curated_path.exists():
+    curated_path = DATA_DIR / f'curated_{push_id}.json'
 ```
 
-第8个元素 `source_lang` 必须存在，供 `_batch_translate_all` 读取传给 prompt。
+## 陷阱 33：ai_translate 内容启发式检测不可靠
+
+**问题**：早期版本用 CJK 比率 < 50% 判断是否需要翻译。即使修复了 kana 排除问题，仍对以下情况失效：
+- 汉字占比高的日语标题（如 `茂木外相 イラン外相と電話会談` → CJK 77% → 被跳过）
+- 含英文专有名词的中文标题（如 `SpaceX抢跑，OpenAI追击` → CJK < 50% → 被标记翻译）
+
+**修复**：改为按来源平台（`source_platform`）固定分类。
+
+```python
+_ENGLISH_SOURCES = frozenset([
+    'bbc 商务', 'bbc 科技', 'bbc 商务+bbc 科技',
+    'reuters', '路透社·商业', '路透社·科技', '路透社·中国',
+    '路透社·商业+路透社·科技', '路透社·商业+路透社·中国', '路透社·科技+路透社·中国',
+    'nytimes', '纽约时报·世界', '纽约时报·科技', '纽约时报·世界+纽约时报·科技',
+    'guardian', '卫报·商务', '卫报·科技+卫报·商务',
+    'techcrunch', 'ars technica', 'pc gamer',
+    'nintendo everything', 'video games chronicle',
+    'rock paper shotgun', 'eurogamer',
+])
+
+_JAPANESE_SOURCES = frozenset([
+    'nhk', 'nhk ビジネス', '4gamer',
+])
+```
+
+匹配逻辑：`any(kw in source_platform.lower() for kw in _JAPANESE_SOURCES)` → Japanese。English 同理。未匹配 → 中文源，跳过翻译。
+
+### 验证
+
+```bash
+cd ~/.hermes/trendradar
+PYTHONPATH=/home/asus/.hermes python3 scripts/ai_translate.py --push-id noon
+python3 -c "
+import json
+d = json.load(open('data/curated_noon_$(date +%Y%m%d).json'))
+for sec in d:
+    if isinstance(d[sec], list):
+        for item in d[sec]:
+            cn = item.get('title_cn','')
+            if cn: print(f\"  ✅ [{sec}] {cn[:60]}\")
+"
+```

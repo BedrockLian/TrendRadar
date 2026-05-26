@@ -13,7 +13,7 @@ metadata:
 ## 运行
 Cron 每日 15:00 跑 `trendradar_health_check.py` (no_agent=true)。有异常推送 WeCom，健康静默。
 
-## 检查项（18项）
+## 检查项（14项 + 4 个子检查）
 
 详见 `references/health-check-design.md`。
 

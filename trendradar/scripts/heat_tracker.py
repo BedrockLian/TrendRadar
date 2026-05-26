@@ -199,26 +199,26 @@ def _write_batch(conn, update_batch: list, insert_batch: list, stats: dict) -> d
 def update_tracker(items: list, push_id: str) -> dict:
     """更新热度追踪（拆分为 _gen_fingerprints / _merge_entries / _write_batch）。"""
     init_db()
-    with get_db() as conn:
-        now = datetime.now(CST).isoformat()
-        stats = {'new': 0, 'updated': 0, 'total_active': 0}
+    conn = get_db()
+    now = datetime.now(CST).isoformat()
+    stats = {'new': 0, 'updated': 0, 'total_active': 0}
 
-        fp_map = _gen_fingerprints(items, push_id, now)
+    fp_map = _gen_fingerprints(items, push_id, now)
 
-        fps = list(fp_map.keys())
-        existing_rows = {}
-        CHUNK = 500
-        for i in range(0, len(fps), CHUNK):
-            chunk = fps[i:i+CHUNK]
-            placeholders = ','.join('?' * len(chunk))
-            for row in conn.execute(
-                f"SELECT fingerprint, platforms, heat_signals, rank_history FROM heat_tracker WHERE fingerprint IN ({placeholders})",
-                chunk
-            ).fetchall():
-                existing_rows[row['fingerprint']] = row
+    fps = list(fp_map.keys())
+    existing_rows = {}
+    CHUNK = 500
+    for i in range(0, len(fps), CHUNK):
+        chunk = fps[i:i+CHUNK]
+        placeholders = ','.join('?' * len(chunk))
+        for row in conn.execute(
+            f"SELECT fingerprint, platforms, heat_signals, rank_history FROM heat_tracker WHERE fingerprint IN ({placeholders})",
+            chunk
+        ).fetchall():
+            existing_rows[row['fingerprint']] = row
 
-        update_batch, insert_batch = _merge_entries(conn, fp_map, existing_rows, now, push_id, stats)
-        stats = _write_batch(conn, update_batch, insert_batch, stats)
+    update_batch, insert_batch = _merge_entries(conn, fp_map, existing_rows, now, push_id, stats)
+    stats = _write_batch(conn, update_batch, insert_batch, stats)
     return stats
 
 
@@ -304,10 +304,10 @@ def _calc_heat(fp: str, title: str, row, now: datetime) -> dict:
 def get_heat_info(items: list) -> dict:
     """为 items 中的每条新闻加载热度追踪数据（拆分为 _query_heat_rows / _calc_heat）。"""
     init_db()
-    with get_db() as conn:
-        now = datetime.now(CST)
-        entries = _query_heat_rows(conn, items)
-        result = {fp: _calc_heat(fp, e['title'], e['row'], now) for fp, e in entries.items()}
+    conn = get_db()
+    now = datetime.now(CST)
+    entries = _query_heat_rows(conn, items)
+    result = {fp: _calc_heat(fp, e['title'], e['row'], now) for fp, e in entries.items()}
     return result
 
 
@@ -323,30 +323,29 @@ def _calc_span_hours(first_seen: str, last_seen: str) -> float:
 def print_tracker_status():
     """打印追踪器状态（用于验证/调试）"""
     init_db()
-    with get_db() as conn:
-        
-        total = conn.execute("SELECT COUNT(*) FROM heat_tracker").fetchone()[0]
-        active = conn.execute("SELECT COUNT(*) FROM heat_tracker WHERE status='active'").fetchone()[0]
-        dormant = conn.execute("SELECT COUNT(*) FROM heat_tracker WHERE status='dormant'").fetchone()[0]
-        
-        print(f"[HEAT] 追踪器: {total}条总记录, {active}活跃, {dormant}休眠")
-        
-        # Top 10 最热新闻（按appearance_count排序）
-        top = conn.execute("""
-            SELECT title, appearance_count, platform_count, 
-                   first_seen, last_seen, status
-            FROM heat_tracker 
-            WHERE status='active' 
-            ORDER BY appearance_count DESC 
-            LIMIT 10
-        """).fetchall()
-        
-        if top:
-            print(f"[HEAT] 当前最热TOP 10:")
-            for i, row in enumerate(top, 1):
-                span = _calc_span_hours(row['first_seen'], row['last_seen'])
-                print(f"  {i}. [{row['appearance_count']}次/{row['platform_count']}平台] {row['title'][:40]}")
-                print(f"     跨度{span:.1f}h, {row['status']}")
+    conn = get_db()
+    
+    total = conn.execute("SELECT COUNT(*) FROM heat_tracker").fetchone()[0]
+    active = conn.execute("SELECT COUNT(*) FROM heat_tracker WHERE status='active'").fetchone()[0]
+    dormant = conn.execute("SELECT COUNT(*) FROM heat_tracker WHERE status='dormant'").fetchone()[0]
+    
+    print(f"[HEAT] 追踪器: {total}条总记录, {active}活跃, {dormant}休眠")
+    
+    top = conn.execute("""
+        SELECT title, appearance_count, platform_count, 
+               first_seen, last_seen, status
+        FROM heat_tracker 
+        WHERE status='active' 
+        ORDER BY appearance_count DESC 
+        LIMIT 10
+    """).fetchall()
+    
+    if top:
+        print(f"[HEAT] 当前最热TOP 10:")
+        for i, row in enumerate(top, 1):
+            span = _calc_span_hours(row['first_seen'], row['last_seen'])
+            print(f"  {i}. [{row['appearance_count']}次/{row['platform_count']}平台] {row['title'][:40]}")
+            print(f"     跨度{span:.1f}h, {row['status']}")
 
 
 if __name__ == '__main__':

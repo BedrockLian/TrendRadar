@@ -114,10 +114,14 @@ def check_dead_links(text: str, timeout: int = 5) -> list[str]:
 
     with ThreadPoolExecutor(max_workers=3) as ex:
         futures = {ex.submit(_check_one, url): url for url in urls}
-        for fut in as_completed(futures, timeout=timeout + 2):
-            result = fut.result()
-            if result:
-                dead.append(result)
+        try:
+            for fut in as_completed(futures, timeout=timeout + 2):
+                result = fut.result()
+                if result:
+                    dead.append(result)
+        except TimeoutError:
+            for url in urls:
+                dead.append(f"{url} → timeout")
 
     return dead
 

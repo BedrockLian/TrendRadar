@@ -32,7 +32,7 @@ DATA_DIR = get_data_dir()
 # The `platform` field values are extracted per language for substring matching.
 # Do NOT maintain a separate mapping file — sources.json is the single truth.
 
-_SOURCES_PATH = Path(__file__).resolve().parent.parent / 'data' / 'sources.json'
+_SOURCES_PATH = get_data_dir() / 'sources.json'
 
 def _load_source_languages() -> tuple[frozenset, frozenset]:
     """Read sources.json and build (en_keywords, ja_keywords) frozensets.
@@ -95,7 +95,7 @@ from string import Template
 
 API_ENDPOINT = get_api_endpoint()
 MODEL = get_model()
-BATCH_SIZE = 20
+BATCH_SIZE = 5
 MAX_CONCURRENT_BATCHES = 5
 
 # ── Exponential Backoff 熔断配置 ────────────────────────────────────────────
@@ -337,7 +337,16 @@ def _load_and_scan(push_id: str) -> tuple[dict, list, Path]:
     today_file = datetime.now(CST).strftime('%Y%m%d')
     curated_path = DATA_DIR / f'curated_{push_id}_{today_file}.json'
     if not curated_path.exists():
-        curated_path = DATA_DIR / f'curated_{push_id}.json'
+        # Fallback 2: find latest dated version
+        dated_files = sorted(
+            DATA_DIR.glob(f'curated_{push_id}_[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].json'),
+            reverse=True,
+        )
+        if dated_files:
+            curated_path = dated_files[0]
+        else:
+            # Fallback 3: generic version
+            curated_path = DATA_DIR / f'curated_{push_id}.json'
     if not curated_path.exists():
         print(
             f"[TRANSLATE] No curated file found for push-id '{push_id}'",

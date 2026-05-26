@@ -21,14 +21,7 @@ SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(os.path.dirname(SCRIPTS_DIR), 'data')
 TRENDRADAR_HOME = os.path.dirname(SCRIPTS_DIR)
 
-DOMAINS = ['top_headlines', 'foreign_china', 'tech', 'economy', 'gaming']
-DOMAIN_LABELS = {
-    'top_headlines': '📰 头条',
-    'foreign_china': '🌏 外媒看华',
-    'tech': '💻 科技',
-    'economy': '📊 经济民生',
-    'gaming': '🎮 游戏',
-}
+from trendradar.scripts.settings import DOMAINS, DOMAIN_LABELS
 
 
 def list_recent_files(days: int = 32):

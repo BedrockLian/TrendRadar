@@ -84,14 +84,13 @@ class TestRecordFingerprints:
         conn, db_path = tmp_db
         tmp_data = Path(tempfile.mkdtemp())
 
-        # 注入 run_id 到 curated
         curated_with_rid = {**sample_curated, 'run_id': '20260521_evening_test1234'}
         curated_file = tmp_data / f'curated_evening_{TEST_DATE}.json'
         curated_file.write_text(json.dumps(curated_with_rid, ensure_ascii=False))
 
         import record_fingerprints as rf
         monkeypatch.setattr(rf, 'DATA_DIR', tmp_data)
-        monkeypatch.setattr(rf, 'DB_PATH', db_path)
+        monkeypatch.setattr(rf._store, 'base_dir', tmp_data)
 
         record_fp('evening')
         rows = conn.execute("SELECT run_id FROM fingerprints LIMIT 1").fetchall()
@@ -101,21 +100,20 @@ class TestRecordFingerprints:
         """插入新条目，计数增加"""
         conn, db_path = tmp_db
 
-        # 把 curated 写入临时文件并用 monkeypatch 劫持 DATA_DIR
         tmp_data = Path(tempfile.mkdtemp())
         curated_file = tmp_data / f'curated_evening_{TEST_DATE}.json'
         curated_file.write_text(json.dumps(sample_curated, ensure_ascii=False))
 
         import record_fingerprints as rf
         monkeypatch.setattr(rf, 'DATA_DIR', tmp_data)
-        monkeypatch.setattr(rf, 'DB_PATH', db_path)
+        monkeypatch.setattr(rf._store, 'base_dir', tmp_data)
 
         before = conn.execute("SELECT COUNT(*) FROM fingerprints").fetchone()[0]
         record_fp('evening')
         after = conn.execute("SELECT COUNT(*) FROM fingerprints").fetchone()[0]
 
         assert after > before
-        assert after == before + sum(len(v) for v in sample_curated.values())
+        assert after == before + sum(len(v) for v in sample_curated.values() if isinstance(v, list))
 
     def test_idempotent(self, tmp_db, sample_curated, monkeypatch):
         """INSERT OR IGNORE：重复插入应不改变计数"""
@@ -127,7 +125,7 @@ class TestRecordFingerprints:
 
         import record_fingerprints as rf
         monkeypatch.setattr(rf, 'DATA_DIR', tmp_data)
-        monkeypatch.setattr(rf, 'DB_PATH', db_path)
+        monkeypatch.setattr(rf._store, 'base_dir', tmp_data)
 
         record_fp('evening')
         count1 = conn.execute("SELECT COUNT(*) FROM fingerprints").fetchone()[0]
@@ -139,13 +137,12 @@ class TestRecordFingerprints:
     def test_missing_curated_file(self, monkeypatch, tmp_db):
         """curated 文件不存在时，record 应优雅返回不崩溃"""
         conn, db_path = tmp_db
-        tmp_data = Path(tempfile.mkdtemp())  # 空目录，无 curated 文件
+        tmp_data = Path(tempfile.mkdtemp())
 
         import record_fingerprints as rf
         monkeypatch.setattr(rf, 'DATA_DIR', tmp_data)
-        monkeypatch.setattr(rf, 'DB_PATH', db_path)
+        monkeypatch.setattr(rf._store, 'base_dir', tmp_data)
 
-        # 不应抛出异常
         record_fp('morning')
         count = conn.execute("SELECT COUNT(*) FROM fingerprints").fetchone()[0]
         assert count == 0
@@ -168,8 +165,8 @@ class TestRecordFingerprints:
 
         import record_fingerprints as rf
         monkeypatch.setattr(rf, 'DATA_DIR', tmp_data)
-        monkeypatch.setattr(rf, 'DB_PATH', db_path)
+        monkeypatch.setattr(rf._store, 'base_dir', tmp_data)
 
         record_fp('evening')
         count = conn.execute("SELECT COUNT(*) FROM fingerprints").fetchone()[0]
-        assert count == 1  # 只有 Valid Title
+        assert count == 1

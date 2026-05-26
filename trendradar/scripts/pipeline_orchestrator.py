@@ -104,8 +104,8 @@ def _write_push_log(push_id: str, result: dict, errors: list):
 
         log_path.parent.mkdir(parents=True, exist_ok=True)
         log_path.write_text(json.dumps(log, ensure_ascii=False, indent=2))
-    except Exception:
-        pass  # Best effort — don't let logging crash the pipeline
+    except Exception as e:
+        print(f"[PIPELINE] ⚠️ push_log write failed: {e}", file=sys.stderr)
 
 
 def _run(cmd: list, timeout: int = 300, capture: bool = True) -> dict:
@@ -383,17 +383,26 @@ def main():
 
     # ── Stage 5: Fragment ──────────────────────────────────────
     fragment_cmd = [PYTHON, str(SCRIPTS_DIR / "fragment_push.py")]
-    fragment = subprocess.run(
-        fragment_cmd,
-        input=briefing,
-        capture_output=True,
-        text=True,
-        timeout=30,
-        cwd=str(TREND_DIR),
-        env=_ENV,
-    )
-    frag_ok = fragment.returncode == 0
-    fragments_json = fragment.stdout.strip() if frag_ok else "[]"
+    try:
+        fragment = subprocess.run(
+            fragment_cmd,
+            input=briefing,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            cwd=str(TREND_DIR),
+            env=_ENV,
+        )
+        frag_ok = fragment.returncode == 0
+        fragments_json = fragment.stdout.strip() if frag_ok else "[]"
+    except subprocess.TimeoutExpired:
+        errors.append("fragment_push: Timeout after 30s")
+        frag_ok = False
+        fragments_json = "[]"
+    except Exception as e:
+        errors.append(f"fragment_push: {e}")
+        frag_ok = False
+        fragments_json = "[]"
 
     # Parse fragments, stripping log lines
     fragments = []

@@ -1,19 +1,32 @@
-# Cron 投递机制：auto-delivery 协议
+# Cron context 下投递机制：auto-delivery 协议
 
-## 现状
+> `send_message` 在 cron context 中**不可用**。所有投递通过 final response auto-delivery 完成。
 
-**`send_message` 在 cron context 不可用。** cron agent 没有 `send_message` 工具。投递走系统机制：agent 的最终 final response 被调度器捕获后自动通过 Gateway 推送到 WeCom（`deliver: wecom`）。
+## 原理
 
-## cron prompt 要求
+cron job 执行完毕后，系统将 Agent 的 final response 自动投递到配置的 deliver 目标（WeCom）。
+Agent 不需要（也不能）在 cron 中使用 `send_message` 工具。
 
-1. 先用 `render_markdown.py` 渲染简报，捕获 stdout 到 `BRIEFING` 变量
-2. 尝试 `fragment_push.py` 分片并用 `send_message` 逐片投递
-3. **send_message 不可用时**：直接输出 `BRIEFING`（脚本渲染的完整 Markdown）作为 final response
-4. 不得用 LLM 重新生成简报内容（会丢失翻译、格式跑偏）
-5. 返回 `[SILENT]` 的条件：无新条目，且简报已通过 send_message 投递完成
+## 正确做法
 
-## 历史陷阱
+1. pipeline 产出渲染好的简报（`render_markdown.py` stdout）
+2. Agent 将简报原文作为 final response 返回
+3. 系统自动投递到 WeCom
 
-2026-05-24: 旧 prompt 第7步说「遍历 fragments 用 send_message 投递」，第8步又说「返回 [SILENT]」。agent 用不了 send_message，又因 [SILENT] 不输出内容，最后自作主张用 LLM 重新生成了内容（丢失全部翻译）。
+```bash
+# 编排器模式
+RESULT=$($PYTHON scripts/pipeline_orchestrator.py 2>&1)
+# 解析 JSON → status=ok 时将 briefing 字段作为 final response
+```
 
-**修复**：prompt 改为 send_message 不可用时直接输出 BRIEFING，不返回 [SILENT]。
+## 错误做法
+
+- ❌ 在 cron 中尝试 `send_message(target="wecom")` — 工具不可用
+- ❌ 返回 `[SILENT]` 作为 final response — 什么都不投递
+- ❌ Agent 用自己话重写简报内容 — 格式跑偏、翻译丢失
+- ❌ 只返回 fragments JSON 数组不输出实际内容
+
+## 历史
+
+此前 pipeline 设计为逐片 send_message 投递，但 cron 环境无此工具。
+v5.7.0+ 改为 auto-delivery：Agent 输出完整简报，系统负责投递。

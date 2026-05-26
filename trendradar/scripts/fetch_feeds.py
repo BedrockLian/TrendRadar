@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
+"""TrendRadar 采集员 — 35个RSS源异步并行抓取（统一 TaskGroup + 3.14 异步优化版）"""
 from trendradar.scripts.settings import get_logger
 log = get_logger('fetch-feeds')
-"""TrendRadar 采集员 — 35个RSS源异步并行抓取（统一 TaskGroup + 3.14 异步优化版）"""
 import json, re, sys, asyncio
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -11,7 +11,6 @@ from trendradar.config.keywords import has_keyword_match_ci
 import feedparser
 import aiohttp
 import concurrent.futures
-import sys
 
 try:
     _PARSE_POOL = concurrent.futures.InterpreterPoolExecutor(max_workers=12)
@@ -26,7 +25,6 @@ from trendradar.scripts.settings import PROXY_URL, needs_proxy
 DATA_DIR = get_data_dir()
 CACHE_DIR = get_cache_dir()
 
-from trendradar.scripts.settings import RSSHUB_CONCURRENT, EXTERNAL_CONCURRENT, TIMEOUT_SEC
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
 RSS_FRESHNESS_MAX_AGE_DAYS = 1  # 全局默认，单源可在 sources.json 中覆盖 freshness_days
 

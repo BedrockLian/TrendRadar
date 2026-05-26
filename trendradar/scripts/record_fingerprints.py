@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
+"""记录本次推送指纹到 DB，供后续时段去重。通过 Storage 统一接入 DB。"""
 from trendradar.scripts.settings import get_logger
 log = get_logger('record-fingerprints')
-"""记录本次推送指纹到 DB，供后续时段去重。通过 Storage 统一接入 DB。"""
-import json, sys
+import json, sys, sqlite3
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
@@ -45,11 +45,10 @@ def record(push_id: str):
 
     before = conn.execute("SELECT COUNT(*) FROM fingerprints").fetchone()[0]
 
-    # 确保 run_id 列存在
-    try:
+    # Ensure run_id column exists (PRAGMA-first to avoid ALTER TABLE blind-try)
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(fingerprints)")}
+    if 'run_id' not in cols:
         conn.execute("ALTER TABLE fingerprints ADD COLUMN run_id TEXT DEFAULT ''")
-    except sqlite3.OperationalError:
-        pass  # 列已存在
 
     batch = []
     for domain in DOMAINS:

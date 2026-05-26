@@ -42,8 +42,10 @@ class Storage:
         except (json.JSONDecodeError, OSError): return default
 
     def write_json(self, path, data, **kw):
-        p = self._r(path); p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(json.dumps(data, ensure_ascii=False, **kw), encoding='utf-8')
+        from trendradar.scripts.settings import atomic_write_json
+        p = self._r(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        atomic_write_json(p, data, **kw)
 
     def read_text(self, path, default=''):
         p = self._r(path)

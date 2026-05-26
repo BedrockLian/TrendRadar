@@ -164,7 +164,7 @@ DEFAULT_ENDPOINT = os.environ.get('TRENDRADAR_DEFAULT_ENDPOINT', 'https://api.de
 DEFAULT_MODEL = os.environ.get('TRENDRADAR_DEFAULT_MODEL', 'deepseek-chat')
 
 
-def get_api_key(key_name: str | None = None) -> str:
+def get_api_key(key_name: str | None = None) -> str | None:
     key = os.environ.get(key_name or API_KEY_ENV)
     if key:
         return key
@@ -177,7 +177,7 @@ def get_api_key(key_name: str | None = None) -> str:
             name, _, val = line.partition('=')
             if name.strip() == (key_name or API_KEY_ENV):
                 return val.strip().strip('"').strip("'")
-    raise RuntimeError(f"API key '{key_name or API_KEY_ENV}' not found in env or {env_path}")
+    return None
 
 
 @lru_cache()
@@ -245,13 +245,16 @@ import logging as _logging
 _LOGGERS: dict[str, _logging.Logger] = {}
 
 def get_logger(name: str = 'trendradar') -> _logging.Logger:
-    """获取结构化 logger，按模块名复用。环境变量 TRENDRADAR_LOG_LEVEL 控制级别。"""
+    """获取结构化 logger，按模块名复用。环境变量 TRENDRADAR_LOG_LEVEL 控制级别。
+    
+    自动注入 RUN_ID（如果 common.current_run_id 已设置）。
+    """
     if name in _LOGGERS:
         return _LOGGERS[name]
     logger = _logging.getLogger(f'trendradar.{name}')
     if not logger.handlers:
         handler = _logging.StreamHandler(sys.stderr)
-        handler.setFormatter(_logging.Formatter(
+        handler.setFormatter(_RunIdFormatter(
             '[%(asctime)s] [%(levelname)-5s] [%(name)s] %(message)s',
             datefmt='%Y-%m-%dT%H:%M:%S'
         ))
@@ -260,6 +263,19 @@ def get_logger(name: str = 'trendradar') -> _logging.Logger:
         logger.setLevel(getattr(_logging, level, _logging.INFO))
     _LOGGERS[name] = logger
     return logger
+
+
+class _RunIdFormatter(_logging.Formatter):
+    """自动在日志中注入 RUN_ID（如果存在）。"""
+    def format(self, record):
+        try:
+            from trendradar.scripts.common import get_run_id_ctx
+            run_id = get_run_id_ctx()
+            if run_id:
+                record.msg = f"[{run_id}] {record.msg}"
+        except Exception:
+            pass
+        return super().format(record)
 
 
 def ensure_db_migrated(db_path: Path | None = None) -> int:

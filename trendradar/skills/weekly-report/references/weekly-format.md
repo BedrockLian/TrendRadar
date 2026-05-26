@@ -61,7 +61,7 @@
 
 ### 🌱 本周意外发现
 
-（盲点审计输出 + _serendipity 条目分析）
+（_serendipity 条目分析 + 盲点审计输出）
 
 
 📌 数据来源：TrendRadar 本周 N 条聚合 · 深度研究

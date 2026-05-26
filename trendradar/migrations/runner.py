@@ -24,7 +24,7 @@ def _available_migrations() -> list[tuple[int, str, str]]:
     for f in sorted(MIGRATIONS_DIR.glob("*.sql")):
         m = re.match(r"(\d+)_(\w+)\.sql", f.name)
         if m:
-            migrations.append((int(m.group(1)), f.name, f.read_text()))
+            migrations.append((int(m.group(1)), f.name, f.read_text(encoding='utf-8')))
     return migrations
 
 
@@ -41,7 +41,19 @@ def migrate(db_path: Path | str, force: bool = False) -> int:
     
     若 force=True，即使 _migrations 已记录也会重新执行迁移 SQL
     （用于修复表被意外删除但迁移记录仍存在的场景）。
+    
+    迁移前自动备份 DB 文件（防止中途失败导致数据丢失）。
     """
+    import shutil
+    db_path = Path(db_path)
+    
+    if db_path.exists():
+        backup_path = db_path.with_suffix('.db.backup')
+        try:
+            shutil.copy2(str(db_path), str(backup_path))
+        except Exception as e:
+            print(f"[MIGRATE] ⚠️ 备份失败: {e}", file=sys.stderr)
+    
     conn = sqlite3.connect(str(db_path))
     try:
         current = _current_version(conn)
@@ -72,6 +84,8 @@ def down(db_path: Path | str, target_version: int = 0) -> int:
 
     从当前版本开始，按逆序执行每条迁移的 -- down: 回滚 SQL，
     并从 _migrations 表中删除已回滚的记录。
+    
+    回滚前自动备份 DB 文件（防止中途失败导致数据丢失）。
 
     Args:
         db_path: 数据库路径
@@ -83,6 +97,16 @@ def down(db_path: Path | str, target_version: int = 0) -> int:
     Raises:
         ValueError: 若某条迁移缺少 -- down: 回滚 SQL。
     """
+    import shutil
+    db_path = Path(db_path)
+    
+    if db_path.exists():
+        backup_path = db_path.with_suffix('.db.backup')
+        try:
+            shutil.copy2(str(db_path), str(backup_path))
+        except Exception as e:
+            print(f"[MIGRATE] ⚠️ 备份失败: {e}", file=sys.stderr)
+    
     conn = sqlite3.connect(str(db_path))
     try:
         current = _current_version(conn)
@@ -196,7 +220,7 @@ def _extract_create_tables(table_names: set[str]) -> list[str]:
     """从迁移文件中提取指定表的 CREATE TABLE 语句。"""
     stmts = []
     for f in sorted(MIGRATIONS_DIR.glob("*.sql")):
-        sql = f.read_text()
+        sql = f.read_text(encoding='utf-8')
         for name in table_names:
             pattern = re.compile(
                 rf'CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+{name}\s*\(.*?\);',

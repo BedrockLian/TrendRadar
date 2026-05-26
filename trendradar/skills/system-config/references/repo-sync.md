@@ -10,58 +10,29 @@
 | 2 | **Hermes 中心脚本** | `~/.hermes/scripts/trendradar_*.py` | no_agent cron 脚本 |
 | 3 | **Git 发布仓** | `~/TrendRadar/` | 版本控制 & 分发 |
 
-## 同步命令（推荐 rsync）
-
-**运行时 → Git 发布仓**（最常用：运行时修改了代码，回写仓库）：
+## 同步命令
 
 ```bash
-rsync -av \
-  --exclude='.git' \
-  --exclude='__pycache__' \
-  --exclude='.pytest_cache' \
-  --exclude='.env' \
-  --exclude='cache/' \
-  --exclude='data/' \
-  --exclude='logs/' \
-  --exclude='mail_queue/' \
-  --exclude='output/' \
-  --exclude='config/sources.json' \
-  --exclude='skills/' \
-  --exclude='监管趋势深度分析_*.md' \
-  /home/asus/.hermes/trendradar/ \
-  /home/asus/TrendRadar/trendradar/
-```
+# ── 1. 核心代码 ──
+cp -r ~/.hermes/trendradar/scripts/   ~/TrendRadar/trendradar/
+cp -r ~/.hermes/trendradar/config/    ~/TrendRadar/trendradar/
+cp -r ~/.hermes/trendradar/migrations/ ~/TrendRadar/trendradar/
+cp -r ~/.hermes/trendradar/references/ ~/TrendRadar/trendradar/
 
-rsync 优于 `cp -r`：自动处理新增目录/文件、排除运行时数据（cache/data/logs/output/mail_queue）、保留本地独有的 sources.json 和 skills/。
+# ── 2. 依赖文件 ──
+cp ~/.hermes/trendradar/pyproject.toml    ~/TrendRadar/trendradar/
+# requirements.txt 从 pyproject.toml 手动维护一致
 
-**Git 发布仓 → 运行时**（重装后还原）：
-
-```bash
-rsync -av \
-  --exclude='__pycache__' \
-  --exclude='.pytest_cache' \
-  /home/asus/TrendRadar/trendradar/ \
-  /home/asus/.hermes/trendradar/
-```
-
-**中心脚本同步**（no_agent cron 脚本）：
-
-```bash
+# ── 3. 中心脚本 ──
 cp ~/.hermes/scripts/trendradar_*.py     ~/TrendRadar/hermes-scripts/
 cp ~/.hermes/scripts/delivery_watchdog.py ~/TrendRadar/hermes-scripts/
-```
 
-**Skills 同步**：
-
-```bash
+# ── 4. Skills ──
 for skill in news-secretary self-healing performance-optimizer weekly-report monthly-report system-config; do
     cp -r ~/.hermes/skills/trendradar/$skill/ ~/TrendRadar/trendradar/skills/
 done
-```
 
-**提交**：
-
-```bash
+# ── 5. 提交 ──
 cd ~/TrendRadar && git add -A
 git diff --cached --stat   # 确认变更内容无误
 git commit -m "<描述>"

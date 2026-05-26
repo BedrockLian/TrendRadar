@@ -32,7 +32,7 @@ if not TIMELINE_PATH.exists():
     print('NO_SLOT')
     sys.exit(1)
 
-timeline = yaml.safe_load(TIMELINE_PATH.read_text())
+timeline = yaml.safe_load(TIMELINE_PATH.read_text(encoding='utf-8'))
 slots_cfg = timeline.get('slots', {})
 
 # 构建 slots 查找表
