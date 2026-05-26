@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "last_updated": "2026-05-20T15:00:00+08:00",
+  "last_updated": "2026-05-26T22:30:00+08:00",
   "data_sources": [
     {
       "id": "ifanr",
@@ -21,6 +21,30 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/huxiu",
+      "authority": 2,
+      "language": "zh"
+    },
+    {
+      "id": "36kr",
+      "name": "36氪",
+      "platform": "36kr",
+      "type": "rss",
+      "category": "tech",
+      "enabled": true,
+      "feed_url": "https://plink.anyfeeder.com/36kr",
+      "desc": "中国领先的科技与财经媒体，覆盖创业、AI、商业深度",
+      "authority": 3,
+      "language": "zh"
+    },
+    {
+      "id": "jiemian",
+      "name": "界面新闻",
+      "platform": "jiemian",
+      "type": "rss",
+      "category": "news",
+      "enabled": true,
+      "feed_url": "https://a.jiemian.com/index.php?m=article&a=rss",
+      "desc": "上海报业集团旗下，深度财经与商业新闻",
       "authority": 3,
       "language": "zh"
     },

@@ -443,6 +443,47 @@ def curate_all(raw: list, push_id: str) -> dict:
     result['top_headlines'] = top_headlines
     result['total'] = sum(len(result[d]) for d in DOMAINS)
 
+    # 全局来源多样性上限：单个来源占比不得超过 30%/slot
+    MAX_SOURCE_PCT = 0.30
+    from collections import Counter
+    sec_counts: dict[str, Counter] = {}
+    for d in DOMAINS:
+        for item in result.get(d, []):
+            src = (item.get('source_platform', '') or '').split('+')[0].strip().lower()
+            if src:
+                c = sec_counts.setdefault(d, Counter())
+                c[src] += 1
+    # 跨板块统计
+    all_sources = Counter()
+    for d in DOMAINS:
+        for item in result.get(d, []):
+            src = (item.get('source_platform', '') or '').split('+')[0].strip().lower()
+            if src:
+                all_sources[src] += 1
+    total = result['total']
+    for src, count in all_sources.most_common():
+        if total > 0 and count / total > MAX_SOURCE_PCT:
+            # 超标 — 从得分最低的条目剔除
+            to_remove = count - int(total * MAX_SOURCE_PCT)
+            # 收集该来源的所有条目（含分数）
+            src_items = []
+            for d in DOMAINS:
+                for i, item in enumerate(result.get(d, [])):
+                    item_src = (item.get('source_platform', '') or '').split('+')[0].strip().lower()
+                    if item_src == src:
+                        score = item.get('_curator_scores', {}).get('total', 0)
+                        src_items.append((score, d, i))
+            # 按分数升序排列，移除最低分的
+            src_items.sort()
+            removed = 0
+            for score, domain, idx in reversed(src_items):
+                if removed >= to_remove:
+                    break
+                # 从结果中移除（保留最后一个避免破坏结构）
+                del result[domain][idx]
+                removed += 1
+                total -= 1
+
     # per-slot 总量截断（③ 硬上限）
     max_total = BRIEFING_RATIO.get(push_id, 30)
     if result['total'] > max_total:
