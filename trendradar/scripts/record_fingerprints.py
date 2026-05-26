@@ -45,11 +45,10 @@ def record(push_id: str):
 
     before = conn.execute("SELECT COUNT(*) FROM fingerprints").fetchone()[0]
 
-    # 确保 run_id 列存在
-    try:
+    # 确保 run_id 列存在（先检查 schema，避免无意义的 try/except）
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(fingerprints)")}
+    if 'run_id' not in cols:
         conn.execute("ALTER TABLE fingerprints ADD COLUMN run_id TEXT DEFAULT ''")
-    except sqlite3.OperationalError:
-        pass  # 列已存在
 
     batch = []
     for domain in DOMAINS:
