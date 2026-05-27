@@ -1,6 +1,6 @@
 # TrendRadar 📡
 
-> **v5.6.0** — 多源 RSS 聚合 + AI 策展 + Pro 深度分析 → 企业微信日/周/月报。含自动体检、偏好收敛、编排器一键管线、全链路安全加固、CI 持续集成。
+> **v5.7.0** — 多源 RSS 聚合 + AI 策展 + Pro 深度分析 → 企业微信日/周/月报。含自动体检、偏好收敛、编排器一键管线、Qwen 独立审计闭环、全链路安全加固、CI 持续集成。
 
 > 📖 **[从零搭建指南 → SETUP.md](SETUP.md)** — 从 Hermes Agent 全新安装到测试部署一站完成。
 
@@ -70,20 +70,25 @@ pipeline_orchestrator.py（一键6阶段）
 - **BlogWatcher 桥接** — `blog_watcher_bridge.py` 对接 BlogWatcher 订阅源，统一进入推送管线
 - **假翻译清理** — `cleanup_fake_translations.py` 自动检测并修复翻译层"原样输出"的无效翻译
 - **推送时段检测** — `push_slot_detect.py` 精确判断当前时段（早/午/晚），避免投递错位
-- **自动体检** — 每日 15:00 17 项自检（含盲点审计），异常推送
+- **自动体检** — 每日 15:00 自检，动态 CRON_JOBS 名称匹配 + sources schema 兼容 + 多 socket 路径 + Storage 连接管理
 - **推送质量优化** — 每日 21:15 评分 + 偏好收敛调优
-- **推送看门狗** — 每日 3 次巡检 WeCom IPC socket + 投递错误检测 + push_log 原子写入 + 早/午/晚三时段 auto-redeliver
+- **推送看门狗** — 每日 3 次巡检（3 路径 socket）+ push_log 原子写入 + 早/午/晚三时段 auto-redeliver + run_id 格式对齐
 - **管线诊断** — `diag_pipeline.sh` 一键诊断各组件健康状况，快速定位故障
 - **知识图谱** — `KNOWLEDGE_GRAPH.md` 630 行完整代码分析，含架构全景图、模块依赖、数据流图
 - **文档精简** — 41 份参考文档合并为 10 份核心文档 + 36 存档 + INDEX.md 索引，新人 onboarding 从 2 天降到 2 小时
-- **cron prompt 单源** — `gen_cron_prompt.py` 从 `--list-steps` 自动生成，消除 SKILL.md 与 prompt 双份维护漂移
+- **cron prompt 单源** — `gen_cron_prompt.py` 从 `--list-steps` 直接导入（无 subprocess），动态解析 PYTHON/PYTHONPATH/TRENDRADAR_HOME
+- **Qwen 独立审计** — 8 维度自由扫描提示词 + `execute-assessment-fixes` skill 自动修复闭环
+- **SKILL 引用完整性** — 38 处断裂引用已修复，rsync 同步 skills → repo
+- **翻译鲁棒性** — batch_translate 解析容错（模型注释行过滤）+ BATCH_SIZE 可配置 + EXIT_NO_CONTENT 不中断管线
+- **分片安全** — fragment 超 MAX_BYTES 标记 over_limit 信号 + footer 多格式兼容
+- **时区一致性** — gen_run_id CST 时区 + push_slot_detect 分钟精度匹配
 - **CI 持续集成** — GitHub Actions 自动运行 ruff lint + bandit 安全扫描 + mypy 类型检查 + pytest + references 一致性校验
 
 ---
 
 ## Skills
 
-本系统深度集成 [Hermes Agent](https://hermes-agent.nousresearch.com)，6 个 skill 定义完整的 Agent 行为：
+本系统深度集成 [Hermes Agent](https://hermes-agent.nousresearch.com)，7 个 skill 定义完整的 Agent 行为：
 
 | Skill | 版本 | 职责 |
 |-------|------|------|
@@ -93,11 +98,12 @@ pipeline_orchestrator.py（一键6阶段）
 | `system-config` | v2.11.0 | 项目路径/Python 环境/Cron 任务/代理配置速查 |
 | `weekly-report` | v2.4.0 | 每周一 Pro 深度趋势研判，五大板块 × 信息茧房突围 |
 | `monthly-report` | v2.3.0 | 每月初全景复盘，4 期周报聚合 + heat_tracker Top10 |
+| `execute-assessment-fixes` | v1.0.0 | Qwen 独立审计报告 → 逐步骤修复 → 验证提交 |
 
 | 功能 | 依赖 Hermes 的组件 |
 |------|-------------------|
 | **推送调度** | 日报 cron（`0 9,12,21 * * *`）+ 周报 cron（`30 9 * * 1`）+ 月报 cron（`0 9 1 * *`） |
-| **6 个 skill** | 上述定义，脱离 Hermes 无意义 |
+| **7 个 skill** | 上述定义，脱离 Hermes 无意义 |
 | **WeCom 投递** | cron final response → Gateway auto-delivery |
 | **晚间深度分析** | `delegate_task` 3×Pro 子 Agent 并行 |
 | **周报/月报 Pro 分析** | `delegate_task` + `deep-research-cli` 六步协议 |
@@ -148,13 +154,15 @@ TrendRadar/
 │   ├── migrations/           #   SQLite 数据库迁移引擎
 │   │   ├── 001_initial.sql           # 初始表结构
 │   │   └── runner.py                 # 迁移执行器（up + down 回滚）
-│   ├── skills/               #   Hermes Agent 技能定义（6个）
+│   ├── skills/               #   Hermes Agent 技能定义（7个）
 │   │   ├── news-secretary/           # 日报推送 v6.5.0
 │   │   ├── self-healing/             # 自动体检 v3.4.0
 │   │   ├── performance-optimizer/    # 推送质量优化 v2.4.0
 │   │   ├── system-config/            # 系统配置速查 v2.11.0
 │   │   ├── weekly-report/            # 周报深度研判 v2.4.0
 │   │   └── monthly-report/           # 月报全景分析 v2.3.0
+│   │   └── execute-assessment-fixes/  # Qwen 审计修复 v1.0.0
+│   ├── reports/             #   审计报告/提示词（qwen-audit-prompt.md）
 │   ├── references/           #   核心参考文档（10 根 + 36 存档 + INDEX.md 索引）
 │   ├── tests/                #   测试用例（146 用例，含 E2E 管线 + 边界测试）
 │   │   ├── conftest.py
@@ -177,7 +185,7 @@ TrendRadar/
 │   ├── README.md                    # 子包说明
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
-│   └── pyproject.toml               # 包定义 v5.5.0
+│   └── pyproject.toml               # 包定义 v5.7.0
 ├── hermes-scripts/           # 自动体检/维护/看门狗脚本
 │   ├── trendradar_health_check.py   # 每日自动体检（17项检查）
 │   ├── trendradar_maintenance.py    # 每日备份清理
