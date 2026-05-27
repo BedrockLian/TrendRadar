@@ -91,7 +91,7 @@ pipeline_orchestrator.py（一键6阶段）
 
 | Skill | 版本 | 职责 |
 |-------|------|------|
-| `news-secretary` | v6.5.0 | 日报推送（核心），早/午/晚三段管线 + 晚间 Pro 深度分析 |
+| `news-secretary` | v6.9.0 | 日报推送（核心），早/午/晚三段管线 + 晚间 Pro 深度分析 |
 | `self-healing` | v3.4.0 | 每日 15:00 自动体检 DB/配置/API/Gateway，修复常见故障 |
 | `performance-optimizer` | v2.4.0 | 每日 21:15 推送质量评分 + 偏好收敛调优 |
 | `system-config` | v2.11.0 | 项目路径/Python 环境/Cron 任务/代理配置速查 |
