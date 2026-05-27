@@ -10,11 +10,9 @@ TRENDRADAR_HOME = Path(os.environ.get('TRENDRADAR_HOME', Path.home() / '.hermes'
 
 # ── 环境锁：Python 3.14t 必须禁用 GIL ────────────────────────────
 def _check_gil():
-    """检查是否在 free-threaded Python (3.14t) 下正确运行。
-    
-    若检测到 3.14t 但 PYTHON_GIL != 0，输出警告到 stderr。
-    不阻止运行——仅作为诊断提示（部分 C 扩展未声明 GIL 豁免时需要）。
-    """
+    """Check free-threaded Python GIL status. Sets module-level _GIL_OK flag."""
+    global _GIL_OK
+    _GIL_OK = True
     if hasattr(sys, '_is_gil_enabled') and not sys._is_gil_enabled():
         return  # GIL 已禁用，正常
     if '3.14' in sys.version and 'free-threading' not in sys.version.lower():
@@ -27,6 +25,7 @@ def _check_gil():
                 RuntimeWarning,
             )
 
+_GIL_OK = True
 _check_gil()
 
 
@@ -132,8 +131,8 @@ DOMESTIC_PROXY_PATTERNS = (
     'plink.anyfeeder.com',  # 国内 RSS 中转
     '.cn',                   # 国内域名
     '.com.cn',
-    'bbc.co.uk',             # BBC 直连可达，代理节点屏蔽 BBC
-    'bbci.co.uk',            # BBC RSS feed 域名
+    'bbc.co.uk',             # BBC: 直连可达。注意：代理节点可能屏蔽 BBC，走直连
+    'bbci.co.uk',            # BBC RSS feed 域名（同上，直连）
 )
 
 def needs_proxy(feed_url: str) -> bool:

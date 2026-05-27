@@ -27,8 +27,10 @@ import argparse
 from pathlib import Path
 
 # 路径解析：脚本在 trendradar/scripts/ 或 trendradar/trendradar/scripts/ 下均可
-_BASE = Path(__file__).resolve().parent.parent  # 一次 parent = scripts/，两次 = trendradar/
-# 如果 _BASE 是 'trendradar' 目录（有 __init__.py），说明在嵌套包中，再上一层
+import os as _os
+_BASE = Path(_os.environ.get('TRENDRADAR_HOME', 
+    Path(__file__).resolve().parent.parent))
+# If running from package (trendradar/ has __init__.py), go one level up
 if (_BASE / '__init__.py').exists() and _BASE.name == 'trendradar':
     _BASE = _BASE.parent
 TRENDRADAR_HOME = _BASE

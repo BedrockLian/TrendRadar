@@ -171,12 +171,19 @@ def load_penalty_file(path: str):
 
 
 def _get_source_penalty(platform: str) -> float:
-    """Get penalty factor for a source platform (1.0 = no penalty)."""
+    """Get penalty factor for a source platform (1.0 = no penalty).
+    
+    Matches by word boundary to avoid spurious matches:
+    'reuters' should match 'Reuters' but not 'ReutersPlus' substrings.
+    """
     if not _penalty_map:
         return 1.0
     plat = platform.lower().strip()
+    plat_words = set(plat.replace('+', ' ').split())
     for src, factor in _penalty_map.items():
-        if src in plat or plat in src:
+        src_lower = src.lower()
+        # Match if source appears as a complete word in platform
+        if src_lower in plat_words or src_lower == plat:
             return factor
     return 1.0
 

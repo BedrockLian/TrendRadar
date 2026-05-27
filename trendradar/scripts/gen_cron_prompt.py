@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-gen_cron_prompt.py — Generate canonical cron prompt from pipeline_orchestrator.py --list-steps.
+gen_cron_prompt.py — Generate canonical cron prompt from pipeline_orchestrator.py SSOT.
 
 Single source of truth: pipeline steps are defined in pipeline_orchestrator.py's
-list_pipeline_steps() function. This script calls --list-steps and formats the
-output as a markdown cron prompt suitable for news-secretary SKILL.md.
+list_pipeline_steps() function. This script imports it directly (no subprocess)
+and formats the output as a markdown cron prompt.
 
 Usage:
   python3 scripts/gen_cron_prompt.py > references/cron-prompt-generated.md
@@ -14,69 +14,80 @@ of maintaining inline prompt text separately.
 """
 
 import json
-import subprocess
+import os
 import sys
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
 CST = timezone(timedelta(hours=8))
 SCRIPTS_DIR = Path(__file__).resolve().parent
-PYTHON = "/usr/local/bin/python3.14t"
-ORCHESTRATOR = SCRIPTS_DIR / "pipeline_orchestrator.py"
+
+# Dynamic PYTHON path — matches pipeline_orchestrator.py behavior
+PYTHON = os.environ.get("PYTHON", sys.executable)
+
+# Resolve paths dynamically
+TRENDRADAR_HOME = Path(os.environ.get(
+    'TRENDRADAR_HOME',
+    Path.home() / '.hermes' / 'trendradar'
+))
+
+HERMES_HOME = TRENDRADAR_HOME.parent  # ~/.hermes
+PYTHONPATH = str(HERMES_HOME)  # settings.py TRENDRADAR_HOME.parent
 
 
 def get_pipeline_steps():
-    """Call pipeline_orchestrator.py --list-steps and return parsed JSON."""
-    result = subprocess.run(
-        [PYTHON, str(ORCHESTRATOR), "--list-steps"],
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
-    if result.returncode != 0:
-        print(f"Error: orchestrator --list-steps failed: {result.stderr}", file=sys.stderr)
-        sys.exit(1)
-    return json.loads(result.stdout)
+    """Import list_pipeline_steps directly — no subprocess needed."""
+    sys.path.insert(0, str(SCRIPTS_DIR))
+    from pipeline_orchestrator import list_pipeline_steps, __version__
+    steps = list_pipeline_steps()
+    steps["version"] = __version__
+    steps["python"] = PYTHON
+    return steps
 
 
 def generate_cron_prompt(steps: dict) -> str:
     """Format pipeline steps as a cron prompt markdown document."""
     version = steps.get("version", "unknown")
-    python_bin = steps.get("python", PYTHON)
+    import platform
+    host = os.environ.get("USER", os.environ.get("USERNAME", "unknown"))
     step_list = steps.get("steps", [])
+
+    # Resolve TRENDRADAR_HOME for generated content
+    tr_home_path = str(TRENDRADAR_HOME)
 
     lines = []
     lines.append(f"<!-- auto-generated: {datetime.now(CST).strftime('%Y-%m-%d %H:%M:%S')} CST -->")
-    lines.append(f"<!-- source: pipeline_orchestrator.py v{version} --list-steps -->")
+    lines.append(f"<!-- host: {host} | python: {PYTHON} -->")
     lines.append("")
-    lines.append(f"# TrendRadar 日报 Cron Prompt (v{version} auto-generated)")
+    lines.append(f"# TrendRadar 日报 Cron Prompt (v{version})")
     lines.append("")
-    lines.append("> ⚠️ This file is auto-generated from `pipeline_orchestrator.py --list-steps`.")
-    lines.append("> Do not edit manually. Run `python3 scripts/gen_cron_prompt.py` to regenerate.")
+    lines.append("> Auto-generated from `pipeline_orchestrator.py --list-steps`.")
+    lines.append("> Run `python3 scripts/gen_cron_prompt.py` to regenerate.")
     lines.append("")
     lines.append("## Environment")
     lines.append("")
     lines.append("```bash")
-    lines.append("export PYTHON=/usr/local/bin/python3.14t")
-    lines.append("export PYTHONPATH=/home/asus/.hermes")
+    lines.append(f"export PYTHON="{PYTHON}"")
+    lines.append(f"export PYTHONPATH="{PYTHONPATH}"")
+    lines.append(f"export TRENDRADAR_HOME="{tr_home_path}"")
     lines.append("export PYTHON_GIL=0")
     lines.append("```")
     lines.append("")
     lines.append("## Main Flow (Orchestrator)")
     lines.append("")
     lines.append("```bash")
-    lines.append("# Step 0: Run orchestrator (single command)")
+    lines.append("# Single command — orchestrator handles the full pipeline")
     lines.append("RESULT=$($PYTHON scripts/pipeline_orchestrator.py 2>&1)")
     lines.append("```")
     lines.append("")
     lines.append("Parse JSON result:")
-    lines.append("- `status: \"silent\"` → return [SILENT]")
-    lines.append("- `status: \"error\"` → output errors, try fallback")
-    lines.append("- `status: \"ok\"` → output `briefing` field as final response (auto-delivery)")
+    lines.append('- `status: "silent"` → return [SILENT]')
+    lines.append('- `status: "error"` → output errors, try fallback')
+    lines.append('- `status: "ok"` → output `briefing` field as final response (auto-delivery)')
     lines.append("")
     lines.append("## Pipeline Steps (for reference)")
     lines.append("")
-    lines.append(f"Pipeline v{version}, Python: `{python_bin}`")
+    lines.append(f"Pipeline v{version} | Python: `{PYTHON}`")
     lines.append("")
     lines.append("| # | Stage | Script | Description |")
     lines.append("|---|-------|--------|-------------|")
@@ -133,9 +144,9 @@ def generate_cron_prompt(steps: dict) -> str:
     lines.append("")
     lines.append("## Pre-flight")
     lines.append("")
-    lines.append("- Read `references/PIPELINE.md` for format specs")
-    lines.append("- Read `references/TRAPS.md` for known pitfalls")
-    lines.append("- Empty line rules: items `\\n\\n\\n`, section headers `\\n\\n\\n`")
+    lines.append("- `TRENDRADAR_HOME`/references/PIPELINE.md — format specs")
+    lines.append("- `TRENDRADAR_HOME`/references/TRAPS.md — known pitfalls")
+    lines.append("- Empty line rules: items `\n\n\n`, section headers `\n\n\n`")
     lines.append("- Never use `send_message`, always use final response auto-delivery")
     lines.append("- `sanity_check.py` auto-scans before push")
     lines.append("")

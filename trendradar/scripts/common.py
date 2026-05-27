@@ -10,8 +10,8 @@ CST = timezone(timedelta(hours=8))
 # Python 3.14 contextvars: 子线程自动继承（thread_inherit_context 默认开启）
 current_run_id: contextvars.ContextVar[str] = contextvars.ContextVar('run_id', default='')
 def gen_run_id(slot: str = "") -> str:
-    """生成可读追溯号: YYYYMMDD_slot_短UUID"""
-    date = datetime.now().strftime("%Y%m%d")
+    """生成可读追溯号: YYYYMMDD_slot_短UUID（CST 时区）。"""
+    date = datetime.now(CST).strftime("%Y%m%d")
     short = uuid.uuid4().hex[:8]
     return f"{date}_{slot}_{short}" if slot else f"{date}_{short}"
 

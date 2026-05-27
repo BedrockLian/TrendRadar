@@ -79,6 +79,7 @@ def check_socket():
     socket_paths = [
         "/tmp/hermes_gateway.sock",
         "/tmp/hermes_wecom.sock",
+        "/tmp/hermes-wecom-card.sock",  # also checked by health_check
     ]
     for path in socket_paths:
         if os.path.exists(path):
@@ -186,8 +187,16 @@ def get_latest_evening_push() -> dict | None:
 
 
 def get_run_id_from_push(entry: dict) -> str | None:
-    """从 push_log 条目提取 run_id。"""
-    # 尝试从 timestamp 构建
+    """从 push_log 条目提取 run_id。
+    
+    Matches format from common.py gen_run_id(): YYYYMMDD_slot_8hex
+    Falls back to timestamp-based construction if run_id not in entry.
+    """
+    # Prefer explicit run_id if available
+    run_id = entry.get('run_id', '')
+    if run_id:
+        return run_id
+    # Fallback: construct from timestamp + push_id
     ts = entry.get('timestamp', '')
     push_id = entry.get('push_id', '')
     date_part = ts[:10].replace('-', '') if ts else ''
@@ -252,7 +261,8 @@ def auto_redeliver_slot(alerts: list[str], push_id: str, slot_name: str, max_age
 
     alerts.append(f"🔄 检测到{slot_name} ({ts}) 未投递到 WeCom，启动补发...")
 
-    briefing_path = Path('/tmp') / f'{push_id}_briefing_{run_id}.md'
+    import tempfile
+    briefing_path = Path(tempfile.gettempdir()) / f'{push_id}_briefing_{run_id}.md'
     try:
         result = subprocess.run(
             [PYTHON, str(TRENDRADAR_HOME / 'scripts' / 'render_markdown.py'),
@@ -295,7 +305,8 @@ def auto_redeliver_evening(alerts: list[str]) -> None:
                 risk_file = f
                 break
             if risk_file and risk_file.stat().st_mtime > (datetime.now() - timedelta(hours=6)).timestamp():
-                formatted = Path('/tmp') / f'risk_analysis_formatted_{run_id}.md'
+                import tempfile
+                formatted = Path(tempfile.gettempdir()) / f'risk_analysis_formatted_{run_id}.md'
                 try:
                     result = subprocess.run(
                         ['cat', str(risk_file)],

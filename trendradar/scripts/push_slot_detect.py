@@ -15,14 +15,17 @@ import json
 import yaml
 
 CST = timezone(timedelta(hours=8))
-TIMELINE_PATH = Path(__file__).resolve().parent.parent / 'config' / 'timeline.yaml'
+import os as _os
+_TIMELINE_DIR = Path(_os.environ.get('TRENDRADAR_HOME', Path(__file__).resolve().parent.parent))
+TIMELINE_PATH = _TIMELINE_DIR / 'config' / 'timeline.yaml'
 
 now = datetime.now(CST)
 h, m = now.hour, now.minute
 
 
-def slot_match(target_h, target_m, h, m):
-    delta = (h * 60 + m) - (target_h * 60 + target_m)
+def slot_match(target_h, target_m, now_h, now_m):
+    """Check if current time is within ±1 minute of target (minute-precision)."""
+    delta = (now_h * 60 + now_m) - (target_h * 60 + target_m)
     return -1 <= delta <= 1
 
 

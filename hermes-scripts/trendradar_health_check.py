@@ -18,16 +18,11 @@ CACHE = TR / 'cache'
 ISSUES = []
 FIXES = []
 
-# ── 已知 cron job IDs（从 hermes cron list 获取） ─────────────
-CRON_JOBS = {
-    '90a2866775df': '日报推送',       # 0 9,12,21 * * *
-    '718b663e8c04': '性能优化器',      # 15 21 * * *
-    'cab79825520e': '推送看门狗',      # 0 10,14,22 * * *
-    '68db70cd8556': '每日维护',        # 0 3 * * *
-    'c987a2883174': '自动体检',        # 0 15 * * *
-    'c20e2c82deda': '周报推送',        # 30 9 * * 1
-    '0b14c67429ba': '月度报告',        # 0 9 1 * *
-}
+# ── 已知 cron job 名称（用于动态匹配，不依赖 job ID） ──────────
+CRON_JOB_NAMES = [
+    '日报推送', '性能优化器', '推送看门狗', '每日维护',
+    '自动体检', '周报推送', '月度报告',
+]
 
 # ── 核心配置键（settings.py 必须导出的常量） ──────────────────
 SETTINGS_CONSTANTS = ['DOMAINS', 'DOMAIN_LABELS', 'MAX_PER_DOMAIN',
@@ -69,6 +64,7 @@ def check_db():
         journal = conn.execute('PRAGMA journal_mode').fetchone()[0]
         if journal.upper() != 'WAL':
             fail('fingerprints.db', 'WARN', f'journal_mode={journal}（建议 WAL）')
+        store.close_db('fingerprints.db')
     except Exception as e:
         fail('fingerprints.db', 'CRITICAL', f'数据库异常: {e}')
 
@@ -152,21 +148,34 @@ def check_settings_constants():
 
 
 def check_cron():
-    """cron 调度器 — 所有关键 job 注册"""
+    """cron 调度器 — 所有关键 job 注册（按名称匹配，不依赖 job ID）"""
     try:
-        r = subprocess.run(['hermes', 'cron', 'list'], capture_output=True, text=True, timeout=15)
-        for jid, label in CRON_JOBS.items():
-            if jid not in r.stdout:
-                fail('cron', 'WARN', f'job {label} ({jid[:8]}…) 未注册')
+        r = subprocess.run(['hermes', 'cron', 'list', '--json'], capture_output=True, text=True, timeout=15)
+        if r.returncode == 0:
+            jobs = json.loads(r.stdout)
+            job_names = {j.get('name', '') for j in jobs if isinstance(j, dict)}
+            for name in CRON_JOB_NAMES:
+                if not any(name in jn for jn in job_names):
+                    fail('cron', 'WARN', f'job "{name}" 未注册')
+        else:
+            # Fallback: plain text match
+            for name in CRON_JOB_NAMES:
+                if name not in r.stdout:
+                    fail('cron', 'WARN', f'job "{name}" 未在输出中找到')
     except Exception as e:
         fail('cron', 'WARN', f'查询失败: {e}')
 
 
 def check_gateway():
     """WeCom gateway 连接"""
-    sock = Path('/tmp/hermes-wecom-card.sock')
-    if not sock.exists():
-        fail('gateway', 'WARN', 'IPC socket /tmp/hermes-wecom-card.sock 不存在')
+    sock_paths = [
+        '/tmp/hermes-wecom-card.sock',
+        '/tmp/hermes_wecom.sock',
+        '/tmp/hermes_gateway.sock',
+    ]
+    found = any(Path(p).exists() for p in sock_paths)
+    if not found:
+        fail('gateway', 'WARN', f'IPC socket 不存在（检查了 {len(sock_paths)} 个路径）')
     try:
         r = subprocess.run(['ps', 'aux'], capture_output=True, text=True, timeout=5)
         gateway_lines = [l for l in r.stdout.split('\n') if 'hermes gateway' in l.lower()]
@@ -313,25 +322,27 @@ def check_pipeline():
         try:
             import random, socket
             sources = json.loads((DATA / 'sources.json').read_text())
-            feeds = []
-            for v in sources.values():
-                if isinstance(v, list):
-                    feeds.extend(v)
-                elif isinstance(v, dict):
-                    for sub in v.values():
-                        if isinstance(sub, list):
-                            feeds.extend(sub)
-            sample = random.sample(feeds, min(3, len(feeds)))
-            for f in sample:
-                url = f.get('feed', '') or f.get('url', '')
-                if not url: continue
-                try:
-                    host = url.split('/')[2] if '://' in url else url.split('/')[0]
-                    s = socket.create_connection((host, 443), timeout=5)
-                    s.close()
-                except Exception:
-                    fail('pipeline', 'WARN', f'RSS 源不可达: {url[:60]}')
-                    break
+            # Handle actual schema: {"data_sources": [{"feed_url": ..., "name": ...}, ...]}
+            feeds = sources.get('data_sources', [])
+            if isinstance(feeds, dict):
+                feeds = list(feeds.values())
+            if not isinstance(feeds, list):
+                feeds = []
+            if feeds:
+                # Filter to enabled RSS sources with feed_url
+                rss_feeds = [f for f in feeds if isinstance(f, dict) and f.get('feed_url')]
+                sample = random.sample(rss_feeds, min(3, len(rss_feeds)))
+                for f in sample:
+                    url = f.get('feed_url', '')
+                    if not url:
+                        continue
+                    try:
+                        host = url.split('/')[2] if '://' in url else url.split('/')[0]
+                        s = socket.create_connection((host, 443), timeout=5)
+                        s.close()
+                    except Exception:
+                        fail('pipeline', 'WARN', f'RSS 源不可达: {url[:60]}')
+                        break
         except Exception:
             pass
 

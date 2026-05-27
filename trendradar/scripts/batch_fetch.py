@@ -70,21 +70,24 @@ def _decode(raw: bytes) -> str | None:
 
 
 def _proxy_alive() -> bool:
-    """检测米霍姆代理是否可达（127.0.0.1:7890），不可达则直连"""
+    """检测代理是否可达（从 settings.PROXY_URL 解析），不可达则直连"""
     global _MIHOMO_CHECKED, _MIHOMO_ALIVE
     if _MIHOMO_CHECKED:
         return _MIHOMO_ALIVE
     _MIHOMO_CHECKED = True
     try:
         import socket
-        host, port = '127.0.0.1', 7890
+        from urllib.parse import urlparse
+        parsed = urlparse(PROXY)
+        host = parsed.hostname or '127.0.0.1'
+        port = parsed.port or 7890
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(2)
         result = s.connect_ex((host, port))
         s.close()
         _MIHOMO_ALIVE = (result == 0)
         if not _MIHOMO_ALIVE:
-            log.info('127.0.0.1:7890 不可达，直连抓取')
+            log.info(f'{host}:{port} 不可达，直连抓取')
         return _MIHOMO_ALIVE
     except Exception:
         _MIHOMO_ALIVE = False

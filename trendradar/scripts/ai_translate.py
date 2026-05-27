@@ -233,16 +233,29 @@ async def batch_translate(
     content = response["choices"][0]["message"]["content"].strip()
 
     # Parse the response: expect 2N lines (title_cn, summary_cn per item)
-    lines = [l.strip() for l in content.split('\n') if l.strip()]
+    # Model may add extra blank lines, numbering, or commentary — strip noise
+    raw_lines = [l.strip() for l in content.split('\n')]
+    # Filter out empty lines and common model commentary prefixes
+    lines = []
+    for l in raw_lines:
+        if not l:
+            continue
+        # Skip lines that look like model commentary, not translations
+        if l.startswith(('Here', 'The following', 'Below', 'Note:', '以上是')):
+            continue
+        lines.append(l)
 
     # Pair into (title, summary) tuples
     results = []
     for i in range(0, len(lines), 2):
         title_cn = lines[i] if i < len(lines) else "[翻译失败]"
         summary_cn = lines[i + 1] if i + 1 < len(lines) else "[翻译失败]"
-        # Strip any [N] prefix the model may have added
-        title_cn = re.sub(r'^\[\d+\]\s*', '', title_cn).strip()
-        summary_cn = re.sub(r'^\[\d+\]\s*', '', summary_cn).strip()
+        # Strip any [N] prefix or bullet the model may have added
+        title_cn = re.sub(r'^[\[（\(]?\d+[\]）\)]?[.、．\s]*', '', title_cn).strip()
+        summary_cn = re.sub(r'^[\[（\(]?\d+[\]）\)]?[.、．\s]*', '', summary_cn).strip()
+        # Skip if this looks like a separator/commentary line
+        if title_cn.startswith(('---', '===')):
+            continue
         results.append((title_cn, summary_cn))
 
     # Pad or truncate to match input count

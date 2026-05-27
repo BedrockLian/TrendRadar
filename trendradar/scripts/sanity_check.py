@@ -58,6 +58,12 @@ def strip_orchestrator_preamble(text: str) -> str:
 
 
 # ── 禁语表 — 任何一条命中 → EXIT_FATAL ──────────────────────
+# Chinese AI model filler patterns (漏检补充)
+CN_AI_PATTERNS = [
+    '作为一个AI', '作为一个人工智能', '根据我的训练数据',
+    '我无法', '我不能', '请注意，我是一个',
+]
+
 BANNED_PHRASES = [
     "As an AI language model",
     "As an AI,",

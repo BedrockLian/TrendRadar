@@ -93,6 +93,7 @@ def _write_push_log(push_id: str, result: dict, errors: list):
 
         entry = {
             "push_id": push_id,
+            "run_id": result.get("stats", {}).get("run_id", ""),
             "timestamp": datetime.now(CST).isoformat(),
             "status": result.get("status", "unknown"),
             "fragment_count": len(result.get("fragments", [])),
@@ -326,10 +327,12 @@ def main():
         return 1
 
     # Parse NEW_COUNT from prep output (appears after the curated JSON)
+    # Use regex to be robust against JSON mixed with other output
+    import re as _re
     new_count = 0
-    for line in prep["stdout"].split("\n"):
-        if line.startswith("NEW_COUNT="):
-            new_count = int(line.split("=", 1)[1])
+    nc_match = _re.search(r'NEW_COUNT=(\d+)', prep["stdout"])
+    if nc_match:
+        new_count = int(nc_match.group(1))
 
     # ── Stage 2: track_events (morning only) ───────────────────
     if push_id == "morning":
@@ -358,8 +361,12 @@ def main():
     stats["stages"]["ai_translate"] = translate_result["elapsed"]
     stats["stages"]["batch_fetch"] = fetch_result["elapsed"]
 
-    if not translate_result["ok"]:
+    # ai_translate returns EXIT_NO_CONTENT(2) when API key missing or nothing to translate
+    # — these are not fatal, pipeline should continue with untranslated content
+    if not translate_result["ok"] and translate_result.get("exit_code") != 2:
         errors.append(f"ai_translate: {translate_result['stderr'][:200]}")
+    elif not translate_result["ok"]:
+        print(f"[PIPELINE] ai_translate skipped (no content / no API key) — continuing", file=sys.stderr)
     if not fetch_result["ok"]:
         errors.append(f"batch_fetch: {fetch_result['stderr'][:200]}")
 
@@ -377,6 +384,9 @@ def main():
 
     # Check for empty briefing (no items)
     if not briefing or "共 0 条" in briefing or "[SILENT]" in briefing:
+        # Still run sanity check if any content was produced (defensive)
+        if briefing and len(briefing) > 50:
+            print(f"[PIPELINE] Empty briefing detected, running sanity check anyway", file=sys.stderr)
         _cleanup_silent(push_id)
         # Also clean up any partial fetch/curate artifacts
         for pattern in [f"fetch_*{push_id}*.json", f"curated_{push_id}*.json"]:
@@ -471,14 +481,15 @@ def main():
     total_elapsed = sum(v for k, v in stats["stages"].items() if isinstance(v, (int, float)))
     stats["total_elapsed"] = total_elapsed
 
+    final_status = "ok" if not errors else ("partial" if len(errors) < 3 else "error")
     result = {
-        "status": "ok",
+        "status": final_status,
         "push_id": push_id,
         "fragments": fragments,
         "briefing": briefing,
         "stats": stats,
         "errors": errors if errors else [],
-        "needs_deep_analysis": push_id == "evening",
+        "needs_deep_analysis": push_id == "evening" and final_status != "error",
         "curated_path": str(DATA_DIR / f"curated_{push_id}_{datetime.now(CST).strftime('%Y%m%d')}.json"),
     }
 

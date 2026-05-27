@@ -34,7 +34,8 @@ DATA_DIR = get_data_dir()
 
 def _detect_emoji(heat_value, push_id, track=None):
     """Detect emoji prefix based on heat/track status."""
-    if push_id == 'evening' and track and track.endswith('_recap'):
+    # Evening recap items (track_events sets 'new'/'continued'/'progress')
+    if push_id == 'evening' and track and (track.endswith('_recap') or track in ('continued', 'progress', 'falling')):
         return '🔄'
     if heat_value:
         if isinstance(heat_value, dict):
@@ -190,10 +191,13 @@ def main():
     output = header + '\n\n\n' + '\n\n\n'.join(sections) + '\n\n\n' + footer
     # Archive: save pure markdown to archive/YYYY-MM-DD/{slot}.md for resend
     archive_dir = Path(get_data_dir()).parent / 'archive' / today_display
-    archive_dir.mkdir(parents=True, exist_ok=True)
     archive_path = archive_dir / f'{push_id}.md'
-    archive_path.write_text(output, encoding='utf-8')
-    log.info(f"Archived to {archive_path}")
+    try:
+        archive_dir.mkdir(parents=True, exist_ok=True)
+        archive_path.write_text(output, encoding='utf-8')
+        log.info(f"Archived to {archive_path}")
+    except OSError as e:
+        log.warning(f'存档写入失败 {archive_path}: {e}')
 
     sys.stdout.write(output)
 

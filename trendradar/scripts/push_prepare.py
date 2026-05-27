@@ -115,10 +115,13 @@ def run_curation(push_id: str) -> dict:
         f1 = executor.submit(_do_fetch)
         f2 = executor.submit(_do_blog)
         
+        # Collect results — blog can succeed even if fetch fails
         blog_items_result = []
+        fetch_err = None
         try:
             f1.result()
         except Exception as e:
+            fetch_err = e
             log.info(f"fetch 失败: {e}")
         
         try:

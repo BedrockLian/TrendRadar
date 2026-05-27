@@ -278,8 +278,11 @@ if __name__ == '__main__':
     start = datetime.now(CST)
     print(f'[{start:%H:%M:%S}] 开始异步抓取...')
     result = asyncio.run(fetch_all(args.push_id))
-
-    write_compressed(CACHE_DIR / f'raw_{args.push_id}', result)
+    # write raw cache with date key (matches push_prepare.py ensure_raw_exists expectation)
+    from datetime import datetime, timezone, timedelta
+    CST = timezone(timedelta(hours=8))
+    today = datetime.now(CST).strftime('%Y%m%d')
+    write_compressed(CACHE_DIR / f'raw_{today}', result)
 
     items = result['items']
     d = {dom: sum(1 for i in items if i.get('_likely_domain') == dom) for dom in ('gaming', 'tech', 'economy', 'top_headlines', 'other')}

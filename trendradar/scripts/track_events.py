@@ -36,13 +36,13 @@ def compute_heat(item: dict) -> float:
 def compare(today_items: list, yesterday_items: list) -> dict:
     today_fps = {}
     for item in today_items:
-        fp = fingerprint(item.get('title', ''))
+        fp = fingerprint(item.get('title', ''), item.get('url', ''))
         if fp:
             today_fps[fp] = item
 
     yesterday_fps = {}
     for item in yesterday_items:
-        fp = fingerprint(item.get('title', ''))
+        fp = fingerprint(item.get('title', ''), item.get('url', ''))
         if fp:
             yesterday_fps[fp] = item
 

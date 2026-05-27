@@ -164,12 +164,13 @@ def split_fragments(markdown: str) -> list[str]:
     if not sections:
         return [markdown]  # single fragment, no splitting
 
-    # Detect footer: the last line starting with **📋 共
+    # Detect footer: any line starting with '📌 *共' or '**📋 共'
     footer = ''
     last_section = sections[-1]
     last_section_lines = last_section.split('\n')
     for i in range(len(last_section_lines) - 1, -1, -1):
-        if last_section_lines[i].strip().startswith('📌 *共') or last_section_lines[i].strip().startswith('**📋 共'):
+        stripped = last_section_lines[i].strip()
+        if stripped.startswith(('📌 *共', '**📋 共', '📌 *共', '📋 共')):
             footer = last_section_lines.pop(i).strip()
             sections[-1] = '\n'.join(last_section_lines).strip()
             break
@@ -212,16 +213,22 @@ def main():
         f"[FRAGMENT] Split into {len(fragments)} fragments",
         file=sys.stderr,
     )
+    over_limit = False
     for i, f in enumerate(fragments):
         byte_count = len(f.encode('utf-8'))
         char_count = len(f)
         print(f"  Fragment {i+1}: {char_count} chars / {byte_count} bytes", file=sys.stderr)
         if byte_count > MAX_BYTES:
+            over_limit = True
             print(
                 f"  ⚠️  Fragment {i+1}: {byte_count} bytes exceeds MAX_BYTES={MAX_BYTES} — "
-                f"sub-splitting may have failed",
+                f"WeCom may silently truncate",
                 file=sys.stderr,
             )
+    if over_limit:
+        # Signal to orchestrator that fragments are unsafe
+        print("", file=sys.stderr)
+        print("[FRAGMENT] ⚠️  WARNING: one or more fragments exceed byte limit", file=sys.stderr)
 
 
 if __name__ == '__main__':

@@ -5,7 +5,8 @@ import sys
 from pathlib import Path
 
 # 动态发现 data 目录
-DATA_DIR = Path("/home/asus/.hermes/trendradar/data")
+from trendradar.scripts.settings import get_data_dir
+DATA_DIR = get_data_dir()
 if not DATA_DIR.exists():
     print(f"ERROR: data dir not found: {DATA_DIR}", file=sys.stderr)
     sys.exit(1)
