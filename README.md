@@ -1,6 +1,6 @@
 # TrendRadar 📡
 
-> **v5.6.0** — 多源 RSS 聚合 + AI 策展 + Pro 深度分析 → 企业微信日/周/月报。含自动体检、偏好收敛、编排器一键管线、全链路安全加固、CI 持续集成。
+> **v5.7.0** — 多源 RSS 聚合 + AI 策展 + Pro 深度分析 → 企业微信日/周/月报。含自动体检、偏好收敛、编排器一键管线、全链路安全加固、CI 持续集成。
 
 > 📖 **[从零搭建指南 → SETUP.md](SETUP.md)** — 从 Hermes Agent 全新安装到测试部署一站完成。
 
@@ -65,6 +65,7 @@ pipeline_orchestrator.py（一键6阶段）
 - **结构化日志** — 统一 logging 工厂，`[timestamp] [LEVEL] [module]` 格式
 - **退出码协议** — 脚本按 `exitcodes.py` 返回 0/2/3/10/11/12/99，Agent 依码决策
 - **API 熔断退避** — 翻译层指数退避 2→30s + jitter + 连续 3 失败熔断
+- **AI批量翻译** — `ai_translate.py` 外文摘要翻译 + **中文短摘要AI扩写**（<50字自动扩至完整信息句）
 - **BATCH_SIZE 可配置** — `--batch-size` CLI + `TRANSLATE_BATCH_SIZE` 环境变量，上限 20
 - **发布前拦截器** — `sanity_check.py` 禁语扫描/死链检测/敏感词脱敏
 - **BlogWatcher 桥接** — `blog_watcher_bridge.py` 对接 BlogWatcher 订阅源，统一进入推送管线
@@ -125,7 +126,7 @@ TrendRadar/
 │   │   ├── curate_and_push.py           # 5 域并行精选 + 多样性惩罚
 │   │   ├── ai_translate.py              # AI 批量翻译 + 熔断退避
 │   │   ├── batch_fetch.py               # 10 并发全文抓取
-│   │   ├── render_markdown.py           # 纯脚本 Markdown 渲染
+│   │   ├── render_markdown.py           # 纯脚本渲染（摘要80字上限+句号边界截断）
 │   │   ├── render_deep_analysis.py      # Pro 深度分析 + 知识图谱
 │   │   ├── fragment_push.py             # UTF-8 字节计数分片
 │   │   ├── sanity_check.py              # 发布前拦截器
