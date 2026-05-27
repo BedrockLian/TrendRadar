@@ -101,3 +101,19 @@ subprocess.run([pipeline_python, ...], env=penv)
 `remove_older_than()` 仅清理 data/ 目录的匹配文件。但 `cache/` 目录下的 RSS 原始缓存和 fetch 快照不受此管控，可能无限堆积。
 **信号**：`cache/` 目录文件数持续增长，磁盘空间缓慢下降。
 **修复**：维护脚本 `trendradar_maintenance.py` 应增加对 `cache/*.json` 的过期清理（保留 48h）。Storage.vacuum() 每周清理 DB 碎片。
+
+## 31. 预分类 category fallback 缺失 foreign_china
+
+`fetch_feeds.py` `_preclassify()` 的 category fallback 分支仅处理 `game`/`tech`/`economy`/`news`。`foreign_china` 类别源（BBC 世界/中国、NPR 国际、路透社·国际）掉到 `else: 'other'` → LLM 精选排除。
+
+**信号**：外媒源在 raw cache 中（`raw_{date}.json` 有该源的文章）但从未在简报中出现。检查 `_likely_domain` 值为 `other`。
+
+**修复**：`elif cat in ('news', 'foreign_china'): item['_likely_domain'] = 'top_headlines'`。
+
+## 32. 预分类短关键词子串误触
+
+`config/keywords.py` 中 2 字符关键词（`FF`/`AI`/`AR`）通过 Aho-Corasick 子串匹配时误触任何包含这些字母组合的英文单词：`FF` 匹配 affairs/effect/office，`AI` 匹配 affairs/main/chain，`AR` 匹配 article/start/market。所有外媒文章的标题/摘要几乎必然包含这些子串，导致大量文章被误分到 tech/gaming 域。
+
+**信号**：商业/政治/经济源的文章大量被标记为 `_likely_domain=tech` 或 `gaming`，而非正确的 `top_headlines`/`economy`。
+
+**修复**：`config/keywords.py` 中移除 FF/AI/AR。完整名（`Final Fantasy`）已在 GAME_KW。ChatGPT/LLM/大模型 等已覆盖 AI 相关检测。

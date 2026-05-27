@@ -1,14 +1,24 @@
 # 烟雾测试维护
 
-`~/TrendRadar/hermes-scripts/trendradar_maintenance.py` 每日 03:00 运行 `pytest tests/`（`no_agent=true`）。
+`~/.hermes/scripts/trendradar_maintenance.py` 每日 03:00 运行 `pytest tests/`（`no_agent=true`）。注意：仓库中 hermes-scripts/ 也有同名副本，两个位置需要同步。
 
 ## 运行命令
 
+### 开发环境（仓库副本）
 ```bash
-cd ~/TrendRadar/trendradar && python -m pytest tests/ -v --tb=short
+cd ~/TrendRadar/trendradar && PYTHONPATH=~/TrendRadar python -m pytest tests/ -v --tb=short
 ```
 
-共 103 个测试（2026-05-26）。
+### 生产环境（Hermes 运行时）
+```bash
+cd ~/.hermes/trendradar && PYTHONPATH=~/.hermes/trendradar python -m pytest trendradar/tests/ -v --tb=short
+```
+
+注意：生产环境的测试文件在 `trendradar/trendradar/tests/`（嵌套包结构），而非 `trendradar/tests/`。
+
+**PYTHONPATH 陷阱**：`~/.hermes/` 包含 `trendradar/__init__.py`，设 `PYTHONPATH=~/.hermes/` 会让 Python 在顶层就能找到 `trendradar` 包，与 conftest 的 sys.path 冲突导致 import 死锁（见 #8）。始终设到 `~/.hermes/trendradar/` 层级。
+
+共 ~103 个测试（排除 `test_push_prepare` 和 `TestRecordFingerprints` 后 ~90 余通过）。
 
 ## 常见失败模式
 
@@ -80,6 +90,43 @@ if 'run_id' not in cols:
 `sanity_check.py` v3.x 新增 `strip_orchestrator_preamble()`：在禁语/格式检查前自动剥离编排器输出的状态行（push_id/deep_analysis/迁移错误等），避免编排器正常输出误触 `BANNED_PHRASES`。
 
 匹配模式见 `ORCHESTRATOR_PREAMBLE_PATTERNS` 列表，按行正则匹配。
+
+### 8. 测试套件完全挂起（import 死锁，零输出，超时）
+
+**症状**: `pytest tests/` 从无输出，120s 后脚本超时。零行测试输出，只有 cron 报 "Script timed out after 120s"。
+
+**根因**: 特定测试文件（`test_push_prepare.py`）在 import 阶段死锁。`push_prepare.py` 使用 `from trendradar.scripts.settings import ...` 导入，当 `PYTHONPATH` 包含 `/home/asus/.hermes/` 时：
+
+1. Python 发现 `trendradar` 顶层级包（因为 `~/.hermes/trendradar/__init__.py` 存在）
+2. 触发 `settings.py` → `common.py` → `storage.py` 等模块的模块级初始化
+3. 与 conftest.py 的 `sys.path.insert(0, ...)` 形成 import 链死锁
+4. pytest 进程无限阻塞，零输出
+
+**排查方法**:
+```bash
+# 1. 检查何时开始死锁——逐测试文件运行
+for tf in tests/test_*.py; do
+  timeout 15 python -m pytest "$tf" -q --tb=line || echo "HANG: $tf"
+done
+
+# 2. 孤立隔离——用最小 timeout 跑疑似文件
+timeout 10 python -m pytest tests/test_push_prepare.py -v
+
+# 3. 确认是 import 级死锁（不是某个测试函数挂起）
+timeout 10 python -c "from push_prepare import count_new_items"  # import 就挂
+```
+
+**修复**:
+- **短期（维护脚本）**: 在 `pytest -k` 过滤器中排除该文件或类：`not push_prepare and not TestRecordFingerprints`
+- **长期（根因）**: 设置子进程 `PYTHONPATH` 时指向项目目录本身（`~/.hermes/trendradar/`）而非父目录（`~/.hermes/`），避免 Python 在顶层包解析时发生冲突
+- **嵌套包结构**: 若代码在 `trendradar/trendradar/` 深层结构下，`cwd` 和 `tests/` 路径都要指向内层包目录，同时 `PYTHONPATH` 设为外层 `~/.hermes/trendradar/`。维护脚本已自适应检测：
+  ```python
+  TR_PKG = TRENDRADAR_HOME / 'trendradar'
+  cwd=str(TR_PKG if TR_PKG.exists() else TRENDRADAR_HOME)
+  penv['PYTHONPATH'] = str(TRENDRADAR_HOME)
+  ```
+
+**预防**: 任何新增测试文件若从 `trendradar.scripts.*` 导入模块，需确保测试运行时不依赖 `~/.hermes/` 在 PYTHONPATH 中。conftest.py 应优先通过 `sys.path.insert` 而非 `PYTHONPATH` 环境变量来控制包解析。
 
 ### 7. 翻译管线：标题未翻译但摘要已翻译
 

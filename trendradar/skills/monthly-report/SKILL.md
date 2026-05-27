@@ -33,17 +33,17 @@ cron 每月 1 日 09:00 (Pro, job `0b14c67429ba`)，或手动。
 📈 趋势研判（跨域交叉+下月新兴话题）
 📋 推送批次追溯（run_id 清单）
 ```
-完整模板见 `references/monthly-template.md`。
+完整模板见 `references/PIPELINE.md  # was monthly-template → pipeline`。
 
 ### 3. 信息茧房
 引用 `blind_spot_audit.py --days 30`。汇总 `_serendipity: true` 到附录。
 
 ### 4. 格式
-简报格式和空行规范见 `references/render-format.md`。无表格/引用/斜体。外文翻中文。每条至少 1 对立视角。零前置文本。
+简报格式和空行规范见 `references/PIPELINE.md  # was render-format → pipeline`。无表格/引用/斜体。外文翻中文。每条至少 1 对立视角。零前置文本。
 
 ## 参考
 
 | 文件 | 内容 |
 |------|------|
-| `references/monthly-template.md` | 完整模板 |
-| `references/render-format.md` | 简报格式规范 |
+| `references/PIPELINE.md  # was monthly-template → pipeline` | 完整模板 |
+| `references/PIPELINE.md  # was render-format → pipeline` | 简报格式规范 |

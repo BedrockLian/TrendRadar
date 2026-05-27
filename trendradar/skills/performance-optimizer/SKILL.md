@@ -15,13 +15,21 @@ metadata:
 
 > 性能维度已达目标（脚本阶段 ~7s），不再优化。瓶颈在外网 HTTP，非可优化范围。
 
+## API 故障韧性
+
+优化器依赖 DeepSeek API 读取 curated 数据和计算评分。API 连接错误是已知故障模式（gateway 日志常见 `Connection error` / `RemoteProtocolError`）：
+
+1. **重试** — terminal 命令设合理 timeout，失败后等 5-10s 重试
+2. **跳过** — 若连续 3 次 API 调用失败，输出 `API 不可达，跳过本轮` 而非崩溃
+3. **交付验证** — 优化报告通过 cron final response auto-delivery 投递。若当天 Gateway 不稳定，优化报告可能不送达——参考 delivery_watchdog.py 的自动补发机制
+
 ## 质量协议
 
-**评分** (>85 达标): 空摘要<5%(+15)、重复<3%(+10)、头条命中≥60%(+10)、每板块≥3条(+10)、外媒满14条(+5)、分布均匀(+10)。扣分: 空摘要≥20%(-15)、板块为0(-20)、单源≥50%(-15)。
+**评分** (>85 达标): 空摘要<5%(+15)、重复<3%(+10)、头条命中≥60%(+10)、每板块≥3条(+10)、外媒满14条(+5)、分布均匀(+10)。扣分: 空摘要≥20%(-15)、板块为0(-20)、单源≥50%(-15)（代码层已有硬上限30%/slot）。
 
-**单源集中度预警**: ≥40% 即使未达扣分线也应标注塌缩风险。
+**单源集中度**: curate_all() 已有全局 30% 硬上限——任何单源在同一个 slot 占比 >30% 时自动剔除最低分条目。优化报告不需要再建议添加新源来稀释已超标来源（稀释策略已在源码层面通过加新源 + 上限代码解决）。集中度预警(≥40%) 仍应标注以便用户知晓结构性问题。
 
-**杠杆**: MIN_SCORE(5-8,±1)、MAX_PER_DOMAIN(±2)、blog recency(1-3,±1)、关键词(±5词)、白名单(增/删)。\n\n### 质量参数\n\n| 参数 | 文件 | 范围 | 步长 |\n|------|------|------|------|\n| `MIN_SCORE` | curate_and_push.py | 5-8 | ±1 |\n| `MAX_PER_DOMAIN['top_headlines']` | curate_and_push.py | 8-15 | ±2 |\n| `MAX_PER_DOMAIN['tech']` | curate_and_push.py | 5-10 | ±2 |\n| blog recency 保底 | curate_and_push.py `_score()` | 1-3 | ±1 |\n\n### 推送参数\n\n| 参数 | 文件 | 范围 | 步长 |\n|------|------|------|------|\n| `MAX_PER_DOMAIN` | curate_and_push.py | ±3 | +1/-1 |\n| `_kw()` 关键词集 | curate_and_push.py | — | ±5词 |\n| slot 时间 | cron job | 06:00-23:00 | ±1h |
+**杠杆**: MIN_SCORE(5-8,±1)、MAX_PER_DOMAIN(±2)、blog recency(1-3,±1)、关键词(±5词)、白名单(增/删)。详见 `references/ARCHITECTURE.md  # was fix-recipes → architecture`。
 
 **交互**: 评分<85 → 列出扣分项+建议 → 问修哪个(编号/all/跳过)。单参数调整，3轮无改善→收敛，跳过 7 天恢复。
 
@@ -46,7 +54,7 @@ metadata:
 
 ## 已验证修复
 
-详见 `references/fix-recipes.md`：短摘要扩写、tech 上限调整、tirith 关闭、foreign_china 扩充。
+详见 `references/ARCHITECTURE.md  # was fix-recipes → architecture`：短摘要扩写、tech 上限调整、tirith 关闭、foreign_china 扩充。
 
 ## 参数沿革
 
@@ -54,10 +62,13 @@ metadata:
 |------|---------------|----------------------|----------|
 | v6.0 | 24/32/24 | 65 | 初始值 |
 | v6.1 | 30/30/20 | 30 (6+7+6+6+5) | 推送量偏差 +108%, 用户全修后收紧。新增 per-slot 截断逻辑在 curate_all(), foreign_china 加 10 词 |
+| v6.2 | 30/30/20 | 30 (不变) | 虎嗅 slot 占比 40% 触发集中警报。新增 36氪 + 界面新闻稀释，curate_all() 新增全局 30%/slot 来源硬上限，虎嗅 authority 3→2 |
 
 ## 参考
 
 | 文件 | 内容 |
 |------|------|
-| `references/fix-recipes.md` | 已验证修复脚本和验证命令 |
-| `references/render-format.md` | 简报格式规范 |
+| `references/ARCHITECTURE.md  # was fix-recipes → architecture` | 已验证修复脚本和验证命令 |
+| `references/PIPELINE.md  # was render-format → pipeline` | 简报格式规范 |
+| `references/DELIVERY-WATERMARK.md  # was delivery-failure-patterns → delivery` | 静默投递失败模式识别 + 诊断流程 |
+| `references/ARCHITECTURE.md  # was source-diversity → architecture` | 来源集中度问题：三层递进方案（硬上限/稀释/权重） |
