@@ -697,7 +697,7 @@ cp -r ~/.hermes/trendradar/references/ ~/TrendRadar/trendradar/
 cp -r ~/.hermes/trendradar/config/ ~/TrendRadar/trendradar/
 cp -r ~/.hermes/trendradar/migrations/ ~/TrendRadar/trendradar/
 
-# 同步技能（7个）
+# 同步技能（6个）
 cp -r ~/.hermes/skills/trendradar/ ~/TrendRadar/trendradar/skills/
 
 # 同步外围脚本
