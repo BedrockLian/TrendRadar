@@ -49,19 +49,30 @@ def _detect_emoji(heat_value, push_id, track=None):
 
 
 def _shorten(text, max_len):
-    """Trim text to max_len chars, preserving sentence boundaries."""
+    """Trim text to max_len chars, preserving sentence boundaries.
+    
+    Never produces broken sentences (断句): if no sentence boundary found
+    within range, returns clean text without ellipsis marker.
+    """
     text = text.strip().replace('\n', ' ').replace('\r', ' ')
     if len(text) <= max_len:
         return text
     cut = text[:max_len]
+    # 1. Sentence-ending punctuation (preferred)
     for sep in '。。！？?！\n':
         pos = cut.rfind(sep)
         if pos > max_len * 0.6:
             return cut[:pos + 1]
+    # 2. Clause boundary (逗号)
+    pos = cut.rfind('，')
+    if pos > max_len * 0.4:
+        return cut[:pos + 1]
+    # 3. Space (English word boundary)
     pos = cut.rfind(' ')
-    if pos > max_len * 0.6:
-        return cut[:pos] + '…'
-    return cut.rstrip() + '…'
+    if pos > max_len * 0.4:
+        return cut[:pos]
+    # 4. Clean truncation — no ellipsis, no broken-sentence marker
+    return cut.rstrip()
 
 
 def _format_item(idx, item, push_id):
