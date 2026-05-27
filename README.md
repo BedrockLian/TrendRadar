@@ -153,7 +153,7 @@ TrendRadar/
 │   │   ├── 001_initial.sql           # 初始表结构
 │   │   └── runner.py                 # 迁移执行器（up + down 回滚）
 │   ├── skills/               #   Hermes Agent 技能定义（6个）
-│   │   ├── news-secretary/           # 日报推送 v6.5.0
+│   │   ├── news-secretary/           # 日报推送 v6.9.0
 │   │   ├── self-healing/             # 自动体检 v3.4.0
 │   │   ├── performance-optimizer/    # 推送质量优化 v2.4.0
 │   │   ├── system-config/            # 系统配置速查 v2.11.0
