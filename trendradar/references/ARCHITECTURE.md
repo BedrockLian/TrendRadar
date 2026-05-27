@@ -1,52 +1,52 @@
 <!-- version: 2.8.0 | consolidated: 2026-05-27 | source: 9 docs merged -->
 
-# TrendRadar Architecture
+# TrendRadar 架构
 
-Consolidated from: classification-architecture.md, import-architecture.md, script-rendering.md, render-markdown.md, orchestrator-notes.md, keyword-architecture.md, migration-mechanism.md, health-check-design.md, api-backoff-circuit-breaker.md
-
----
-
-## 1. System Overview
-
-TrendRadar is a multi-RSS feed aggregation pipeline that fetches, classifies, curates, translates, renders, and pushes daily news briefings to WeCom (企业微信). The pipeline is orchestrated by `pipeline_orchestrator.py` v2.8.0 and runs on a cron schedule (`0 9,12,21 * * *`).
-
-### Pipeline Flow
-
-```
-pipeline_orchestrator.py (v2.8.0 — one-click 7-stage)
-  ① push_slot_detect → ② push_prepare(fetch+curate) → ③ parallel(ai_translate ∥ batch_fetch)
-  → ④ render_markdown → ⑤ fragment_push (UTF-8 byte-counted splitting) → ⑥ record_fingerprints (Storage unified access)
-  → output JSON: {status, fragments, briefing, stats, needs_deep_analysis}
-```
+合并自: classification-architecture.md, import-architecture.md, script-rendering.md, render-markdown.md, orchestrator-notes.md, keyword-architecture.md, migration-mechanism.md, health-check-design.md, api-backoff-circuit-breaker.md
 
 ---
 
-## 2. Script Import Architecture
+## 1. 系统概述
 
-### The Bare Import Problem
+TrendRadar 是一个多 RSS 源聚合管道，负责抓取、分类、精选、翻译、渲染并推送每日新闻简报到企业微信。管道由 `pipeline_orchestrator.py` v2.8.0 编排，按 cron 调度运行（`0 9,12,21 * * *`）。
 
-Scripts previously used bare imports like `from settings import ...` — works when running `python scripts/xxx.py` (sys.path auto-adds scripts/), but fails as module import (`python -c "import trendradar.scripts.xxx"`) with `ModuleNotFoundError`.
+### 管道流程
 
-### Fix: Fully-Qualified Imports
+```
+pipeline_orchestrator.py (v2.8.0 — 一键式 7 阶段)
+  ① push_slot_detect → ② push_prepare(抓取+精选) → ③ 并行(ai_translate ∥ batch_fetch)
+  → ④ render_markdown → ⑤ fragment_push (UTF-8 字节计数分片) → ⑥ record_fingerprints (Storage 统一接入)
+  → 输出 JSON: {status, fragments, briefing, stats, needs_deep_analysis}
+```
+
+---
+
+## 2. 脚本导入架构
+
+### 裸导入问题
+
+脚本之前使用裸导入如 `from settings import ...` — 当执行 `python scripts/xxx.py` 时正常（sys.path 自动添加 scripts/），但作为模块导入时（`python -c "import trendradar.scripts.xxx"`）会报 `ModuleNotFoundError`。
+
+### 修复：完全限定导入
 
 ```python
-# ❌ Bare imports
+# ❌ 裸导入
 from settings import get_logger
 from heat_tracker import make_fingerprint
 
-# ✅ Fully-qualified imports
+# ✅ 完全限定导入
 from trendradar.scripts.settings import get_logger
 from trendradar.scripts.heat_tracker import make_fingerprint
 ```
 
-### Verification Commands
+### 验证命令
 
 ```bash
-# Check for residual bare imports
+# 检查残留的裸导入
 grep -rn "^from \(settings\|heat_tracker\|fetch_feeds\) \|^import \(heat_tracker\|fetch_feeds\)" \
   ~/.hermes/trendradar/scripts/*.py | grep -v "from trendradar" | grep -v __pycache__
 
-# Verify all modules import correctly
+# 验证所有模块导入正确
 cd ~/.hermes/trendradar
 for mod in push_prepare batch_fetch ai_translate render_markdown fragment_push \
   curate_and_push track_events record_fingerprints heat_tracker fetch_feeds \
@@ -56,23 +56,23 @@ for mod in push_prepare batch_fetch ai_translate render_markdown fragment_push \
 done
 ```
 
-- 2026-05-24: Full fix of 15 files. 14/14 import tests pass.
-- New scripts default to fully-qualified imports. `pipeline_orchestrator.py` is the reference implementation.
+- 2026-05-24：15 个文件全部修复。14/14 导入测试通过。
+- 新脚本默认使用完全限定导入。以 `pipeline_orchestrator.py` 为参考实现。
 
 ---
 
-## 3. Classification Pipeline Architecture
+## 3. 分类管道架构
 
-### Dual Keyword Set Trap
+### 双关键词集陷阱
 
-| Location | Variable | Purpose | Word Count |
-|----------|----------|---------|------------|
-| `fetch_feeds.py::_kw_sets()` | — | fetch pre-classification | ~130 (subset) |
-| `curate_and_push.py::_config()` | — | curate main classification | ~505 (full set) |
+| 位置 | 变量 | 用途 | 词数 |
+|------|------|------|------|
+| `fetch_feeds.py::_kw_sets()` | — | 抓取预分类 | ~130（子集） |
+| `curate_and_push.py::_config()` | — | 精选主分类 | ~505（全集） |
 
-`_preclassify()` writes `_likely_domain` into raw JSON. If unsynchronized, raw JSON gets lots of `other`. **When modifying `_kw()`, must sync `_kw_sets()`**.
+`_preclassify()` 将 `_likely_domain` 写入原始 JSON。如果两个集合不同步，原始 JSON 中会有大量 `other`。**修改 `_kw()` 时必须同步更新 `_kw_sets()`**。
 
-### Classification Pipeline (curate_all)
+### 分类管道（curate_all）
 
 ```
 foreach item:
@@ -82,160 +82,160 @@ foreach item:
   4. headline:     safety_kw ∨ politics_kw      → headline
   5. tech:         tech_kw_hit                  → tech
   6. economy:      economy_kw_hit               → economy
-  7. Fallback (by source category):
+  7. 回退（按来源分类）：
      news    → headline
      game    → gaming
      tech    → tech
      economy → economy
-     no match → _drop=True
+     无匹配   → _drop=True
 ```
 
-### Key Design Decisions
+### 关键设计决策
 
-**Fallback routing**: `_all_source_category()` routes by source category. `news` category sources (联合早报, 澎湃等 12 sources) → `headline`, competing with safety/politics items for top-10.
+**回退路由**：`_all_source_category()` 按来源分类路由。`news` 分类来源（联合早报、澎湃等 12 个来源）→ `headline`，与安全/政治类条目竞争 top-10。
 
-**politics special handling**: 124 politics keywords route to `headline` but are NOT in `_kw_sets()` — fetch pre-classification marks as `other`, curate stage correctly routes via politics keywords. Never add politics words to economy set.
+**politics 特殊处理**：124 个政治关键词路由到 `headline`，但不在 `_kw_sets()` 中 — 抓取预分类标记为 `other`，精选阶段通过政治关键词正确路由。绝不将政治词加入经济词集。
 
-### Source Coverage Audit Pitfall
+### 信源覆盖审计陷阱
 
-`blind_spot_audit.py` only looks at curated JSON. MAX_PER_DOMAIN causes active sources to show zero in curated but normal in raw. **True dead source = raw zero**. 2026-05-21 audit: reported 18 dead → actually 4 truly dead (deleted), 35 alive.
+`blind_spot_audit.py` 只查看已精选的 JSON。MAX_PER_DOMAIN 会导致活跃来源在精选数据中显示为零但在原始数据中正常。**真正的死源 = 原始数据为零**。2026-05-21 审计：报告 18 个死亡 → 实际仅 4 个真死亡（已删除），35 个活跃。
 
 ---
 
-## 4. Keyword Architecture (v4.7 — 505 words, 6 domains)
+## 4. 关键词架构（v4.7 — 505 词，6 个领域）
 
-Dual-location maintenance: `curate_and_push.py::_kw()` (full set) / `fetch_feeds.py::_kw_sets()` (~150 word subset, only game/tech/economy)
+双位置维护：`curate_and_push.py::_kw()`（全集）/ `fetch_feeds.py::_kw_sets()`（约 150 词子集，仅 game/tech/economy）
 
-| domain | count | languages |
-|--------|-------|-----------|
-| game | 131 | zh/en/ja |
-| tech | 87 | zh/en |
-| economy | 94 | zh/en |
-| politics | 124 | zh/en |
-| safety | 31 | zh |
-| junk | 38 | zh |
+| 领域 | 数量 | 语言 |
+|------|------|------|
+| game | 131 | 中/英/日 |
+| tech | 87 | 中/英 |
+| economy | 94 | 中/英 |
+| politics | 124 | 中/英 |
+| safety | 31 | 中 |
+| junk | 38 | 中 |
 
-### game (131 words)
+### game（131 词）
 zh: 游戏, 独立游戏, 原神, 黑神话, 塞尔达, 艾尔登法环, 博德之门, 魔兽, 暴雪, 使命召唤, 我的世界, 评测, 游戏版号, 米哈游, 崩坏, 星穹铁道, 绝区零, 机核, 触乐, 主机, 手游, 掌机, 索尼, 任天堂
 en: Game/GTA/Steam/Epic/Switch/Xbox/PlayStation/PS5/Nintendo/MOD/DLC/FPS/RPG/3A/Genshin/Elden Ring/Dark Souls/Baldur's Gate/HoYoverse/Honkai/Star Rail/Zenless/ZZZ/GameLook/Famitsu/Steam Deck/Game Pass/Monster Hunter/Final Fantasy/esports/tournament/MMO/MOBA/roguelike/soulslike/JRPG/Unreal Engine/Unity/remaster/remake/Early Access/beta/Twitch/Gamescom
 ja: ゲーム, ファミ通, 4Gamer, 発売, 配信, リリース, レビュー, 体験版, アップデート, ゲーム機, スクエニ, カプコン, バンナム, セガ, コナミ, フロム, アトラス, モンハン, ドラクエ, ファイナルファンタジー
 
-### tech (87 words)
+### tech（87 词）
 zh: AI, 大模型, 芯片, 半导体, 英伟达, GPU, CPU, 手机, 操作系统, 苹果, 华为, 特斯拉, 自动驾驶, 机器人, 电动汽车, 云计算, 5G, 开源, 编程
 en: ChatGPT, LLM, AMD, Meta, Google, Nvidia, Intel, Apple, Samsung, Microsoft, Tesla, semiconductor, chip, foundry, SpaceX, NASA, cryptocurrency, blockchain, Bitcoin, cybersecurity, ransomware, startup, SaaS, cloud, API, open source, Kubernetes, Docker, GitHub
 
-### economy (94 words)
+### economy（94 词）
 zh: 就业, 消费, 工资, 物价, CPI, 房价, 裁员, 社保, GDP, 财政, 税收, 养老金, 贸易, 进出口, 贷款, 融资, 农业, 物流, 制造
 en: employment, unemployment, layoff, inflation, interest rate, Federal Reserve, housing market, trade war, tariff, supply chain, recession, GDP growth, commodity, energy crisis, manufacturing, poverty
 
-### politics (124) / safety (31)
+### politics（124）/ safety（31）
 politics en: Trump, Biden, Putin, Xi Jinping, Zelensky, Ukraine, Russia, Taiwan, Israel, Gaza, North Korea, Iran, NATO, EU, election, sanctions, war, missile, military, Pentagon, UN, G7, G20, BRICS
 politics zh: 访华, 会见, 外交, 中美, 中俄, 北约, 联合国, 制裁, 习近平, 总理, 欧盟, 美国, 日本, 韩国, 印度, 乌克兰, 俄罗斯, 选举, 战争, 冲突, 军演, 航天
-safety: zh-only 31 words (disaster/safety category)
+safety: 纯中文 31 词（灾害/安全类别）
 
-### Expansion Principles
-1. Run `blind_spot_audit.py` first + check raw `other` domain
-2. Avoid generic words (no `studio`/`発表`/`sales` cross-industry words)
-3. Bilingual pairing, use abbreviations for JP publishers
-4. When modifying `_kw()`, sync `_kw_sets()`
-5. politics never enters `_kw_sets()`, handled by `curate_all()`
-
----
-
-## 5. Script Rendering Architecture
-
-### Why Script Rendering
-
-LLM-based rendering (`render_briefing.py`) was replaced with pure-script rendering:
-
-| Dimension | LLM Rendering | Script Rendering |
-|-----------|--------------|-----------------|
-| Speed | ~9s (5× parallel API) | ~0s |
-| Token cost | API cost per run | Zero |
-| Format consistency | Dependent on LLM prompt adherence | Hardcoded, 100% reliable |
-| User complaints | Frequent (empty line issues) | None |
-
-### Scripts
-
-**`render_markdown.py`** — Reads curated JSON → directly formats markdown per render-format spec.
-- No API calls, zero token cost
-- Summaries truncated at 150 chars with sentence-boundary-aware cutoff
-- Empty line rules hardcoded (no LLM drift)
-- Output compatible with `fragment_push.py`
-
-**`render_deep_analysis.py`** — Reads Pro subagent output from stdin → formats for WeCom mobile.
-- Strips tables/code blocks/horizontal rules (unsupported by WeCom)
-- Detects section headings by keyword → adds emoji (📈🎯📌⚡)
-- Auto-truncates at 1600 chars (WeCom single-message limit)
-- Preserves natural paragraph breaks
-
-| Scenario | Renderer |
-|----------|----------|
-| Daily briefing (morning/noon/evening) | `render_markdown.py` (always) |
-| Deep analysis (evening Pro agents) | `render_deep_analysis.py` (always) |
-| LLM-based fallback | Not needed — script covers all cases |
+### 扩展原则
+1. 先运行 `blind_spot_audit.py` + 检查原始 `other` 领域
+2. 避免泛词（不加入 `studio`/`発表`/`sales` 等跨行业词）
+3. 双语配对，日文发行商使用缩写
+4. 修改 `_kw()` 时同步 `_kw_sets()`
+5. politics 永不进入 `_kw_sets()`，由 `curate_all()` 处理
 
 ---
 
-## 6. Render Markdown Internals
+## 5. 脚本渲染架构
 
-**Location**: `/home/asus/.hermes/trendradar/scripts/render_markdown.py`
+### 为什么使用脚本渲染
 
-Replaces `render_briefing.py` (deleted). Renders curated JSON directly to WeCom markdown. Cron references MUST use this script name — never fall back to deleted old names.
+基于 LLM 的渲染（`render_briefing.py`）已被纯脚本渲染替代：
 
-Advantages:
-- Speed: ~0s (vs LLM ~9s)
-- Cost: zero tokens (vs LLM API consumption)
-- Format: 100% consistent, no LLM output drift
+| 维度 | LLM 渲染 | 脚本渲染 |
+|------|----------|----------|
+| 速度 | ~9s（5 路并行 API） | ~0s |
+| Token 成本 | 每次运行消耗 API 费用 | 零 |
+| 格式一致性 | 依赖 LLM 提示遵循度 | 硬编码，100% 可靠 |
+| 用户投诉 | 频繁（空行问题） | 无 |
 
-The format contract (7 iron rules) is stored in the script's docstring. Any format change must update the docstring before changing code.
+### 脚本
+
+**`render_markdown.py`** — 读取精选后的 JSON → 按渲染格式规范直接格式化 Markdown。
+- 无 API 调用，零 token 成本
+- 摘要截断至 150 字符，以句号边界感知方式裁切
+- 空行规则硬编码（无 LLM 漂移）
+- 输出兼容 `fragment_push.py`
+
+**`render_deep_analysis.py`** — 从 stdin 读取 Pro 子 agent 输出 → 格式化为企业微信移动端友好格式。
+- 去除表格/代码块/水平线（企业微信不支持）
+- 按关键词检测章节标题 → 添加 emoji（📈🎯📌⚡）
+- 自动截断至 1600 字符（企业微信单条消息限制）
+- 保留自然段落分隔
+
+| 场景 | 渲染器 |
+|------|--------|
+| 每日简报（早/午/晚） | `render_markdown.py`（始终） |
+| 深度分析（晚间 Pro agent） | `render_deep_analysis.py`（始终） |
+| LLM 回退 | 不需要 — 脚本覆盖所有情况 |
 
 ---
 
-## 7. Orchestrator Reliability Notes
+## 6. Render Markdown 内部机制
 
-### fragment_push Output Parsing
-`fragment_push.py` writes JSON array to stdout, logs to stderr. But logs may leak to stdout in some environments. Orchestrator finds the first line starting with `[` and ending with `]` as JSON, ignores rest. On failure, falls back to single fragment (entire briefing as one message).
+**位置**：`/home/asus/.hermes/trendradar/scripts/render_markdown.py`
 
-### ThreadPoolExecutor for Parallel Stage
-`ai_translate` and `batch_fetch` run in parallel via `concurrent.futures.ThreadPoolExecutor(max_workers=2)`. This is in-process parallelism (not subprocess), so both share GIL state. With `PYTHON_GIL=0` (python3.14t), no GIL contention.
+替代 `render_briefing.py`（已删除）。将精选后的 JSON 直接渲染为企业微信 Markdown。Cron 引用必须使用此脚本名 — 绝不回退到已删除的旧名称。
 
-### NEW_COUNT Detection
-The orchestrator parses `NEW_COUNT=N` from push_prepare stdout for stats tracking.
+优势：
+- 速度：~0s（对比 LLM ~9s）
+- 成本：零 token（对比 LLM API 消耗）
+- 格式：100% 一致，无 LLM 输出漂移
+
+格式契约（7 条铁律）存储在脚本的 docstring 中。任何格式修改必须先更新 docstring 再改代码。
 
 ---
 
-## 8. Database Migration Mechanism
+## 7. 编排器可靠性说明
 
-### Architecture
+### fragment_push 输出解析
+`fragment_push.py` 将 JSON 数组写入 stdout，日志写入 stderr。但在某些环境下日志可能泄漏到 stdout。编排器查找第一行以 `[` 开头、以 `]` 结尾的行作为 JSON，忽略其余内容。解析失败时，回退到单片段模式（整份简报作为一条消息）。
 
-`trendradar/migrations/` directory manages SQLite schema versions:
+### ThreadPoolExecutor 并行阶段
+`ai_translate` 和 `batch_fetch` 通过 `concurrent.futures.ThreadPoolExecutor(max_workers=2)` 并行运行。这是进程内并行（非子进程），两者共享 GIL 状态。使用 `PYTHON_GIL=0`（python3.14t）时无 GIL 争用。
+
+### NEW_COUNT 检测
+编排器从 push_prepare 的 stdout 解析 `NEW_COUNT=N` 用于统计追踪。
+
+---
+
+## 8. 数据库迁移机制
+
+### 架构
+
+`trendradar/migrations/` 目录管理 SQLite schema 版本：
 
 ```
 migrations/
 ├── __init__.py
-├── runner.py        # Migration engine (~50 line SQLite engine)
-└── 001_initial.sql  # fingerprints + heat_tracker + 5 indices
+├── runner.py        # 迁移引擎（约 50 行 SQLite 引擎）
+└── 001_initial.sql  # fingerprints + heat_tracker + 5 个索引
 ```
 
-### Replaced Code
+### 替代的代码
 
-Migration engine unifies 2 scattered CREATE TABLE locations:
+迁移引擎统一了 2 处分散的 CREATE TABLE 位置：
 
-| Original location | Replacement |
-|-------------------|-------------|
-| `heat_tracker.py:init_db()` | Calls `settings.ensure_db_migrated(DB_PATH)` |
-| `health_check.py:auto_repair_missing_table()` | Calls `migrations.runner.migrate(db)` |
+| 原始位置 | 替代方案 |
+|----------|----------|
+| `heat_tracker.py:init_db()` | 调用 `settings.ensure_db_migrated(DB_PATH)` |
+| `health_check.py:auto_repair_missing_table()` | 调用 `migrations.runner.migrate(db)` |
 
-### How It Works
-1. `_migrations` table records applied versions
-2. On startup, scans `migrations/*.sql`, sorted by filename prefix version number
-3. Only applies SQL files with version > current version
-4. Idempotent: already-applied migrations are skipped
+### 工作原理
+1. `_migrations` 表记录已应用的版本
+2. 启动时扫描 `migrations/*.sql`，按文件名前缀版本号排序
+3. 仅应用版本号大于当前版本的 SQL 文件
+4. 幂等性：已应用的迁移会被跳过
 
-### Adding New Migrations
+### 添加新迁移
 
-Create `migrations/002_xxx.sql` with new field/index DDL:
+创建 `migrations/002_xxx.sql` 包含新字段/索引 DDL：
 
 ```sql
 -- 002_add_emotion.sql
@@ -243,9 +243,9 @@ ALTER TABLE heat_tracker ADD COLUMN emotion_score REAL DEFAULT 0.0;
 ALTER TABLE heat_tracker ADD COLUMN emotion_label TEXT DEFAULT '';
 ```
 
-Auto-detected and executed by runner — no business code changes needed.
+Runner 自动检测并执行 — 无需修改业务代码。
 
-### Verification
+### 验证
 ```bash
 cd ~/.hermes/trendradar
 PYTHONPATH=/home/asus/.hermes python3 -c "
@@ -257,124 +257,124 @@ print(f'Schema version: v{ver}')
 
 ---
 
-## 9. Health Check Design
+## 9. 健康检查设计
 
-### Operation
-Cron `c987a2883174`, daily 15:00, no_agent=true, silent.
-Script: `~/.hermes/scripts/trendradar_health_check.py`
+### 运行方式
+Cron `c987a2883174`，每日 15:00，no_agent=true，静默运行。
+脚本：`~/.hermes/scripts/trendradar_health_check.py`
 
-### Silent Design
-- Normal → stdout empty → no push
-- Abnormal → stdout = Markdown → push to WeCom
+### 静默设计
+- 正常 → stdout 为空 → 不推送
+- 异常 → stdout = Markdown → 推送到企业微信
 
-### Checks (14 items)
+### 检查项（14 项）
 
-| # | Function | Check | Auto-repair |
-|---|----------|-------|-------------|
-| 1 | check_db | fingerprints table | ✅ migrate() |
-| 2 | check_db | heat_tracker table | ✅ migrate() |
-| 3 | check_db | DB non-zero-byte | ✅ delete empty shell |
-| 4 | check_scripts | 18 core scripts exist | ❌ |
-| 5 | check_config | YAML+JSON+keywords.py integrity | ❌ |
-| 6 | check_settings_constants | DOMAINS/DOMAIN_LABELS/BRIEFING_RATIO etc | ❌ |
-| 7 | check_cron | 7 job IDs all registered | ❌ |
-| 8 | check_gateway | IPC socket + hermes wecom process | ❌ |
-| 9 | check_data_freshness | curated < 15h | ❌ |
-| 10 | check_api | deepseek + internet egress reachable | ❌ |
-| 11 | check_stale_processes | Stale processes for all cron job IDs | ❌ |
-| 12 | check_memory_size | MEMORY/USER usage (>75% warn) | ❌ |
-| 13 | check_push_log_backpressure | push_log.json size (100KB/1MB) | ❌ |
-| 14 | check_pipeline | slot_detect+RSS connectivity+import+step integrity | ❌ |
-| 15 | _check_system_resources | Disk usage (≥90% alert) | ❌ |
+| # | 功能 | 检查内容 | 自动修复 |
+|---|------|----------|----------|
+| 1 | check_db | fingerprints 表 | ✅ migrate() |
+| 2 | check_db | heat_tracker 表 | ✅ migrate() |
+| 3 | check_db | DB 非零字节 | ✅ 删除空壳文件 |
+| 4 | check_scripts | 18 个核心脚本存在 | ❌ |
+| 5 | check_config | YAML+JSON+keywords.py 完整性 | ❌ |
+| 6 | check_settings_constants | DOMAINS/DOMAIN_LABELS/BRIEFING_RATIO 等 | ❌ |
+| 7 | check_cron | 7 个 job ID 全部已注册 | ❌ |
+| 8 | check_gateway | IPC socket + hermes wecom 进程 | ❌ |
+| 9 | check_data_freshness | 精选数据 < 15h | ❌ |
+| 10 | check_api | deepseek + 互联网出口可达 | ❌ |
+| 11 | check_stale_processes | 所有 cron job ID 的僵尸进程 | ❌ |
+| 12 | check_memory_size | MEMORY/USER 使用率（>75% 警告） | ❌ |
+| 13 | check_push_log_backpressure | push_log.json 大小（100KB/1MB） | ❌ |
+| 14 | check_pipeline | slot_detect+RSS 连通性+导入+步骤完整性 | ❌ |
+| 15 | _check_system_resources | 磁盘使用率（≥90% 告警） | ❌ |
 
-### 7 Cron Job IDs
+### 7 个 Cron Job ID
 
-| ID | Name | Type |
+| ID | 名称 | 类型 |
 |----|------|------|
-| `c987a2883174` | Auto health check | no_agent |
-| `90a2866775df` | Daily briefing push | LLM |
-| `68db70cd8556` | Daily maintenance | no_agent |
-| `cab79825520e` | Push watchdog | no_agent |
-| `718b663e8c04` | Performance optimizer | LLM |
-| `c20e2c82deda` | Weekly report push | LLM |
-| `0b14c67429ba` | Monthly report | LLM |
+| `c987a2883174` | 自动健康检查 | no_agent |
+| `90a2866775df` | 每日简报推送 | LLM |
+| `68db70cd8556` | 每日维护 | no_agent |
+| `cab79825520e` | 推送看门狗 | no_agent |
+| `718b663e8c04` | 性能优化器 | LLM |
+| `c20e2c82deda` | 周报推送 | LLM |
+| `0b14c67429ba` | 月报 | LLM |
 
-### Auto-repair
-- `auto_repair_missing_table()` — calls `repair_missing_tables()` + `migrate()` to rebuild fingerprint/heat tables
-- `auto_repair_empty_db()` — deletes 0-byte DB files
-- Migration engine is idempotent-safe, records version to `_migrations` table
+### 自动修复
+- `auto_repair_missing_table()` — 调用 `repair_missing_tables()` + `migrate()` 重建 fingerprint/heat 表
+- `auto_repair_empty_db()` — 删除 0 字节 DB 文件
+- 迁移引擎幂等安全，版本记录到 `_migrations` 表
 
-### Python Interpreter Notes
+### Python 解释器注意事项
 
-All subprocess calls (push_slot_detect, import checks) MUST use pipeline's python3.14t, not system python3:
+所有子进程调用（push_slot_detect、导入检查）必须使用管道的 python3.14t，而非系统 python3：
 
 ```python
 pipeline_python = os.environ.get('PYTHON', '/usr/local/bin/python3.14t')
 if not os.access(pipeline_python, os.X_OK):
-    pipeline_python = sys.executable  # fallback
+    pipeline_python = sys.executable  # 回退
 penv = os.environ.copy()
 penv['PYTHONPATH'] = str(TR.parent)     # /home/asus/.hermes
 penv.setdefault('PYTHON_GIL', '0')
 subprocess.run([pipeline_python, ...], env=penv)
 ```
 
-System python3 lacks `feedparser`, `zstandard` etc. only installed on python3.14t → import check false positives.
+系统 python3 缺少 `feedparser`、`zstandard` 等库（仅安装在 python3.14t 上）→ 导入检查会误报。
 
-### History
-- v1.0: 20 items, with memory warning
-- v1.1: Removed memory check (desktop thresholds inappropriate), 12h fingerprint, curated freshness 6h→15h, added full chain check
-- v2.0: 15 items, added settings constants / push_log volume / disk resources / 7 cron IDs
+### 历史
+- v1.0：20 项，含内存警告
+- v1.1：移除内存检查（桌面阈值不合适），12h 指纹，精选新鲜度 6h→15h，新增全链检查
+- v2.0：15 项，新增 settings 常量 / push_log 容量 / 磁盘资源 / 7 个 cron ID
 
 ---
 
-## 10. API Backoff + Circuit Breaker (Reusable Pattern)
+## 10. API 退避 + 熔断器（可复用模式）
 
-`ai_translate.py`'s DeepSeek API calls use this pattern, applicable to all LLM API integrations.
+`ai_translate.py` 的 DeepSeek API 调用使用此模式，适用于所有 LLM API 集成。
 
-### Configuration Constants
+### 配置常量
 
 ```python
-RETRY_BASE_DELAY = 2.0        # Initial wait seconds
-RETRY_MAX_DELAY = 30.0        # Cap seconds
-RETRY_JITTER = 0.5            # ±50% random jitter
-RETRY_MAX_ATTEMPTS = 4        # Max 5 attempts (initial + 4 retries)
-CIRCUIT_BREAKER_THRESHOLD = 3  # 3 consecutive batch failures → trip
+RETRY_BASE_DELAY = 2.0        # 初始等待秒数
+RETRY_MAX_DELAY = 30.0        # 上限秒数
+RETRY_JITTER = 0.5            # ±50% 随机抖动
+RETRY_MAX_ATTEMPTS = 4        # 最多 5 次尝试（初始 + 4 次重试）
+CIRCUIT_BREAKER_THRESHOLD = 3  # 连续 3 次批量失败 → 熔断
 ```
 
-### Backoff Algorithm
+### 退避算法
 
 ```
-attempt 0: no delay (first try)
-attempt 1: base * 2^0 = 2s   ± 50% jitter → 1-3s
-attempt 2: base * 2^1 = 4s   ± 50% jitter → 2-6s
-attempt 3: base * 2^2 = 8s   ± 50% jitter → 4-12s
-attempt 4: base * 2^3 = 16s  ± 50% jitter, capped at 30s → 8-24s
+attempt 0: 无延迟（首次尝试）
+attempt 1: base * 2^0 = 2s   ± 50% 抖动 → 1-3s
+attempt 2: base * 2^1 = 4s   ± 50% 抖动 → 2-6s
+attempt 3: base * 2^2 = 8s   ± 50% 抖动 → 4-12s
+attempt 4: base * 2^3 = 16s  ± 50% 抖动，上限 30s → 8-24s
 ```
 
-Each retry timeout increases by 30s (stream drops may need longer wait).
+每次重试超时增加 30s（流中断可能需要更长的等待时间）。
 
-### Circuit Breaker
+### 熔断器
 
-Module-level counter `_translate_failures`:
-- Each batch success → reset to 0
-- Each batch failure → +1
-- Reaches CIRCUIT_BREAKER_THRESHOLD → `circuit_broken()` returns True → skip all remaining batches
-- Manual reset: `reset_circuit()`
+模块级计数器 `_translate_failures`：
+- 每批次成功 → 重置为 0
+- 每批次失败 → +1
+- 达到 CIRCUIT_BREAKER_THRESHOLD → `circuit_broken()` 返回 True → 跳过所有剩余批次
+- 手动重置：`reset_circuit()`
 
-### Usage Pattern
+### 使用模式
 
 ```python
 for batch in batches:
     if circuit_broken():
-        skip_remaining()  # Don't waste API quota
+        skip_remaining()  # 不浪费 API 配额
     try:
         result = await call_api()
-        reset_circuit()   # Reset on success
+        reset_circuit()   # 成功时重置
     except Exception:
         increment_failures()
 ```
 
-### Adaptation Traps
-- Jitter uses `random.random() * 2 - 1` for ±50%, never fixed `* 0.5`
-- Module-level counter in asyncio doesn't need locks (Python GIL protects single bytecode ops)
-- Circuit breaker threshold should = concurrent batch count (e.g., 5 concurrent → threshold=5), otherwise 3 concurrent failures won't trigger
+### 适配陷阱
+- Jitter 使用 `random.random() * 2 - 1` 实现 ±50%，绝不使用固定的 `* 0.5`
+- asyncio 中的模块级计数器不需要锁（Python GIL 保护单字节码操作）
+- 熔断器阈值应 = 并发批次数（如 5 个并发 → threshold=5），否则 3 个并发失败不会触发熔断
