@@ -23,6 +23,7 @@ from trendradar.scripts.settings import get_logger
 log = get_logger('render-markdown')
 
 import json, sys
+from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
 CST = timezone(timedelta(hours=8))
@@ -186,6 +187,13 @@ def main():
 
     # Assemble: header + 2 blank lines + sections (each separated by 2 blank lines) + 2 blank lines + footer
     output = header + '\n\n\n' + '\n\n\n'.join(sections) + '\n\n\n' + footer
+    # Archive: save pure markdown to archive/YYYY-MM-DD/{slot}.md for resend
+    archive_dir = Path(get_data_dir()).parent / 'archive' / today_display
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    archive_path = archive_dir / f'{push_id}.md'
+    archive_path.write_text(output, encoding='utf-8')
+    log.info(f"Archived to {archive_path}")
+
     sys.stdout.write(output)
 
 
