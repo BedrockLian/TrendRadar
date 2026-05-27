@@ -8,7 +8,7 @@ from pathlib import Path
 from functools import lru_cache, cache
 
 CST = timezone(timedelta(hours=8))
-from trendradar.scripts.settings import get_data_dir, get_cache_dir, MIN_SCORE, MAX_PER_DOMAIN, DOMAINS, TRENDRADAR_HOME, BRIEFING_RATIO
+from trendradar.scripts.settings import get_data_dir, get_cache_dir, MIN_SCORE, MAX_PER_DOMAIN, DOMAINS, TRENDRADAR_HOME, BRIEFING_RATIO, SCORE_HEAT_WORDS, MAX_SAME_SOURCE, DIVERSITY_PENALTY_FACTOR, MAX_SOURCE_PCT
 from trendradar.config.keywords import has_keyword_match, ALL_KEYWORDS
 DATA_DIR = get_data_dir()
 CACHE_DIR = get_cache_dir()
@@ -255,7 +255,6 @@ def _score(item: dict, domain: str = 'tech') -> dict:
     if recency == 0 and item.get('_is_blog'):
         recency = 1
     uniqueness = 3 if any(m in title for m in ['[续]', '[新]', '[更新]']) else 2 if url else 1
-    from trendradar.scripts.settings import SCORE_HEAT_WORDS
     cov, hits = item.get('_coverage_count', 1), sum(1 for w in SCORE_HEAT_WORDS if w in title)
     heat = 3 if cov >= 4 or (cov >= 2 and hits >= 2) else 2 if cov >= 3 or hits >= 2 else 1 if cov >= 2 or hits >= 1 else 0
     total = clarity + authority + recency + uniqueness + heat
@@ -269,6 +268,10 @@ def _score(item: dict, domain: str = 'tech') -> dict:
         if any(kw in title for kw in neg_kw):
             return {'total': 0, 'pass': False}
     return {'total': total, 'pass': total >= MIN_SCORE and recency > 0}
+
+
+# Public alias for _score (naming convention: verb_noun)
+calculate_score = _score
 
 
 def _curate_domain(items: list, domain: str) -> list:
@@ -292,8 +295,6 @@ def _curate_domain(items: list, domain: str) -> list:
     # 来源多样性惩罚：同源 > 3 条时权重减半
     result = []
     source_counts: dict[str, int] = {}
-    MAX_SAME_SOURCE = 3
-    PENALTY_FACTOR = 0.5
     
     for item in curated:
         src = (item.get('source_platform', '') or '').split('+')[0].strip().lower()
@@ -302,7 +303,7 @@ def _curate_domain(items: list, domain: str) -> list:
             if count >= MAX_SAME_SOURCE:
                 # 权重减半但不丢弃 — 仍可能作为 low-priority 条目
                 item['_curator_scores']['total'] = int(
-                    item['_curator_scores']['total'] * PENALTY_FACTOR
+                    item['_curator_scores']['total'] * DIVERSITY_PENALTY_FACTOR
                 )
                 item['_diversity_penalized'] = True
             source_counts[src] = count + 1
@@ -417,9 +418,8 @@ def _curate_sections(pool: list, push_id: str) -> dict:
     return result
 
 
-def curate_all(raw: list, push_id: str) -> dict:
-    """全局重分类 + 并行精选（拆分为 _classify_items / _score_headlines / _curate_sections）。"""
-    # 热度信息
+def _inject_heat(raw: list):
+    """注入热度信息到 raw items（无副作用地修改传入列表）。"""
     try:
         import trendradar.scripts.heat_tracker as ht
         if not any('_heat' in item for item in raw):
@@ -431,29 +431,20 @@ def curate_all(raw: list, push_id: str) -> dict:
         import traceback
         log.warning(f'热度追踪失败: {e}\n{traceback.format_exc()}')
 
-    # 分类
+
+def classify_and_score(raw: list) -> tuple:
+    """分类 + 评分：返回 (top_headlines, pool_items)。"""
     headline, remaining, foreign_china = _classify_items(raw)
-
-    # 头条评分
     top_headlines = _score_headlines(headline)
+    return top_headlines, remaining + foreign_china
 
-    # 其余 domain 精选
-    pool = remaining + foreign_china
-    result = _curate_sections(pool, push_id)
-    result['top_headlines'] = top_headlines
-    result['total'] = sum(len(result[d]) for d in DOMAINS)
 
-    # 全局来源多样性上限：单个来源占比不得超过 30%/slot
-    MAX_SOURCE_PCT = 0.30
+def apply_truncation(result: dict, push_id: str):
+    """per-slot 总量截断 + 全局来源多样性上限。"""
     from collections import Counter
-    sec_counts: dict[str, Counter] = {}
-    for d in DOMAINS:
-        for item in result.get(d, []):
-            src = (item.get('source_platform', '') or '').split('+')[0].strip().lower()
-            if src:
-                c = sec_counts.setdefault(d, Counter())
-                c[src] += 1
-    # 跨板块统计
+    from trendradar.scripts.settings import MAX_SOURCE_PCT as _MAX_SOURCE_PCT
+    
+    # 全局来源多样性上限
     all_sources = Counter()
     for d in DOMAINS:
         for item in result.get(d, []):
@@ -462,10 +453,8 @@ def curate_all(raw: list, push_id: str) -> dict:
                 all_sources[src] += 1
     total = result['total']
     for src, count in all_sources.most_common():
-        if total > 0 and count / total > MAX_SOURCE_PCT:
-            # 超标 — 从得分最低的条目剔除
-            to_remove = count - int(total * MAX_SOURCE_PCT)
-            # 收集该来源的所有条目（含分数）
+        if total > 0 and count / total > _MAX_SOURCE_PCT:
+            to_remove = count - int(total * _MAX_SOURCE_PCT)
             src_items = []
             for d in DOMAINS:
                 for i, item in enumerate(result.get(d, [])):
@@ -473,31 +462,27 @@ def curate_all(raw: list, push_id: str) -> dict:
                     if item_src == src:
                         score = item.get('_curator_scores', {}).get('total', 0)
                         src_items.append((score, d, i))
-            # 按分数升序排列，移除最低分的
             src_items.sort()
             removed = 0
             for score, domain, idx in reversed(src_items):
                 if removed >= to_remove:
                     break
-                # 从结果中移除（保留最后一个避免破坏结构）
                 del result[domain][idx]
                 removed += 1
                 total -= 1
 
-    # per-slot 总量截断（③ 硬上限）
+    # per-slot 总量截断
+    from trendradar.scripts.settings import BRIEFING_RATIO
     max_total = BRIEFING_RATIO.get(push_id, 30)
     if result['total'] > max_total:
-        # 按板块比例截断：优先保留头条，其他板块各自缩减
-        non_headline = result['total'] - len(top_headlines)
-        remaining = max_total - len(top_headlines)
+        non_headline = result['total'] - len(result.get('top_headlines', []))
+        remaining = max_total - len(result.get('top_headlines', []))
         if remaining < 0:
-            # 头条已超标，截断头条
-            result['top_headlines'] = top_headlines[:max_total]
+            result['top_headlines'] = result['top_headlines'][:max_total]
             for d in DOMAINS:
                 if d != 'top_headlines':
                     result[d] = []
         elif remaining < non_headline:
-            # 按比例缩减非头条板块
             for d in ['tech', 'gaming', 'economy', 'foreign_china']:
                 keep = max(1, int(len(result[d]) / non_headline * remaining))
                 result[d] = result[d][:keep]
@@ -506,5 +491,22 @@ def curate_all(raw: list, push_id: str) -> dict:
                     break
         result['truncated'] = True
         result['total'] = sum(len(result[d]) for d in DOMAINS)
+
+
+def curate_all(raw: list, push_id: str) -> dict:
+    """全局重分类 + 并行精选（拆分为 _inject_heat / classify_and_score / _curate_sections / apply_truncation）。"""
+    # 热度信息
+    _inject_heat(raw)
+
+    # 分类 + 评分
+    top_headlines, pool = classify_and_score(raw)
+
+    # 其余 domain 精选
+    result = _curate_sections(pool, push_id)
+    result['top_headlines'] = top_headlines
+    result['total'] = sum(len(result[d]) for d in DOMAINS)
+
+    # 多样性截断
+    apply_truncation(result, push_id)
 
     return result

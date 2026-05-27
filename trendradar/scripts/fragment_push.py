@@ -205,7 +205,9 @@ def split_fragments(markdown: str) -> list[str]:
 def main():
     markdown = sys.stdin.read()
     fragments = split_fragments(markdown)
+    # Only JSON on stdout — orchestrator parses this
     print(json.dumps(fragments, ensure_ascii=False))
+    # All diagnostics go to stderr
     print(
         f"[FRAGMENT] Split into {len(fragments)} fragments",
         file=sys.stderr,
@@ -213,11 +215,12 @@ def main():
     for i, f in enumerate(fragments):
         byte_count = len(f.encode('utf-8'))
         char_count = len(f)
-        log.info(f"  Fragment {i+1}: {char_count} chars / {byte_count} bytes")
+        print(f"  Fragment {i+1}: {char_count} chars / {byte_count} bytes", file=sys.stderr)
         if byte_count > MAX_BYTES:
-            log.warning(
+            print(
                 f"  ⚠️  Fragment {i+1}: {byte_count} bytes exceeds MAX_BYTES={MAX_BYTES} — "
-                f"sub-splitting may have failed"
+                f"sub-splitting may have failed",
+                file=sys.stderr,
             )
 
 

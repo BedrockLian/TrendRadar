@@ -165,3 +165,49 @@ class TestCurateDomain:
         result = self._curate_domain(items, 'tech')
         titles = [i['title'] for i in result]
         assert '正常条目标题够长' not in titles
+
+    def test_diversity_penalty_same_source(self):
+        """5 items from same source → items 4 and 5 get diversity penalty.
+
+        The diversity penalty in _curate_domain triggers when the same source
+        appears more than MAX_SAME_SOURCE (3) times. Items 4 and 5 (0-indexed:
+        items at index 3 and 4) should have _diversity_penalized=True and
+        their scores halved (×0.5, int-rounded).
+        """
+        same_source = '36氪'
+        items = []
+        for i in range(5):
+            items.append({
+                'title': f'科技新闻标题第{i}号足够长通过清晰度检测',
+                'summary': f'这是第{i}条来自{same_source}的科技新闻摘要内容足够详细',
+                'source_platform': same_source,
+                'url': f'https://36kr.com/p/{i}',
+                'timestamp': _RECENT_TS,
+                '_likely_domain': 'tech',
+                '_drop': False,
+                '_coverage_count': 1,
+            })
+
+        result = self._curate_domain(items, 'tech')
+
+        # All 5 items should be included (not dropped, just penalized)
+        assert len(result) <= 5
+
+        # Items originating from same source after the 3rd should be penalized
+        penalized = [i for i in result if i.get('_diversity_penalized')]
+        # Items 4 and 5 (index 3, 4 in original order) should be penalized
+        assert len(penalized) >= 2, (
+            f"Expected at least 2 penalized items from same source, got {len(penalized)}. "
+            f"Penalized titles: {[i['title'] for i in penalized]}"
+        )
+
+        # Verify penalized items have halved scores
+        non_penalized = [i for i in result if not i.get('_diversity_penalized')]
+        if penalized and non_penalized:
+            max_penalized_score = max(i['_curator_scores']['total'] for i in penalized)
+            min_normal_score = min(i['_curator_scores']['total'] for i in non_penalized)
+            # Penalized scores should be approximately half of normal
+            assert max_penalized_score <= min_normal_score, (
+                f"Penalized items should have lower scores. "
+                f"Max penalized={max_penalized_score}, Min normal={min_normal_score}"
+            )

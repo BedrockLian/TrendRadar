@@ -95,8 +95,9 @@ from string import Template
 
 API_ENDPOINT = get_api_endpoint()
 MODEL = get_model()
-BATCH_SIZE = 5
-MAX_CONCURRENT_BATCHES = 5
+from trendradar.scripts.settings import TRANSLATE_BATCH_SIZE, TRANSLATE_BATCH_MAX_CONCURRENT
+BATCH_SIZE = TRANSLATE_BATCH_SIZE
+MAX_CONCURRENT_BATCHES = TRANSLATE_BATCH_MAX_CONCURRENT
 
 # ── Exponential Backoff 熔断配置 ────────────────────────────────────────────
 # 针对 Trap 28: DeepSeek openresty 流中断 (RemoteProtocolError)
@@ -256,6 +257,7 @@ async def _batch_translate_all(
     session: aiohttp.ClientSession,
     items_to_translate: list,
     api_key: str,
+    batch_size: int = None,
 ) -> list:
     """Translate all items using concurrent batches when > BATCH_SIZE items.
 
@@ -271,12 +273,13 @@ async def _batch_translate_all(
         lang = item[7] or 'English'
         groups.setdefault(lang, []).append(item)
 
+    bs = batch_size if batch_size is not None else BATCH_SIZE
     all_results = []
     for lang, group_items in groups.items():
         # Build batches within this language group
         batches = []
-        for batch_start in range(0, len(group_items), BATCH_SIZE):
-            batch = group_items[batch_start:batch_start + BATCH_SIZE]
+        for batch_start in range(0, len(group_items), bs):
+            batch = group_items[batch_start:batch_start + bs]
             pairs = [(item[3], item[4]) for item in batch]
             batches.append((batch, pairs, batch_start, lang))
 
@@ -437,7 +440,8 @@ async def process_curated(push_id: str) -> dict:
             "(graceful degradation)",
             file=sys.stderr,
         )
-        sys.exit(0)
+        from trendradar.scripts.exitcodes import EXIT_NO_CONTENT
+        sys.exit(EXIT_NO_CONTENT)
 
     total_chars = 0
     translated_count = 0
@@ -483,7 +487,15 @@ def main():
         choices=['morning', 'noon', 'evening'],
         help='Which push slot to process (morning|noon|evening)'
     )
+    parser.add_argument('--batch-size', type=int, default=None,
+                        help=f'Items per batch (default: {TRANSLATE_BATCH_SIZE}, max 20)')
     args = parser.parse_args()
+    
+    # Apply batch_size override
+    global BATCH_SIZE
+    if args.batch_size:
+        BATCH_SIZE = min(args.batch_size, 20)
+    
     asyncio.run(process_curated(args.push_id))
 
 

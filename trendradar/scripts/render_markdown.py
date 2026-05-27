@@ -55,7 +55,8 @@ def _shorten(text, max_len):
     Never produces broken sentences (断句): if no sentence boundary found
     within range, returns clean text without ellipsis marker.
     """
-    text = text.strip().replace('\n', ' ').replace('\r', ' ')
+    import re
+    text = re.sub(r'\s+', ' ', text.strip())
     if len(text) <= max_len:
         return text
     cut = text[:max_len]

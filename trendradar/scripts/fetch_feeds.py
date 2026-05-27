@@ -151,13 +151,13 @@ async def fetch_all(push_id: str = '') -> dict:
         return result
 
     # 直连 batch
-    direct_conn = aiohttp.TCPConnector(limit=40, limit_per_host=10)
+    direct_conn = aiohttp.TCPConnector(limit=20, limit_per_host=8)
     async with aiohttp.ClientSession(connector=direct_conn,
                                      headers={'User-Agent': USER_AGENT}) as direct_session:
         direct_results = await _fetch_batch(direct_sources, direct_session)
 
     # 代理 batch — 用独立 connector，避免 session 关闭污染共享连接池
-    proxy_conn = aiohttp.TCPConnector(limit=40, limit_per_host=10)
+    proxy_conn = aiohttp.TCPConnector(limit=20, limit_per_host=8)
     async with aiohttp.ClientSession(connector=proxy_conn,
                                      headers={'User-Agent': USER_AGENT},
                                      proxy=PROXY_URL) as proxy_session:

@@ -108,17 +108,24 @@ async def fetch_aiohttp(sem: asyncio.Semaphore, session, item: dict) -> dict | N
 
 
 def fetch_curl(item: dict) -> dict | None:
-    """curl 兜底（系统代理 + 更完整 headers）"""
+    """curl 兜底（系统代理 + 更完整 headers）。"""
     url = item.get('url', '')
     if not url: return None
     try:
         r = subprocess.run(['curl', '-sL', '--connect-timeout', '10', '--max-time', '15',
                             '-H', f'User-Agent: {UA}', '-H', 'Accept: text/html,*/*', url],
                            capture_output=True, text=True, timeout=20)
-        if r.returncode != 0 or len(r.stdout) < 500: return None
+        if r.returncode != 0:
+            log.warning(f'curl 兜底失败: {url[:60]} (exit={r.returncode})')
+            return None
+        if len(r.stdout) < 500:
+            log.warning(f'curl 兜底内容太短: {url[:60]} ({len(r.stdout)} bytes)')
+            return None
         clean = _clean_html(r.stdout)
         return item | {'content': clean, 'chars': len(clean)} if len(clean) > 50 else None
-    except (subprocess.SubprocessError, OSError): return None
+    except (subprocess.SubprocessError, OSError) as e:
+        log.warning(f'curl 兜底异常: {url[:60]} ({e})')
+        return None
 
 
 async def batch_fetch(push_id: str) -> dict:

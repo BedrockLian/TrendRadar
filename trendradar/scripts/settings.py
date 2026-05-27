@@ -73,6 +73,10 @@ SLOT_NAMES = {'morning': '早报', 'noon': '午间速递', 'evening': '今日回
 DAILY_LIMIT = 80
 BRIEFING_RATIO = {'morning': 30, 'noon': 30, 'evening': 20}
 
+# ── 翻译配置 ────────────────────────────────────────────
+TRANSLATE_BATCH_SIZE = int(os.environ.get('TRENDRADAR_TRANSLATE_BATCH_SIZE', 5))
+TRANSLATE_BATCH_MAX_CONCURRENT = int(os.environ.get('TRENDRADAR_TRANSLATE_CONCURRENT', 5))
+
 # ── 文件命名模板（C3 解耦） ────────────────────────────────────────
 def raw_path(date_str: str) -> Path:
     return get_cache_dir() / f'raw_{date_str}.json'
@@ -90,6 +94,11 @@ def batch_path(push_id: str) -> Path:
 # ── 评分参数（C4 解耦） ──────────────────────────────────────────────
 ## 精选门槛
 MIN_SCORE = 6
+
+## 多样性惩罚（C4 解耦 — 原分散在 curate_and_push.py）
+MAX_SAME_SOURCE = 3
+DIVERSITY_PENALTY_FACTOR = 0.5
+MAX_SOURCE_PCT = 0.30
 
 ## 标题清晰度分档（字符数）
 TITLE_CLARITY_LOW = 10
@@ -165,6 +174,11 @@ DEFAULT_MODEL = os.environ.get('TRENDRADAR_DEFAULT_MODEL', 'deepseek-chat')
 
 
 def get_api_key(key_name: str | None = None) -> str | None:
+    """Get API key from env var first, fallback to .env file.
+    
+    Security: set via environment variable (CI/CD injection) when possible.
+    If using .env, ensure: chmod 600 ~/.hermes/trendradar/.env
+    """
     key = os.environ.get(key_name or API_KEY_ENV)
     if key:
         return key

@@ -196,94 +196,127 @@ def get_run_id_from_push(entry: dict) -> str | None:
     return None
 
 
-def auto_redeliver_evening(alerts: list[str]) -> None:
-    """检查晚间晚报是否投递成功，未投递则自动补发。"""
-    latest = get_latest_evening_push()
+def get_latest_push_for_slot(slot: str) -> dict | None:
+    """从 push_log.json 获取最近一次指定 slot 的推送记录。"""
+    log_path = TRENDRADAR_HOME / 'data' / 'push_log.json'
+    if not log_path.exists():
+        return None
+    try:
+        log = json.loads(log_path.read_text())
+        if not isinstance(log, list):
+            return None
+        for entry in reversed(log):
+            if entry.get('push_id') == slot:
+                return entry
+    except Exception:
+        pass
+    return None
+
+
+def auto_redeliver_slot(alerts: list[str], push_id: str, slot_name: str, max_age_hours: int = 6) -> None:
+    """检查某个 slot 的推送是否投递成功，未投递则自动补发。
+    
+    Args:
+        push_id: 'morning' | 'noon' | 'evening'
+        slot_name: 中文名称 for logging
+        max_age_hours: 超过此时限的推送不补发
+    """
+    latest = get_latest_push_for_slot(push_id)
     if not latest:
-        return  # 无晚间推送记录，跳过
+        return
 
     run_id = get_run_id_from_push(latest)
     if not run_id:
         return
 
-    # 已标记为投递成功 → 跳过
     if is_delivered(run_id):
         return
 
     status = latest.get('status', '')
     ts = latest.get('timestamp', '')[:19]
 
-    # pipeline 失败的不补发（可能数据有问题）
     if status != 'ok':
-        alerts.append(f"ℹ️ 最近晚间推送 ({ts}) 状态={status}，跳过补发")
-        # 仍标记为已处理，避免反复扫
+        alerts.append(f"ℹ️ 最近{slot_name} ({ts}) 状态={status}，跳过补发")
         mark_delivered(run_id)
         return
 
-    # 判断时效：超过 6 小时的不补（太旧了）
     try:
         push_time = datetime.fromisoformat(ts)
         age_hours = (datetime.now(CST) - push_time).total_seconds() / 3600
-        if age_hours > 6:
-            alerts.append(f"ℹ️ 最近晚间推送 ({ts}) 已超过 6 小时，不补发")
+        if age_hours > max_age_hours:
+            alerts.append(f"ℹ️ 最近{slot_name} ({ts}) 已超过 {max_age_hours} 小时，不补发")
             mark_delivered(run_id)
             return
     except Exception:
         pass
 
-    # ── 补发流程 ──
-    alerts.append(f"🔄 检测到晚间推送 ({ts}) 未投递到 WeCom，启动补发...")
+    alerts.append(f"🔄 检测到{slot_name} ({ts}) 未投递到 WeCom，启动补发...")
 
-    # 1. 补发简报
-    briefing_path = Path('/tmp') / f'evening_briefing_{run_id}.md'
+    briefing_path = Path('/tmp') / f'{push_id}_briefing_{run_id}.md'
     try:
         result = subprocess.run(
             [PYTHON, str(TRENDRADAR_HOME / 'scripts' / 'render_markdown.py'),
-             '--push-id', 'evening'],
+             '--push-id', push_id],
             capture_output=True, text=True, timeout=30,
             env={**os.environ, 'PYTHONPATH': str(TRENDRADAR_HOME.parent), 'PYTHON_GIL': '0'}
         )
         if result.returncode == 0 and result.stdout.strip():
             briefing_path.write_text(result.stdout)
-            # sanity check
             subprocess.run(
                 [PYTHON, str(TRENDRADAR_HOME / 'scripts' / 'sanity_check.py'),
-                 '--push-id', 'evening'],
+                 '--push-id', push_id],
                 capture_output=True, timeout=15,
                 env={**os.environ, 'PYTHONPATH': str(TRENDRADAR_HOME.parent), 'PYTHON_GIL': '0'}
             )
             if send_to_wecom(briefing_path):
-                alerts.append(f"  ✅ 简报已补发至 WeCom")
+                alerts.append(f"  ✅ {slot_name}已补发至 WeCom")
             else:
-                alerts.append(f"  ❌ 简报补发失败 (hermes send exit != 0)")
+                alerts.append(f"  ❌ {slot_name}补发失败 (hermes send exit != 0)")
         else:
-            alerts.append(f"  ⚠️ 简报重新渲染失败 (exit={result.returncode})")
+            alerts.append(f"  ⚠️ {slot_name}重新渲染失败 (exit={result.returncode})")
     except Exception as e:
-        alerts.append(f"  ⚠️ 简报补发异常: {e}")
+        alerts.append(f"  ⚠️ {slot_name}补发异常: {e}")
 
-    # 2. 补发深度分析（如果存在）
-    report_path = TRENDRADAR_HOME / 'reports'
-    risk_file = None
-    for f in sorted(report_path.glob('risk_analysis_*_evening.md'), reverse=True):
-        risk_file = f
-        break
-    if risk_file and risk_file.stat().st_mtime > (datetime.now() - timedelta(hours=6)).timestamp():
-        # 尝试用 render_deep_analysis.py 格式化
-        formatted = Path('/tmp') / f'risk_analysis_formatted_{run_id}.md'
-        try:
-            result = subprocess.run(
-                ['cat', str(risk_file)],
-                capture_output=True, text=True, timeout=10
-            )
-            if result.returncode == 0 and result.stdout.strip():
-                formatted.write_text(result.stdout)
-                if send_to_wecom(formatted, subject="🔬 风险与警示"):
-                    alerts.append(f"  ✅ 深度分析已补发至 WeCom")
-        except Exception as e:
-            alerts.append(f"  ⚠️ 深度分析补发异常: {e}")
-
-    # 标记已处理，避免每个 watchdog 周期都补发
     mark_delivered(run_id)
+
+
+def auto_redeliver_evening(alerts: list[str]) -> None:
+    """检查晚间晚报是否投递成功，未投递则自动补发（含深度分析）。"""
+    auto_redeliver_slot(alerts, 'evening', '晚间推送', max_age_hours=6)
+
+    # 晚间额外补发深度分析
+    latest = get_latest_push_for_slot('evening')
+    if latest:
+        run_id = get_run_id_from_push(latest)
+        if run_id and is_delivered(run_id):
+            report_path = TRENDRADAR_HOME / 'reports'
+            risk_file = None
+            for f in sorted(report_path.glob('risk_analysis_*_evening.md'), reverse=True):
+                risk_file = f
+                break
+            if risk_file and risk_file.stat().st_mtime > (datetime.now() - timedelta(hours=6)).timestamp():
+                formatted = Path('/tmp') / f'risk_analysis_formatted_{run_id}.md'
+                try:
+                    result = subprocess.run(
+                        ['cat', str(risk_file)],
+                        capture_output=True, text=True, timeout=10
+                    )
+                    if result.returncode == 0 and result.stdout.strip():
+                        formatted.write_text(result.stdout)
+                        if send_to_wecom(formatted, subject="🔬 风险与警示"):
+                            alerts.append(f"  ✅ 深度分析已补发至 WeCom")
+                except Exception as e:
+                    alerts.append(f"  ⚠️ 深度分析补发异常: {e}")
+
+
+def auto_redeliver_morning(alerts: list[str]) -> None:
+    """检查早报是否投递成功，未投递则自动补发。"""
+    auto_redeliver_slot(alerts, 'morning', '早报', max_age_hours=4)
+
+
+def auto_redeliver_noon(alerts: list[str]) -> None:
+    """检查午报是否投递成功，未投递则自动补发。"""
+    auto_redeliver_slot(alerts, 'noon', '午间速递', max_age_hours=4)
 
 
 # ── 主流程 ──────────────────────────────────────────
@@ -326,8 +359,7 @@ def main():
     if sanity_issue:
         alerts.append(sanity_issue)
 
-    # 5. 新增：auto-delivery 空投检测 + 自动补发
-    auto_redeliver_evening(alerts)
+    # 5. 新增：auto-delivery 空投检测 + 自动补发（所有时段）\n    auto_redeliver_morning(alerts)\n    auto_redeliver_noon(alerts)\n    auto_redeliver_evening(alerts)
 
     # 6. 输出
     if alerts:

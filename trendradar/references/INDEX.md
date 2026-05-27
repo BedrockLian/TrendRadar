@@ -1,77 +1,75 @@
-<!-- version: 2.8.0 | last-reviewed: 2026-05-26 -->
+<!-- version: 3.0.0 | consolidated: 2026-05-27 | 41 → 9 docs -->
 
-# References 索引
+# TrendRadar References Index
 
-> 按功能分类。Agent 按需加载，不必全量读取。
-> 根目录 `references/` 是全部真相的超集。Skill 目录中的副本为 Agent 兼容性保留。
+Consolidated from 41 reference documents to 9 (+ archive). Each consolidated
+document merges multiple originals. See `_archive/` for historical files.
 
-## 🔴 事故档案（出问题时先查这里）
+## Active Documents
 
-| 文件 | 何时读 |
-|------|--------|
-| `traps.md` | 任何不明故障 → 先查这里（22 个有效陷阱） |
-| `traps-archive.md` | 历史已修复陷阱（8 个，防回退时查） |
-| `pipeline-pitfalls.md` | 管线产出 0 条 / 翻译丢失 / Session is closed |
-| `translation-pipeline-sync.md` | 翻译存在但渲染时丢失 |
-| `render-markdown-failures.md` | 渲染脚本报错 / 格式异常 |
-| `health-check-pitfalls.md` | 体检脚本误报 / 子进程失败 |
-| `smoke-test-maintenance.md` | pytest 失败 / ImportError |
-| `ai-translate-cjk-detection.md` | 翻译检测历史演进（已废弃架构，见顶部标注） |
-| `migration-idempotency-bug.md` | DB 表丢失但迁移跳过 |
-| `api-diagnosis.md` | DeepSeek 断流 / WeCom WS 抖动 |
-| `fix-recipes.md` | 已验证的质量修复脚本 |
-| `performance-pitfalls.md` | TCP 连接池耗尽 |
-| `fragment-byte-splitting.md` | WeCom 静默截断 / 分片超限 |
-| `pitfalls-utf8-bytes.md` | UTF-8 字节计数陷阱 |
+| File | Contents | Merged From |
+|------|----------|-------------|
+| `ARCHITECTURE.md` | System architecture, classification, keywords, rendering, migrations, health check, API patterns | classification-architecture.md, import-architecture.md, script-rendering.md, render-markdown.md, orchestrator-notes.md, keyword-architecture.md, migration-mechanism.md, health-check-design.md, api-backoff-circuit-breaker.md |
+| `PIPELINE.md` | Pipeline data flow, performance bottlenecks, render format spec, deep analysis format | pipeline.md, performance-pitfalls.md, render-format.md, deep-analysis-format.md |
+| `SETUP.md` | Proxy config, RSSHub setup, cache cleanup, cron ops, migration rollback, cron prompt, auto-delivery, source management | proxy-config.md, rsshub-proxy-setup.md, cache-cleanup.md, cron-operations.md, migration-rollback.md, cron-prompt-canonical.md, cron-sendmessage-fallback.md, sources-management.md, sources-format.md |
+| `TRAPS.md` | All known pitfalls (48 traps) | traps.md, pipeline-pitfalls.md, translation-pipeline-sync.md, render-markdown-failures.md, health-check-pitfalls.md, smoke-test-maintenance.md, ai-translate-cjk-detection.md, migration-idempotency-bug.md, api-diagnosis.md, fix-recipes.md, fragment-byte-splitting.md, pitfalls-utf8-bytes.md |
+| `REPO-SYNC.md` | Git repository sync procedures | (kept as-is) |
+| `REFERENCES-CONSISTENCY-GUIDE.md` | References maintenance and conflict resolution | (kept as-is) |
+| `SKILL-AUDIT.md` | Skill audit checklist (7 dimensions) | (kept as-is) |
+| `DELIVERY-WATERMARK.md` | Delivery marker mechanism documentation | (new) |
+| `cron-prompt-generated.md` | Auto-generated cron prompt from pipeline_orchestrator --list-steps | (new, auto-generated) |
 
-## 🟡 技术规格（改格式/加源时读）
+## Archive
 
-| 文件 | 何时读 |
-|------|--------|
-| `render-format.md` | 修改简报格式前 |
-| `deep-analysis-format.md` | 修改深度分析格式前 |
-| `keyword-architecture.md` | 扩充/修改关键词前 |
-| `sources-format.md` | 添加/修改 RSS 源前 |
-| `sources-management.md` | RSS 源发现与添加流程 |
-| `weekly-format.md` | 写周报前 |
-| `monthly-template.md` | 写月报前 |
-| `performance-optimizer` SKILL.md | 调整评分/推送参数（含参数表） |
+Files moved to `_archive/`:
+- `traps-archive.md` — historically fixed traps (preserved for reference)
+- `weekly-format.md` — weekly report template (referenced by weekly-report skill)
+- `monthly-template.md` — monthly report template (referenced by monthly-report skill)
 
-## 🔵 架构文档（理解系统时读）
+## Original → New Mapping
 
-| 文件 | 何时读 |
-|------|--------|
-| `pipeline.md` | 理解管线全貌 |
-| `classification-architecture.md` | 理解分类管线 |
-| `script-rendering.md` | 理解渲染架构决策 |
-| `import-architecture.md` | 理解导入规范 |
-| `render-markdown.md` | 理解渲染脚本内部结构 |
-| `orchestrator-notes.md` | 理解编排器注意事项 |
-| `health-check-design.md` | 理解体检设计（14 项 + 4 子检查） |
-| `migration-mechanism.md` | 理解迁移引擎 |
+| Original File | New Home |
+|---------------|----------|
+| `INDEX.md` | → this file (replaced) |
+| `ai-translate-cjk-detection.md` | → TRAPS.md §39 |
+| `api-backoff-circuit-breaker.md` | → ARCHITECTURE.md §10 |
+| `api-diagnosis.md` | → TRAPS.md §44 |
+| `cache-cleanup.md` | → SETUP.md §3 |
+| `classification-architecture.md` | → ARCHITECTURE.md §3 |
+| `cron-operations.md` | → SETUP.md §4 |
+| `cron-prompt-canonical.md` | → SETUP.md §6 |
+| `cron-sendmessage-fallback.md` | → SETUP.md §7 |
+| `deep-analysis-format.md` | → PIPELINE.md §Deep Analysis |
+| `fix-recipes.md` | → TRAPS.md §45 |
+| `fragment-byte-splitting.md` | → TRAPS.md §48 |
+| `health-check-design.md` | → ARCHITECTURE.md §9 |
+| `health-check-pitfalls.md` | → TRAPS.md §41 |
+| `import-architecture.md` | → ARCHITECTURE.md §2 |
+| `keyword-architecture.md` | → ARCHITECTURE.md §4 |
+| `migration-idempotency-bug.md` | → TRAPS.md §43 |
+| `migration-mechanism.md` | → ARCHITECTURE.md §8 |
+| `migration-rollback.md` | → SETUP.md §5 |
+| `monthly-template.md` | → _archive/monthly-template.md |
+| `orchestrator-notes.md` | → ARCHITECTURE.md §7 |
+| `performance-pitfalls.md` | → PIPELINE.md §Performance |
+| `pipeline-pitfalls.md` | → TRAPS.md §31-36 |
+| `pipeline.md` | → PIPELINE.md (base) |
+| `pitfalls-utf8-bytes.md` | → TRAPS.md §47 |
+| `proxy-config.md` | → SETUP.md §1 |
+| `references-consistency-guide.md` | → (kept as-is) |
+| `render-format.md` | → PIPELINE.md §Render Format |
+| `render-markdown-failures.md` | → TRAPS.md §40 |
+| `render-markdown.md` | → ARCHITECTURE.md §6 |
+| `repo-sync.md` | → (kept as-is) |
+| `rsshub-proxy-setup.md` | → SETUP.md §2 |
+| `script-rendering.md` | → ARCHITECTURE.md §5 |
+| `skill-audit.md` | → (kept as-is) |
+| `smoke-test-maintenance.md` | → TRAPS.md §42 |
+| `sources-format.md` | → SETUP.md §8 |
+| `sources-management.md` | → SETUP.md §8 |
+| `traps-archive.md` | → _archive/traps-archive.md |
+| `traps.md` | → TRAPS.md (base) |
+| `translation-pipeline-sync.md` | → TRAPS.md §37-39 |
+| `weekly-format.md` | → _archive/weekly-format.md |
 
-## 🟢 运维手册（部署/维护时读）
-
-| 文件 | 何时读 |
-|------|--------|
-| `cron-operations.md` | Cron 管理 / Gateway 重启 |
-| `cron-prompt-canonical.md` | 更新日报 cron prompt |
-| `cron-sendmessage-fallback.md` | 理解 cron 投递机制 |
-| `repo-sync.md` | 同步到 Git 仓库（三处同步流程） |
-| `cache-cleanup.md` | 缓存清理规程 |
-| `migration-rollback.md` | 回滚迁移 |
-| `proxy-config.md` | WSL 代理配置 |
-| `rsshub-proxy-setup.md` | RSSHub 代理设置 |
-
-## 🟣 可复用模式
-
-| 文件 | 何时读 |
-|------|--------|
-| `api-backoff-circuit-breaker.md` | 集成新的 LLM API 时 |
-| `skill-audit.md` | 修改 Skill 后审计（7 维度检查表） |
-
-## 🟤 文档治理
-
-| 文件 | 何时读 |
-|------|--------|
-| `references-consistency-guide.md` | 维护 references/ 本身时。冲突修复 + CI 防护 + 日常铁律 |
+Total: 41 original docs → 9 active + 3 archived + 1 auto-generated = all accounted for.

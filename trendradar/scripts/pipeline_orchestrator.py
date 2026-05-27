@@ -76,7 +76,12 @@ def _write_push_log(push_id: str, result: dict, errors: list):
     
     Records: push_id, timestamp, status, fragment_count, error_count.
     Used by delivery_watchdog to detect partial-delivery failures.
+    
+    Uses atomic write (temp + os.replace) to prevent corruption from
+    concurrent multi-cron writes.
     """
+    import os as _os
+    import tempfile as _tempfile
     log_path = DATA_DIR / "push_log.json"
     try:
         if log_path.exists():
@@ -103,7 +108,14 @@ def _write_push_log(push_id: str, result: dict, errors: list):
             log = log[-100:]
 
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        log_path.write_text(json.dumps(log, ensure_ascii=False, indent=2))
+        fd, tmp = _tempfile.mkstemp(dir=log_path.parent, prefix='.tmp_push_log_')
+        try:
+            with _os.fdopen(fd, 'w', encoding='utf-8') as f:
+                json.dump(log, f, ensure_ascii=False, indent=2)
+            _os.replace(tmp, log_path)
+        except Exception:
+            _os.unlink(tmp)
+            raise
     except Exception as e:
         print(f"[PIPELINE] ⚠️ push_log write failed: {e}", file=sys.stderr)
 
@@ -404,18 +416,32 @@ def main():
         frag_ok = False
         fragments_json = "[]"
 
-    # Parse fragments, stripping log lines
+    # Parse fragments — fragment_push now outputs ONLY JSON on stdout
     fragments = []
     try:
-        # fragment_push writes JSON array on a single line, + log lines on stderr
-        # But stdout may have multiple lines if logging leaks
-        lines = fragments_json.split("\n")
-        for line in lines:
-            line = line.strip()
-            if line.startswith("[") and line.endswith("]"):
-                fragments = json.loads(line)
-                break
-    except json.JSONDecodeError:
+        # Strip any log-level prefix that may have leaked to stdout
+        # fragment_push guarantees JSON on stdout and logs on stderr
+        cleaned = fragments_json.strip()
+        if cleaned.startswith("["):
+            # Find the first complete JSON array
+            depth = 0
+            end = 0
+            for i, c in enumerate(cleaned):
+                if c == '[':
+                    depth += 1
+                elif c == ']':
+                    depth -= 1
+                    if depth == 0:
+                        end = i + 1
+                        break
+            if end > 0:
+                fragments = json.loads(cleaned[:end])
+            else:
+                fragments = json.loads(cleaned)
+        else:
+            # Fallback: if no JSON array, use as single fragment
+            fragments = [briefing]
+    except (json.JSONDecodeError, ValueError):
         fragments = [briefing]  # fallback: single fragment
 
     stats["stages"]["fragment_push"] = 0

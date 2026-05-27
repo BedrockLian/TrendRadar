@@ -96,6 +96,14 @@ def run_curation(push_id: str) -> dict:
     """
     import trendradar.scripts.curate_and_push as curate
     
+    # ── 加载来源惩罚与健康评分（盲点审计 → curator 权重反馈） ──
+    penalty_path = DATA_DIR / 'source_penalty.json'
+    if penalty_path.exists():
+        curate.load_penalty_file(str(penalty_path))
+    health_path = DATA_DIR / 'source_health.json'
+    if health_path.exists():
+        curate.load_source_health(str(health_path))
+    
     # RSS fetch 和 blog scan 并行执行
     def _do_fetch():
         ensure_raw_exists(push_id)
