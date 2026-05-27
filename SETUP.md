@@ -239,14 +239,14 @@ TrendRadar/
 │   │   ├── system-config/             # 系统配置速查
 │   │   ├── weekly-report/             # 周报深度研判
 │   │   └── monthly-report/            # 月报全景分析
-│   ├── references/                     # 参考文档（26 份）
-│   ├── tests/                         # 测试用例（90+）
+│   ├── references/                     # 核心参考文档（10 根 + 36 存档 + INDEX.md）
+│   ├── tests/                         # 测试用例（146 用例）
 │   ├── pyproject.toml                 # 项目元数据/依赖
 │   └── requirements.txt               # 依赖清单
 ├── hermes-scripts/                    # Hermes 外围脚本
-│   ├── trendradar_health_check.py     # 自动体检（15项检查）
+│   ├── trendradar_health_check.py     # 自动体检
 │   ├── trendradar_maintenance.py      # 每日维护（备份+清理）
-│   └── delivery_watchdog.py           # 推送降级看门狗
+│   └── delivery_watchdog.py           # 推送看门狗 + auto-redeliver（早/午/晚）
 ├── .gitignore
 ├── LICENSE
 └── README.md
@@ -328,21 +328,24 @@ TrendRadar 从环境变量或 `.env` 文件加载 API 凭证：
 ```bash
 # 运行时目录
 cat > ~/.hermes/trendradar/.env << 'EOF'
-DEEPSEEK_API_KEY=sk-your-key-here
+DEEPSEEK_API_KEY=***
 DEEPSEEK_API_ENDPOINT=https://api.deepseek.com/v1/chat/completions
 DEEPSEEK_MODEL=deepseek-chat
 TRENDRADAR_LOG_LEVEL=INFO
 EOF
 
+# 安全加固：限制 .env 文件权限
 chmod 600 ~/.hermes/trendradar/.env
 ```
 
 或者直接设置环境变量：
 
 ```bash
-export DEEPSEEK_API_KEY="sk-xxxxxxxxxxxxxxxx"
+export DEEPSEEK_API_KEY="sk-xxx...xxxx"
 export PYTHONPATH=/home/asus/.hermes
 export PYTHON_GIL=0
+# 可选：翻译批量大小（默认 5，最大 20）
+# export TRENDRADAR_TRANSLATE_BATCH_SIZE=10
 ```
 
 ### 4.2 数据目录
@@ -422,14 +425,20 @@ python3.14t -m pytest -v -m "not slow"
 
 ```
 tests/
+├── test_pipeline_e2e.py          # 编排器基础测试
+├── test_pipeline_e2e_real.py     # 真实管线 E2E（11 用例，@integration）
 ├── test_ai_translate.py          # AI 翻译模块
+├── test_ai_translate_boundary.py # BATCH_SIZE 边界 + 熔断（22 用例）
 ├── test_batch_fetch.py           # 批量抓取
-├── test_curate_and_push.py       # 策展和推送逻辑
+├── test_curate_and_push.py       # 策展 + 多样性惩罚
 ├── test_fetch_feeds.py           # RSS 抓取
 ├── test_heat_tracker.py          # 热度追踪
 ├── test_push_prepare.py          # 推送准备
 ├── test_push_slot_detect.py      # 时段探测
-└── test_record_and_common.py     # 公共模块 + 指纹记录
+├── test_render_markdown.py       # 渲染格式
+├── test_sanity_check.py          # 发布前拦截
+├── test_record_and_common.py     # 公共模块 + 指纹记录
+└── test_track_events.py          # 事件追踪
 ```
 
 > 初始化时因 SQLite 数据库尚为空白，部分测试写入后即通过。

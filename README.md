@@ -1,6 +1,6 @@
 # TrendRadar 📡
 
-> **v5.5.0** — 多源 RSS 聚合 + AI 策展 + Pro 深度分析 → 企业微信日/周/月报。含自动体检、偏好收敛、编排器一键管线、CI 持续集成。
+> **v5.6.0** — 多源 RSS 聚合 + AI 策展 + Pro 深度分析 → 企业微信日/周/月报。含自动体检、偏好收敛、编排器一键管线、全链路安全加固、CI 持续集成。
 
 > 📖 **[从零搭建指南 → SETUP.md](SETUP.md)** — 从 Hermes Agent 全新安装到测试部署一站完成。
 
@@ -65,16 +65,19 @@ pipeline_orchestrator.py（一键6阶段）
 - **结构化日志** — 统一 logging 工厂，`[timestamp] [LEVEL] [module]` 格式
 - **退出码协议** — 脚本按 `exitcodes.py` 返回 0/2/3/10/11/12/99，Agent 依码决策
 - **API 熔断退避** — 翻译层指数退避 2→30s + jitter + 连续 3 失败熔断
+- **BATCH_SIZE 可配置** — `--batch-size` CLI + `TRANSLATE_BATCH_SIZE` 环境变量，上限 20
 - **发布前拦截器** — `sanity_check.py` 禁语扫描/死链检测/敏感词脱敏
 - **BlogWatcher 桥接** — `blog_watcher_bridge.py` 对接 BlogWatcher 订阅源，统一进入推送管线
 - **假翻译清理** — `cleanup_fake_translations.py` 自动检测并修复翻译层"原样输出"的无效翻译
 - **推送时段检测** — `push_slot_detect.py` 精确判断当前时段（早/午/晚），避免投递错位
 - **自动体检** — 每日 15:00 17 项自检（含盲点审计），异常推送
 - **推送质量优化** — 每日 21:15 评分 + 偏好收敛调优
-- **推送看门狗** — 每日 3 次巡检 WeCom IPC socket + 投递错误检测 + push_log 原子性追踪
+- **推送看门狗** — 每日 3 次巡检 WeCom IPC socket + 投递错误检测 + push_log 原子写入 + 早/午/晚三时段 auto-redeliver
 - **管线诊断** — `diag_pipeline.sh` 一键诊断各组件健康状况，快速定位故障
 - **知识图谱** — `KNOWLEDGE_GRAPH.md` 630 行完整代码分析，含架构全景图、模块依赖、数据流图
-- **CI 持续集成** — GitHub Actions 自动运行 lint + 烟雾测试 + 全量测试 + references 一致性校验
+- **文档精简** — 41 份参考文档合并为 10 份核心文档 + 36 存档 + INDEX.md 索引，新人 onboarding 从 2 天降到 2 小时
+- **cron prompt 单源** — `gen_cron_prompt.py` 从 `--list-steps` 自动生成，消除 SKILL.md 与 prompt 双份维护漂移
+- **CI 持续集成** — GitHub Actions 自动运行 ruff lint + bandit 安全扫描 + mypy 类型检查 + pytest + references 一致性校验
 
 ---
 
@@ -132,8 +135,9 @@ TrendRadar/
 │   │   ├── cleanup_fake_translations.py # 假翻译自动清理
 │   │   ├── interest_cli.py              # 兴趣偏好 CLI 管理
 │   │   ├── trace.py                     # 追踪/调试工具
+│   │   ├── gen_cron_prompt.py            # cron prompt 自动生成（SSOT）
 │   │   ├── common.py                    # 公共工具函数
-│   │   ├── settings.py                  # 统一配置（路径/API 加载）
+│   │   ├── settings.py                  # 统一配置（路径/API/BATCH_SIZE）
 │   │   ├── storage.py                   # SQLite 存储抽象层
 │   │   └── exitcodes.py                 # 退出码协议定义
 │   ├── config/                #   关键词/时段/翻译/兴趣配置
@@ -151,10 +155,12 @@ TrendRadar/
 │   │   ├── system-config/            # 系统配置速查 v2.11.0
 │   │   ├── weekly-report/            # 周报深度研判 v2.4.0
 │   │   └── monthly-report/           # 月报全景分析 v2.3.0
-│   ├── references/           #   运行时参考文档（41 文件，含坑点/格式/架构/修复配方）
-│   ├── tests/                #   测试用例（92 用例）
+│   ├── references/           #   核心参考文档（10 根 + 36 存档 + INDEX.md 索引）
+│   ├── tests/                #   测试用例（146 用例，含 E2E 管线 + 边界测试）
 │   │   ├── conftest.py
-│   │   ├── test_pipeline_e2e.py      # 端到端管线测试
+│   │   ├── test_pipeline_e2e.py      # 编排器基础测试
+│   │   ├── test_pipeline_e2e_real.py  # 真实管线 E2E 测试（integrated）
+│   │   ├── test_ai_translate_boundary.py  # BATCH_SIZE 边界 + 熔断测试
 │   │   ├── test_fetch_feeds.py
 │   │   ├── test_curate_and_push.py
 │   │   ├── test_ai_translate.py
@@ -219,14 +225,14 @@ bash scripts/diag_pipeline.sh
 ## 测试
 
 ```bash
-# 全量测试
-cd trendradar && pytest tests/ -v --timeout 30
+# 全量测试（146 用例）
+cd trendradar && PYTHONPATH=$PWD pytest tests/ -v
 
-# 快速烟雾测试（CI 第一阶段）
-cd trendradar && pytest tests/ -m smoke -v
+# 集成测试（真实管线）
+cd trendradar && PYTHONPATH=$PWD pytest tests/ -m integration -v
 
-# Lint
-cd trendradar && ruff check trendradar/
+# Lint + 安全扫描
+cd trendradar && ruff check trendradar/ && bandit -r trendradar/scripts/ -s B101
 ```
 
 GitHub Actions CI 在每次 push 到 `main` 时自动运行 ruff lint → 烟雾测试 → 全量测试 → references 一致性校验。
@@ -248,7 +254,7 @@ GitHub Actions CI 在每次 push 到 `main` 时自动运行 ruff lint → 烟雾
 | 调度 | Hermes Agent cron（早/午/晚 + 周报 + 月报） |
 | 压缩 | zstandard (zstd) |
 | CI | GitHub Actions（ruff lint + pytest smoke/test + refs 校验） |
-| 文档 | 41 份运行时参考文档 + KNOWLEDGE_GRAPH.md 代码分析 |
+| 文档 | 10 份核心参考文档 + 36 存档 + INDEX.md 索引 + KNOWLEDGE_GRAPH.md 代码分析 |
 
 ---
 
