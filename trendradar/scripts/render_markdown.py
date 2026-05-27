@@ -10,7 +10,7 @@ render_markdown.py — 纯脚本渲染 TrendRadar 简报，无需 LLM API。
 1. 全文无 `---` 横线分隔线
 2. 板块标题后跟 `\\n\\n\\n`（2个空行）
 3. 条目间用 `\\n\\n\\n` 分隔（2个空行）
-4. 条目内部：标题 + \\n\\n + 摘要 + \\n\\n + 链接（各1个空行）
+4. 条目内部：标题 + \\n\\n + 摘要（50字内，完整句子） + \\n\\n + 链接（各1个空行）
 5. 链接格式：[【媒体名】](url)，媒体名本身可点击
 6. 尾注跟 \\n\\n 单空行
 7. 禁止 LLM 改写输出——本脚本的输出即最终简报
@@ -75,7 +75,7 @@ def _format_item(idx, item, push_id):
     Each line pair separated by single blank line (\n\n).
     """
     title = _shorten(item.get('title_cn') or item.get('title') or '', 80)
-    summary = _shorten(item.get('summary_cn') or item.get('summary') or '', 150)
+    summary = _shorten(item.get('summary_cn') or item.get('summary') or '', 50)
     url = (item.get('url') or '').strip()
     source = (item.get('source_platform') or '').split('+')[0].strip()
     heat = item.get('_heat')

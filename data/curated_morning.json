@@ -1,0 +1,1543 @@
+{
+  "top_headlines": [
+    {
+      "title": "小红书成世界杯版权“黑马”",
+      "summary": "本文来自微信公众号： 懒熊体育 ，作者：彭锦距离世界杯开幕就剩16天，这届世界杯去哪里看？答案正变得明朗，甚至有些出人意料。在即将参与转播的平台名单中，出现了小红书的名字。据懒熊体育了解，小红书将成为国际足联2026年美加墨世界杯持权转播商，从中央广播电视总台获得本届FIFA世界杯全部场次的直播权、视频点播权等权益。如果仍然将小红书简单理解为一个以女性用户为主的生活内容平台，这样的组合难免显得违和。但细究会发现，这种“违和感”或许源于两种刻板印象的叠加：其一，作为全球影响力最大的单项体育赛事，世界杯拥有跨越年龄、性别与兴趣边界的能力，从来不是单一人群的内容消费场景；其二，小红书也不是体育旁观者",
+      "source_platform": "虎嗅",
+      "hot_rank": 1,
+      "url": "https://www.huxiu.com/article/4861820.html?f=rss",
+      "timestamp": "2026-05-27T00:19:36+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "虎嗅"
+      ],
+      "_likely_domain": "headline",
+      "_heat": {
+        "fingerprint": "b2a97e815d90857d",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "虎嗅"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 1,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 13,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "王毅谈当前伊朗局势僵局",
+      "summary": "当地时间26日，中共中央政治局委员、外交部长王毅在主持联合国安理会“维护联合国宪章宗旨和原则，加强以联合国为核心的国际体系”高级别会议后现场回答了媒体提问。记者问及中方对推动化解当前伊朗局势僵局的看法建议。王毅表示，中国一直在为化解当前冲突而努力。习近平主席提出四点主张，为维护和促进中东和平指明方向。我们与主要当事方、重要的地区和国际伙伴保持着沟通协调。我们认为，地区各国的主权、安全和领土完整必须得到尊重，平民和非军事目标必须得到保护，航道安全以及能源基础设施必须得到保障，核不扩散体系的规定必须得到履行。当前局势的关键是美伊谈判。我们支持巴基斯坦等国的积极斡旋，也支持美伊各自作出的努力。冰冻三",
+      "source_platform": "澎湃新闻",
+      "hot_rank": 1,
+      "url": "https://m.thepaper.cn/detail/33242584",
+      "timestamp": "2026-05-27T00:04:11+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "澎湃新闻"
+      ],
+      "_likely_domain": "headline",
+      "_heat": {
+        "fingerprint": "31e2aeab6ee79c0b",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "澎湃新闻"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 1,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 13,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "ローマ教皇 就任後初の重要文書 AIの軍事利用に懸念示す",
+      "summary": "[NHK 商业] ローマ教皇レオ14世は、世界のカトリック教会に向けて、就任後初めて、教会としての指針を示す重要文書を発表し、AI＝人工知能について、「武装解除されなければならない」などと軍事利用への懸念を示しました。 // [NHK 科学医疗] ローマ教皇レオ14世は、世界のカトリック教会に向けて、就任後初めて、教会としての指針を示す重要文書を発表し、AI＝人工知能について、「武装解除されなければならない」などと軍事利用への懸念を示しました。",
+      "source_platform": "NHK 商业+NHK 科学医疗",
+      "hot_rank": 18,
+      "url": "http://www3.nhk.or.jp/news/html/20260526/k10015131961000.html",
+      "timestamp": "2026-05-26T09:00:47+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 2,
+      "_coverage_platforms": [
+        "NHK 科学医疗",
+        "NHK 商业"
+      ],
+      "_likely_domain": "headline",
+      "_heat": {
+        "fingerprint": "501f100117039f34",
+        "is_new": false,
+        "is_sustained": true,
+        "is_deep": false,
+        "trend": "stable",
+        "heat_score": 3.7,
+        "appearances": 7,
+        "platforms": [
+          "NHK 科学医疗",
+          "NHK 商业"
+        ],
+        "span_hours": 12.013203954444444,
+        "rank_timeline": [
+          {
+            "rank": 10,
+            "time": "2026-05-26T21:02:41.923783+08:00"
+          },
+          {
+            "rank": 12,
+            "time": "2026-05-27T00:30:34.329270+08:00"
+          },
+          {
+            "rank": 12,
+            "time": "2026-05-27T00:35:48.798689+08:00"
+          },
+          {
+            "rank": 12,
+            "time": "2026-05-27T00:36:10.232944+08:00"
+          },
+          {
+            "rank": 12,
+            "time": "2026-05-27T00:36:26.665014+08:00"
+          },
+          {
+            "rank": 12,
+            "time": "2026-05-27T00:37:16.277807+08:00"
+          },
+          {
+            "rank": 18,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true,
+      "title_cn": "ローマ教皇 就任後初の重要文書でAI軍事利用に懸念",
+      "summary_cn": "ローマ教皇レオ14世は、就任後初めて世界のカトリック教会に向けた重要文書を発表し、人工知能（AI）について「武装解除されなければならない」などと軍事利用への懸念を示した。"
+    },
+    {
+      "title": "克明食品耍“手擀”心机，擦边的风刮向挂面",
+      "summary": "本文来自微信公众号： 斑马消费 ，作者：范建克明食品卖了好几年的“陈克明手擀”挂面，终于迎来监管处罚——日前被央视点名、产品下架。实际上，2025年10月，“陈克明手擀”商标已被主管部门依法注销，但这包挂面多卖了大半年，直至日前公司才主动声明停产和下架。这不是个例，金沙河、今麦郎等品牌均被网友发现使用“手擀”或“手打”字样，涉嫌误导消费者。长期以来，“手擀”作为传统手艺的象征，但被工业挂面绑上了关系后，成为低成本营销的噱头。商标擦边成风5年前，克明食品拿到“陈克明手擀”30类方便食品商标注册证，可以在茶、零食小吃、挂面、调味品、饺子等9类商品包装上合法使用。从此，公司生产的“手擀”挂面产品登上",
+      "source_platform": "虎嗅",
+      "hot_rank": 8,
+      "url": "https://www.huxiu.com/article/4861815.html?f=rss",
+      "timestamp": "2026-05-26T23:47:09+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "虎嗅"
+      ],
+      "_likely_domain": "headline",
+      "_heat": {
+        "fingerprint": "26c33369b909a714",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "虎嗅"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 8,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "重庆不止有火锅：全球每3台笔记本，就有1台的外壳出自这里",
+      "summary": "本文来自微信公众号： 中外管理传媒 ，责任编辑：胸怀天下，作者：中外管理重庆，这座以麻辣火锅和重工业闻名的山城，在过去十年间完成了一次惊人的转型。很少有人知道，这里已是全球最大的笔记本电脑生产基地——年产各类笔记本超过6000万台，占全球总产量的三分之一。从空中俯瞰，惠普、宏碁、华硕的品牌标志矗立在厂区顶端；走进产业链深处，富士康、广达、英业达的代工厂日夜运转。而在这些巨头的光环之下，有一家在公众视野之外悄然生长的企业——重庆宇海精密制造股份有限公司（以下简称“宇海精密”）。每天，数以万计的精密结构件从宇海精密的车间出发，被送往英业达、广达、纬创、仁宝等全球顶级代工厂，在那里与芯片、屏幕、主板",
+      "source_platform": "虎嗅",
+      "hot_rank": 15,
+      "url": "https://www.huxiu.com/article/4861810.html?f=rss",
+      "timestamp": "2026-05-26T23:13:20+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "虎嗅"
+      ],
+      "_likely_domain": "headline",
+      "_heat": {
+        "fingerprint": "f104c7b303d73b86",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "虎嗅"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 15,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": false
+    },
+    {
+      "title": "朝鲜进行新型武器系统试射，金正恩观摩",
+      "summary": "当地时间5月26日，朝鲜导弹总局和国防科学院进行轻型多用途导弹发射系统和多管战术巡航导弹武器系统试验。上述两款武器系统是朝鲜依据国防发展五年规划，推进火炮与导弹力量现代化建设进程中研发的新型装备。朝鲜劳动党总书记、国务委员长金正恩观摩试验。金正恩对本次试验取得的成果予以高度评价，对高精尖国防科技成功应用于武器实装试验表示满意，并充分肯定了即将列装南部边境远程炮兵旅的战术巡航导弹的军事价值。该型战术巡航导弹集成超精确自主导航、地形匹配导航技术，搭载人工智能末制导系统，采用滑翔与推进复合飞行模式，可对100公里范围内目标实施精准打击，作战性能突出。金正恩表示，此次新型武器系统试验，是朝鲜推进军力现",
+      "source_platform": "澎湃新闻",
+      "hot_rank": 3,
+      "url": "https://m.thepaper.cn/detail/33242512",
+      "timestamp": "2026-05-26T23:56:32+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "澎湃新闻"
+      ],
+      "_likely_domain": "headline",
+      "_heat": {
+        "fingerprint": "23a15c59a242bc17",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "澎湃新闻"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 3,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": false
+    }
+  ],
+  "foreign_china": [
+    {
+      "title": "日米外相会談 台湾海峡安定の重要性確認 イラン情勢も議論",
+      "summary": "[NHK 商业] 茂木外務大臣は、訪問先のインドで、アメリカのルビオ国務長官と会談し、台湾海峡の平和と安定の重要性を改めて確認しました。また、イラン情勢をめぐり、戦闘終結に向けた協議が一刻も早く合意に達することが重要だと伝えました。 // [NHK 政治] 茂木外務大臣は、訪問先のインドで、アメリカのルビオ国務長官と会談し、台湾海峡の平和と安定の重要性を改めて確認しました。また、イラン情勢をめぐり、戦闘終結に向けた協議が一刻も早く合意に達することが重要だと伝えました。",
+      "source_platform": "NHK 商业+NHK 政治",
+      "hot_rank": 15,
+      "url": "http://www3.nhk.or.jp/news/html/20260526/k10015132101000.html",
+      "timestamp": "2026-05-26T09:51:20+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 2,
+      "_coverage_platforms": [
+        "NHK 政治",
+        "NHK 商业"
+      ],
+      "_likely_domain": "foreign_china",
+      "_heat": {
+        "fingerprint": "122adfbbfe8a26cc",
+        "is_new": false,
+        "is_sustained": true,
+        "is_deep": false,
+        "trend": "stable",
+        "heat_score": 3.7,
+        "appearances": 7,
+        "platforms": [
+          "NHK 商业",
+          "NHK 政治"
+        ],
+        "span_hours": 12.013203954444444,
+        "rank_timeline": [
+          {
+            "rank": 7,
+            "time": "2026-05-26T21:02:41.923783+08:00"
+          },
+          {
+            "rank": 9,
+            "time": "2026-05-27T00:30:34.329270+08:00"
+          },
+          {
+            "rank": 9,
+            "time": "2026-05-27T00:35:48.798689+08:00"
+          },
+          {
+            "rank": 9,
+            "time": "2026-05-27T00:36:10.232944+08:00"
+          },
+          {
+            "rank": 9,
+            "time": "2026-05-27T00:36:26.665014+08:00"
+          },
+          {
+            "rank": 9,
+            "time": "2026-05-27T00:37:16.277807+08:00"
+          },
+          {
+            "rank": 15,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true,
+      "title_cn": "日米外相会談 台湾海峡安定の重要性を確認 イラン情勢も協議",
+      "summary_cn": "茂木外務大臣は訪問先のインドで米国のルビオ国務長官と会談し、台湾海峡の平和と安定の重要性を改めて確認した。また、イラン情勢を巡り、戦闘終結に向けた協議が一刻も早く合意に達することが重要だと伝えた。"
+    },
+    {
+      "title": "ホルムズ海峡 日本関係船1隻が通過 金子国交相が明らかに",
+      "summary": "[NHK 商业] 金子国土交通大臣は、26日の閣議のあとの会見で、ペルシャ湾内にとどまっている日本関係の船舶のうち新たに1隻がホルムズ海峡を通過したと明らかにしました。 // [NHK 经济] 金子国土交通大臣は、26日の閣議のあとの会見で、ペルシャ湾内にとどまっている日本関係の船舶のうち新たに1隻がホルムズ海峡を通過したと明らかにしました。",
+      "source_platform": "NHK 商业+NHK 经济",
+      "hot_rank": 20,
+      "url": "http://www3.nhk.or.jp/news/html/20260526/k10015131531000.html",
+      "timestamp": "2026-05-26T03:32:12+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 2,
+      "_coverage_platforms": [
+        "NHK 经济",
+        "NHK 商业"
+      ],
+      "_likely_domain": "foreign_china",
+      "_heat": {
+        "fingerprint": "e93c8748ec46d4e0",
+        "is_new": false,
+        "is_sustained": true,
+        "is_deep": false,
+        "trend": "stable",
+        "heat_score": 3.7,
+        "appearances": 7,
+        "platforms": [
+          "NHK 经济",
+          "NHK 商业"
+        ],
+        "span_hours": 12.013203954444444,
+        "rank_timeline": [
+          {
+            "rank": 13,
+            "time": "2026-05-26T21:02:41.923783+08:00"
+          },
+          {
+            "rank": 14,
+            "time": "2026-05-27T00:30:34.329270+08:00"
+          },
+          {
+            "rank": 14,
+            "time": "2026-05-27T00:35:48.798689+08:00"
+          },
+          {
+            "rank": 14,
+            "time": "2026-05-27T00:36:10.232944+08:00"
+          },
+          {
+            "rank": 14,
+            "time": "2026-05-27T00:36:26.665014+08:00"
+          },
+          {
+            "rank": 14,
+            "time": "2026-05-27T00:37:16.277807+08:00"
+          },
+          {
+            "rank": 20,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true,
+      "title_cn": "ホルムズ海峡 日本関係船1隻が通過 金子国交相が明らかに",
+      "summary_cn": "金子国土交通大臣は26日の閣議後の会見で、ペルシャ湾内に留まっている日本関係の船舶のうち新たに1隻がホルムズ海峡を通過したと明らかにした。"
+    },
+    {
+      "title": "電気・ガス料金支援へ 今年度の予備費5135億円の支出決定",
+      "summary": "[NHK 经济] 政府は、中東情勢を受けて、ことし7月から3か月間、電気・ガス料金の支援を行うため、今年度予算の予備費から5135億円を支出することを決めました。 // [NHK 政治] 政府は、中東情勢を受けて、ことし7月から3か月間、電気・ガス料金の支援を行うため、今年度予算の予備費から5135億円を支出することを決めました。",
+      "source_platform": "NHK 经济+NHK 政治",
+      "hot_rank": 6,
+      "url": "http://www3.nhk.or.jp/news/html/20260526/k10015131441000.html",
+      "timestamp": "2026-05-26T09:37:58+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 2,
+      "_coverage_platforms": [
+        "NHK 政治",
+        "NHK 经济"
+      ],
+      "_likely_domain": "foreign_china",
+      "_heat": {
+        "fingerprint": "7c8aea5b3324d71b",
+        "is_new": false,
+        "is_sustained": true,
+        "is_deep": false,
+        "trend": "stable",
+        "heat_score": 3.7,
+        "appearances": 7,
+        "platforms": [
+          "NHK 经济",
+          "NHK 政治"
+        ],
+        "span_hours": 12.013203954444444,
+        "rank_timeline": [
+          {
+            "rank": 3,
+            "time": "2026-05-26T21:02:41.923783+08:00"
+          },
+          {
+            "rank": 3,
+            "time": "2026-05-27T00:30:34.329270+08:00"
+          },
+          {
+            "rank": 3,
+            "time": "2026-05-27T00:35:48.798689+08:00"
+          },
+          {
+            "rank": 3,
+            "time": "2026-05-27T00:36:10.232944+08:00"
+          },
+          {
+            "rank": 3,
+            "time": "2026-05-27T00:36:26.665014+08:00"
+          },
+          {
+            "rank": 3,
+            "time": "2026-05-27T00:37:16.277807+08:00"
+          },
+          {
+            "rank": 6,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true,
+      "title_cn": "電気・ガス料金支援へ 今年度予備費5135億円の支出決定",
+      "summary_cn": "政府は中東情勢を受け、今年7月から3か月間、電気・ガス料金の支援を行うため、今年度予算の予備費から5135億円を支出することを決めた。"
+    },
+    {
+      "title": "食料品の消費税 “税率含め方向性決まっていない” 官房副長官",
+      "summary": "[NHK 经济] 食料品の消費税の扱いをめぐり、尾崎官房副長官は、超党派の「国民会議」の実務者会議で具体的な議論が進められている途中だとして、現時点で税率を含め方向性は決まっていないと説明しました。 // [NHK 政治] 食料品の消費税の扱いをめぐり、尾崎官房副長官は、超党派の「国民会議」の実務者会議で具体的な議論が進められている途中だとして、現時点で税率を含め方向性は決まっていないと説明しました。",
+      "source_platform": "NHK 经济+NHK 政治",
+      "hot_rank": 17,
+      "url": "http://www3.nhk.or.jp/news/html/20260526/k10015131481000.html",
+      "timestamp": "2026-05-26T03:16:03+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 2,
+      "_coverage_platforms": [
+        "NHK 政治",
+        "NHK 经济"
+      ],
+      "_likely_domain": "foreign_china",
+      "_heat": {
+        "fingerprint": "30d233c91459cd96",
+        "is_new": false,
+        "is_sustained": true,
+        "is_deep": false,
+        "trend": "stable",
+        "heat_score": 3.7,
+        "appearances": 7,
+        "platforms": [
+          "NHK 经济",
+          "NHK 政治"
+        ],
+        "span_hours": 12.013203954444444,
+        "rank_timeline": [
+          {
+            "rank": 14,
+            "time": "2026-05-26T21:02:41.923783+08:00"
+          },
+          {
+            "rank": 14,
+            "time": "2026-05-27T00:30:34.329270+08:00"
+          },
+          {
+            "rank": 14,
+            "time": "2026-05-27T00:35:48.798689+08:00"
+          },
+          {
+            "rank": 14,
+            "time": "2026-05-27T00:36:10.232944+08:00"
+          },
+          {
+            "rank": 14,
+            "time": "2026-05-27T00:36:26.665014+08:00"
+          },
+          {
+            "rank": 14,
+            "time": "2026-05-27T00:37:16.277807+08:00"
+          },
+          {
+            "rank": 17,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": false,
+      "title_cn": "食料品の消費税「税率含め方向性決まっていない」官房副長官",
+      "summary_cn": "食料品の消費税の扱いを巡り、尾崎官房副長官は、超党派の「国民会議」の実務者会議で具体的な議論が進められている途中だとして、現時点で税率を含め方向性は決まっていないと説明した。"
+    },
+    {
+      "title": "Universal Music Group and TikTok renew agreement to combat unauthorized AI music",
+      "summary": "For years, UMG has pushed platforms, streaming services, and AI companies to implement stricter content moderation policies.",
+      "source_platform": "TechCrunch",
+      "hot_rank": 14,
+      "url": "https://techcrunch.com/2026/05/26/universal-music-group-and-tiktok-renew-agreement-to-combat-unauthorized-ai-music/",
+      "timestamp": "2026-05-26T14:55:05+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "TechCrunch"
+      ],
+      "_likely_domain": "foreign_china",
+      "_heat": {
+        "fingerprint": "026244e2653eee6c",
+        "is_new": false,
+        "is_sustained": true,
+        "is_deep": false,
+        "trend": "stable",
+        "heat_score": 3.0,
+        "appearances": 6,
+        "platforms": [
+          "TechCrunch"
+        ],
+        "span_hours": 8.548646874722222,
+        "rank_timeline": [
+          {
+            "rank": 6,
+            "time": "2026-05-27T00:30:34.329270+08:00"
+          },
+          {
+            "rank": 6,
+            "time": "2026-05-27T00:35:48.798689+08:00"
+          },
+          {
+            "rank": 6,
+            "time": "2026-05-27T00:36:10.232944+08:00"
+          },
+          {
+            "rank": 6,
+            "time": "2026-05-27T00:36:26.665014+08:00"
+          },
+          {
+            "rank": 6,
+            "time": "2026-05-27T00:37:16.277807+08:00"
+          },
+          {
+            "rank": 14,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 10,
+        "pass": true
+      },
+      "_needs_search": false,
+      "title_cn": "环球音乐集团与TikTok续签协议，共同打击未经授权的人工智能音乐",
+      "summary_cn": "多年来，环球音乐集团一直推动平台、流媒体服务和人工智能公司实施更严格的内容审核政策。"
+    }
+  ],
+  "tech": [
+    {
+      "title": "内幕交易避损近900万，淮安相兑弘毅及两名当事人合计被罚没1163万元",
+      "summary": "因内幕交易避损，一家私募基金及两名当事人被罚没超千万。5月25日，浙江证监局发布两份行政处罚决定书，分别对高磊、黄宝安内幕交易案作出处罚。除了上述二人，私募基金淮安相兑弘毅投资管理中心（有限合伙）（下称“淮安相兑弘毅”）也在本案中被没收违法所得逾876万元。具体而言，浙江证监局指出，经查明，2024年7月17日盘后，相关公司披露更正公告对2024年第一季度报告财务数据进行更正，该事项属于重大事件，公开前属于内幕信息。2024年7月12日盘后，前述内幕信息已实质公开，本案内幕信息敏感期为2024年7月2日至7月12日盘后。处罚决定书显示，高磊与黄宝安系朋友关系，黄宝安是上述法定内幕信息的知情人，",
+      "source_platform": "澎湃新闻",
+      "hot_rank": 11,
+      "url": "https://m.thepaper.cn/detail/33237958",
+      "timestamp": "2026-05-26T23:42:00+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "澎湃新闻"
+      ],
+      "_likely_domain": "tech",
+      "_heat": {
+        "fingerprint": "8d8f5515a35cc182",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "澎湃新闻"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 11,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "从一张午餐桌到无限宇宙，李飞飞押注AI的下一个维度",
+      "summary": "三次关键访谈，一个正在加速验证的判断。",
+      "source_platform": "钛媒体",
+      "hot_rank": 1,
+      "url": "https://www.tmtpost.com/8001563.html",
+      "timestamp": "2026-05-27T00:00:00+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "钛媒体"
+      ],
+      "_likely_domain": "tech",
+      "_heat": {
+        "fingerprint": "c41e596ffcb03c62",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "钛媒体"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 1,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "米アンソロピック「ミュトス」1万件のぜい弱性検出と発表",
+      "summary": "アメリカの新興AI企業、アンソロピックは22日、新たなAIモデル、「クロード・ミュトス」によってソフトウエアの重大なぜい弱性が1万件以上見つかったと発表しました。",
+      "source_platform": "NHK 商业",
+      "hot_rank": 5,
+      "url": "http://www3.nhk.or.jp/news/html/20260527/k10015132401000.html",
+      "timestamp": "2026-05-26T19:34:19+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "NHK 商业"
+      ],
+      "_likely_domain": "tech",
+      "_heat": {
+        "fingerprint": "9c91f897ac13e941",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "NHK 商业"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 5,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true,
+      "title_cn": "美国AI初创公司Anthropic宣布其模型“Claude Mythos”检测出逾1万处软件漏洞",
+      "summary_cn": "美国新兴AI企业Anthropic于22日宣布，其新型AI模型“Claude Mythos”已发现超过1万处软件重大漏洞。"
+    },
+    {
+      "title": "中国AI的东西战线——从延安到中途岛",
+      "summary": "要打到东京湾，还有很多漫长、艰难的硬仗，要一场场打下来。",
+      "source_platform": "钛媒体",
+      "hot_rank": 6,
+      "url": "https://www.tmtpost.com/8002752.html",
+      "timestamp": "2026-05-26T10:01:30+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "钛媒体"
+      ],
+      "_likely_domain": "tech",
+      "_heat": {
+        "fingerprint": "cc2a23e67b92d162",
+        "is_new": false,
+        "is_sustained": true,
+        "is_deep": false,
+        "trend": "stable",
+        "heat_score": 3.4,
+        "appearances": 7,
+        "platforms": [
+          "钛媒体"
+        ],
+        "span_hours": 12.013203954444444,
+        "rank_timeline": [
+          {
+            "rank": 3,
+            "time": "2026-05-26T21:02:41.923783+08:00"
+          },
+          {
+            "rank": 3,
+            "time": "2026-05-27T00:30:34.329270+08:00"
+          },
+          {
+            "rank": 3,
+            "time": "2026-05-27T00:35:48.798689+08:00"
+          },
+          {
+            "rank": 3,
+            "time": "2026-05-27T00:36:10.232944+08:00"
+          },
+          {
+            "rank": 3,
+            "time": "2026-05-27T00:36:26.665014+08:00"
+          },
+          {
+            "rank": 3,
+            "time": "2026-05-27T00:37:16.277807+08:00"
+          },
+          {
+            "rank": 6,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "宇树科技IPO，从赚钱机器到“造脑运动”的一场豪赌",
+      "summary": "一家研发费率仅7.7%的公司，凭什么敢把42亿的85%砸进研发？",
+      "source_platform": "钛媒体",
+      "hot_rank": 9,
+      "url": "https://www.tmtpost.com/8003035.html",
+      "timestamp": "2026-05-26T09:34:33+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "钛媒体"
+      ],
+      "_likely_domain": "tech",
+      "_heat": {
+        "fingerprint": "277b38121df2c545",
+        "is_new": false,
+        "is_sustained": true,
+        "is_deep": false,
+        "trend": "stable",
+        "heat_score": 3.4,
+        "appearances": 7,
+        "platforms": [
+          "钛媒体"
+        ],
+        "span_hours": 12.013203954444444,
+        "rank_timeline": [
+          {
+            "rank": 7,
+            "time": "2026-05-26T21:02:41.923783+08:00"
+          },
+          {
+            "rank": 7,
+            "time": "2026-05-27T00:30:34.329270+08:00"
+          },
+          {
+            "rank": 7,
+            "time": "2026-05-27T00:35:48.798689+08:00"
+          },
+          {
+            "rank": 7,
+            "time": "2026-05-27T00:36:10.232944+08:00"
+          },
+          {
+            "rank": 7,
+            "time": "2026-05-27T00:36:26.665014+08:00"
+          },
+          {
+            "rank": 7,
+            "time": "2026-05-27T00:37:16.277807+08:00"
+          },
+          {
+            "rank": 9,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "SpaceX IPO Filing Reveals Favorable Terms for Elon Musk",
+      "summary": "[纽约时报·科技] The ways it set up its board and Mr. Musk’s pay appear to benefit him at the expense of other shareholders, corporate governance experts said. // [纽约时报·商务] The ways it set up its board and Mr. Musk’s pay appear to benefit him at the expense of other shareholders, corporate governance experts said.",
+      "source_platform": "纽约时报·科技+纽约时报·商务",
+      "hot_rank": 2,
+      "url": "https://www.nytimes.com/2026/05/26/technology/spacex-elon-musk-pay-board-governance.html",
+      "timestamp": "2026-05-26T18:59:36+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 2,
+      "_coverage_platforms": [
+        "纽约时报·商务",
+        "纽约时报·科技"
+      ],
+      "_likely_domain": "tech",
+      "_heat": {
+        "fingerprint": "2e0e1d9b8f2a81d8",
+        "is_new": false,
+        "is_sustained": true,
+        "is_deep": false,
+        "trend": "stable",
+        "heat_score": 3.3,
+        "appearances": 6,
+        "platforms": [
+          "纽约时报·商务",
+          "纽约时报·科技"
+        ],
+        "span_hours": 8.548646874722222,
+        "rank_timeline": [
+          {
+            "rank": 1,
+            "time": "2026-05-27T00:30:34.329270+08:00"
+          },
+          {
+            "rank": 1,
+            "time": "2026-05-27T00:35:48.798689+08:00"
+          },
+          {
+            "rank": 1,
+            "time": "2026-05-27T00:36:10.232944+08:00"
+          },
+          {
+            "rank": 1,
+            "time": "2026-05-27T00:36:26.665014+08:00"
+          },
+          {
+            "rank": 1,
+            "time": "2026-05-27T00:37:16.277807+08:00"
+          },
+          {
+            "rank": 2,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": false,
+      "title_cn": "SpaceX IPO文件披露对埃隆·马斯克的有利条款",
+      "summary_cn": "公司治理专家表示，其董事会设立方式和马斯克薪酬安排似乎以牺牲其他股东利益为代价使他受益。"
+    },
+    {
+      "title": "Spotify boss defends move to AI music, saying it is better than ‘slop’",
+      "summary": "[卫报·科技] Streaming platform says remix tool agreed with Universal Music Group will protect artists from piracySpotify’s chief executive has defended the company’s move into AI-generated music, claiming it offers users and creators a better alternative to piracy and unregulated AI slop.Last week, the platform // [卫报·商务] Streaming platform says remix tool agreed with Universal Music Group will protect artists from piracySpotify’s chief executive has defended the company’s move into AI-generated music, claiming it offers users and creators a better alternative to piracy and unregulated AI slop.Last week, the platform",
+      "source_platform": "卫报·科技+卫报·商务",
+      "hot_rank": 2,
+      "url": "https://www.theguardian.com/technology/2026/may/26/spotify-ai-remix-tool-protects-artists-slop",
+      "timestamp": "2026-05-26T13:40:37+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 2,
+      "_coverage_platforms": [
+        "卫报·商务",
+        "卫报·科技"
+      ],
+      "_likely_domain": "tech",
+      "_heat": {
+        "fingerprint": "f0fa481587e9191d",
+        "is_new": false,
+        "is_sustained": true,
+        "is_deep": false,
+        "trend": "stable",
+        "heat_score": 3.3,
+        "appearances": 6,
+        "platforms": [
+          "卫报·商务",
+          "卫报·科技"
+        ],
+        "span_hours": 8.548646874722222,
+        "rank_timeline": [
+          {
+            "rank": 2,
+            "time": "2026-05-27T00:30:34.329270+08:00"
+          },
+          {
+            "rank": 2,
+            "time": "2026-05-27T00:35:48.798689+08:00"
+          },
+          {
+            "rank": 2,
+            "time": "2026-05-27T00:36:10.232944+08:00"
+          },
+          {
+            "rank": 2,
+            "time": "2026-05-27T00:36:26.665014+08:00"
+          },
+          {
+            "rank": 2,
+            "time": "2026-05-27T00:37:16.277807+08:00"
+          },
+          {
+            "rank": 2,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": false,
+      "title_cn": "Spotify老板为进军人工智能音乐辩护，称其优于“垃圾内容”",
+      "summary_cn": "流媒体平台表示，与环球音乐集团达成的混音工具协议将保护艺术家免受盗版侵害。Spotify首席执行官为公司进军人工智能音乐领域辩护，称其为用户和创作者提供了比盗版和不受监管的AI垃圾内容更好的选择。"
+    }
+  ],
+  "economy": [
+    {
+      "title": "唤醒沉睡的巨人：中国国有存量资产盘活的深度探究与系统性策略……",
+      "summary": "本文来自微信公众号： TOP创新区研究院 ，作者：趋势研究组现状与背景：万亿资产亟待唤醒的时代强音经过数十年的高速发展和大规模投资建设，中国城市已积累起数额庞大的国有存量资产。然而，其中一部分正处于闲置或低效利用的“沉睡”状态，构成了一个亟待挖掘的巨大价值洼地。中国国有资产行业比例（Sources:WisdomTree,Bloomberg,MSCl）闲置与低效资产的规模与类型：全国城镇建设用地规模庞大，但低效和闲置问题突出。据估算，中国基础设施存量资产规模已超百万亿元。这些资产形态各异，既包括城市中心的老旧厂房、功能衰退的产业园区，也涵盖了空置的办公楼宇、招待所，乃至部分三四线城市中因规划超前",
+      "source_platform": "虎嗅",
+      "hot_rank": 2,
+      "url": "https://www.huxiu.com/article/4861819.html?f=rss",
+      "timestamp": "2026-05-27T00:18:03+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "虎嗅"
+      ],
+      "_likely_domain": "economy",
+      "_heat": {
+        "fingerprint": "9199a87d45843f99",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "虎嗅"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 2,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 13,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "大瓶柠檬水扎堆上架，集体硬刚蜜雪冰城",
+      "summary": "本文来自微信公众号： 斑马消费 ，作者：陈晓京柠檬水，站到C位一杯普通的柠檬水，站到了今年夏季货架的C位。以往，柠檬只是作为各种饮料的辅料，用于增加产品的味觉层次。今夏饮料旺季到来，各大品牌柠檬类饮品扎堆，一场大战已无声地拉开了序幕。初步统计，今年前5个月，农夫山泉、康师傅、统一、元气森林等20多个主流饮料品牌，上架柠檬类饮品数量超过50款，较上年同期增长120%。这些产品涵盖柠檬气泡水、柠檬茶、纯柠檬水等，以各种形式在细分赛道全面发力。这是继无糖茶、电解质饮料爆红之后，饮料厂商们发现的又一新大陆。厂商们不约而同祭出大瓶装的杀手锏，市场主流为1L装产品，核心价格带集中在3元至6元/L，相当于0",
+      "source_platform": "虎嗅",
+      "hot_rank": 6,
+      "url": "https://www.huxiu.com/article/4861816.html?f=rss",
+      "timestamp": "2026-05-26T23:50:41+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "虎嗅"
+      ],
+      "_likely_domain": "economy",
+      "_heat": {
+        "fingerprint": "e1bcc674b32a671e",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "虎嗅"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 6,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "イランの濃縮ウランめぐり駆け引き 米軍は“自衛”の攻撃も",
+      "summary": "アメリカのトランプ大統領は、イランとの協議の焦点の1つとなっているイラン国内の濃縮ウランについて条件が整えばアメリカ以外の場所での廃棄も認める考えを示し、駆け引きが続いています。一方、アメリカ軍は25日、イラン南部で船舶やミサイル施設を標的に自衛のための攻撃を行ったと明らかにし、戦闘終結に向けた合意が実現するかは依然として不透明な情勢です。",
+      "source_platform": "NHK 商业",
+      "hot_rank": 19,
+      "url": "http://www3.nhk.or.jp/news/html/20260526/k10015131601000.html",
+      "timestamp": "2026-05-26T08:38:58+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "NHK 商业"
+      ],
+      "_likely_domain": "economy",
+      "_heat": {
+        "fingerprint": "c21b81522540841d",
+        "is_new": false,
+        "is_sustained": true,
+        "is_deep": false,
+        "trend": "stable",
+        "heat_score": 3.4,
+        "appearances": 7,
+        "platforms": [
+          "NHK 商业"
+        ],
+        "span_hours": 12.013203954444444,
+        "rank_timeline": [
+          {
+            "rank": 11,
+            "time": "2026-05-26T21:02:41.923783+08:00"
+          },
+          {
+            "rank": 13,
+            "time": "2026-05-27T00:30:34.329270+08:00"
+          },
+          {
+            "rank": 13,
+            "time": "2026-05-27T00:35:48.798689+08:00"
+          },
+          {
+            "rank": 13,
+            "time": "2026-05-27T00:36:10.232944+08:00"
+          },
+          {
+            "rank": 13,
+            "time": "2026-05-27T00:36:26.665014+08:00"
+          },
+          {
+            "rank": 13,
+            "time": "2026-05-27T00:37:16.277807+08:00"
+          },
+          {
+            "rank": 19,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": true,
+      "title_cn": "围绕伊朗浓缩铀展开博弈 美军实施“自卫”打击",
+      "summary_cn": "美国总统特朗普就伊朗国内浓缩铀问题表示，若条件具备，可同意在伊朗境外进行处置，博弈仍在持续。与此同时，美军于25日宣布对伊朗南部船舶及导弹设施实施了自卫性打击，战事能否达成停火协议仍不明朗。"
+    },
+    {
+      "title": "450万元医保罚单背后，一家地方龙头医院的“慢性死亡”",
+      "summary": "罚单背后：股东、管理、资产的三重困局",
+      "source_platform": "虎嗅",
+      "hot_rank": 3,
+      "url": "https://www.huxiu.com/article/4861818.html?f=rss",
+      "timestamp": "2026-05-27T00:15:00+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "虎嗅"
+      ],
+      "_likely_domain": "economy",
+      "_heat": {
+        "fingerprint": "10f6ebb5134e7581",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "虎嗅"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 3,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "株価 初の6万6000円台に 取り引き時間中の最高値を更新",
+      "summary": "27日の東京株式市場、日経平均株価は一時、1400円以上上昇し、初めて6万6000円台をつけ、取り引き時間中の最高値を更新しました。26日のニューヨーク株式市場でハイテク株の比率が高いナスダックの株価指数などが最高値を更新したことを受けて、東京市場でも半導体関連の銘柄を中心に買い注文が広がっています。",
+      "source_platform": "NHK 经济",
+      "hot_rank": 1,
+      "url": "http://www3.nhk.or.jp/news/html/20260527/k10015132451000.html",
+      "timestamp": "2026-05-27T00:11:24+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "NHK 经济"
+      ],
+      "_likely_domain": "economy",
+      "_heat": {
+        "fingerprint": "eb2b2b1b4d182135",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "NHK 经济"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 1,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": false,
+      "title_cn": "日经指数首次突破66000点 盘中刷新历史最高纪录",
+      "summary_cn": "27日东京股市日经平均指数一度上涨逾1400点，首次站上66000点关口，刷新盘中最高纪录。受26日纽约股市纳斯达克高科技股指数创新高影响，东京市场半导体相关个股买盘扩大。"
+    },
+    {
+      "title": "US to seek public comment on which Chinese goods qualify for lower tariffs, Greer says",
+      "summary": "The US government will shortly issue a formal call for public comment on which Chinese products should qualify for lower tariffs under a newly established bilateral “Board of Trade”, US Trade Representative Jamieson Greer announced on Tuesday.\n“We’ll be putting out a Federal Register notice shortly,",
+      "source_platform": "南华早报",
+      "hot_rank": 2,
+      "url": "https://www.scmp.com/news/china/diplomacy/article/3354957/us-seek-public-comment-which-chinese-goods-get-tariff-cuts?utm_source=rss_feed",
+      "timestamp": "2026-05-26T22:18:38+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "南华早报"
+      ],
+      "_likely_domain": "economy",
+      "_heat": {
+        "fingerprint": "72d2998aa1cc89a4",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "南华早报"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 2,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 10,
+        "pass": true
+      },
+      "_needs_search": false,
+      "title_cn": "美国将就哪些中国商品符合低关税条件征求公众意见，格里尔表示",
+      "summary_cn": "美国贸易代表杰米森·格里尔周二宣布，美国政府将很快正式发布通知，就新成立的双边“贸易委员会”下哪些中国产品应享受较低关税征求公众意见。“我们将很快在《联邦公报》上发布通知，”"
+    }
+  ],
+  "gaming": [
+    {
+      "title": "007新游Steam全球好评率91%！简中特别好评",
+      "summary": "《007 初露锋芒》是一款由《杀手》系列开发商IO Interactive开发的间谍题材动作冒险游戏，故事聚焦英国顶级特工007詹姆斯·邦德年轻时的故事，游戏现已在各大平台正式发售。\n\n\n\n昨晚，游戏正式在Steam平台解锁，其首批评价也已正式出炉。\n\n\n\n根据游民星空数据，截至发稿，游戏目前共在Steam收获2034份玩家评测，全球玩家好评率为91%，评价等级为“特别好评”。简中评测共280份，好评率87%，评价等级为“特别好评”。&nbsp;\n\n\n\n具体评价方面，给出好评的玩家指出，本作发扬了线性剧情3A的优势，战斗刺激，电影动作大片既视感。\n\n\n\n\n而给出差评的玩家则认为，游戏存在DLS",
+      "source_platform": "游民星空",
+      "hot_rank": 3,
+      "url": "https://www.gamersky.com/news/202605/2146396.shtml",
+      "timestamp": "2026-05-27T00:20:00+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "游民星空"
+      ],
+      "_likely_domain": "gaming",
+      "_heat": {
+        "fingerprint": "797e2a81bae40aca",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "游民星空"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 3,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "《遗忘之海》「破晓号测试」定档5月28日：加入鸡飞狗跳的航海之旅！",
+      "summary": "在刚刚结束的「破晓号测试」前瞻直播中，《遗忘之海》项目组首次向船长完整揭开了《遗忘之海》的全貌。从核心概念“遗忘之海”，到群岛与奥托皮亚的自由探索，再到那个“鸡飞狗跳又欢乐自由”的热闹木偶世界——随着「破晓号测试」即将开启，游戏各类玩法细节、游戏机制、优化内容及福利活动悉数曝光。\n一、核心世界观：奔赴遗忘之海，探寻记忆与真相《遗忘之海》作为“一个鸡飞狗跳，欢乐自由的世界”，主打轻松欢乐、自由随性的游戏体验。船长们可随时与船员出海探险，在记忆与遗忘交织的多周目旅程中寻找世界真相，最终抵达神秘的遗忘之海，触碰遗失的过往，与故人隔空相逢。\n船长从奥托皮亚码头出海进入海域，通过击败散怪、强敌与霸主获取",
+      "source_platform": "机核",
+      "hot_rank": 13,
+      "url": "https://www.gcores.com/articles/214979",
+      "timestamp": "2026-05-26T03:31:37+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "机核"
+      ],
+      "_likely_domain": "gaming",
+      "_heat": {
+        "fingerprint": "04b2029d11278c3e",
+        "is_new": false,
+        "is_sustained": true,
+        "is_deep": false,
+        "trend": "stable",
+        "heat_score": 3.4,
+        "appearances": 7,
+        "platforms": [
+          "机核"
+        ],
+        "span_hours": 12.013203954444444,
+        "rank_timeline": [
+          {
+            "rank": 12,
+            "time": "2026-05-26T21:02:41.923783+08:00"
+          },
+          {
+            "rank": 13,
+            "time": "2026-05-27T00:30:34.329270+08:00"
+          },
+          {
+            "rank": 13,
+            "time": "2026-05-27T00:35:48.798689+08:00"
+          },
+          {
+            "rank": 13,
+            "time": "2026-05-27T00:36:10.232944+08:00"
+          },
+          {
+            "rank": 13,
+            "time": "2026-05-27T00:36:26.665014+08:00"
+          },
+          {
+            "rank": 13,
+            "time": "2026-05-27T00:37:16.277807+08:00"
+          },
+          {
+            "rank": 13,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "《巫师3》突然官宣新直播！新DLC真要来了吗？",
+      "summary": "据IGN报道，CDPR突然宣布，为纪念《巫师3：狂猎》DLC“血与酒”推出10周年，将于北京时间5月28日晚11点举办一场特别纪念直播，而此举也再次引发了对于传闻中《巫师3：狂猎》新DLC的猜测。\n\n\n\n关于《巫师3：狂猎》将推出新DLC的消息传闻已久，据称，该DLC将起到承上启下的作用，为未来的《巫师4》铺路。知名可靠消息人士NatetheHate曾表示，《巫师3：狂猎》的新DLC“确实存在”，波兰分析师Mateusz Chrzanowski认为该DLC将于本财年内发售，否则无法达成CDPR的绩效目标，导致高层“奖金泡汤”。\n\n\n\n尽管目前官方并未暗示此次直播会公布任何新消息，但这依旧没能阻",
+      "source_platform": "游民星空",
+      "hot_rank": 2,
+      "url": "https://www.gamersky.com/news/202605/2146397.shtml",
+      "timestamp": "2026-05-27T00:43:00+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "游民星空"
+      ],
+      "_likely_domain": "gaming",
+      "_heat": {
+        "fingerprint": "e42e9b5d99f4308f",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "游民星空"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 2,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "GPASS 夏日优惠活动现已开始＆核聚变深圳站会员福利免费领！",
+      "summary": "夏日特惠现已开始！在 2026 年 5 月 26日 00:00 到 2026 年 6 月 9 日 00:00 期间购买 GPASS 会员将享受折扣价格：\n\n一年会员价格 248 元（原价 298 元） ；\n\n半年会员价格 158 元（原价 188 元） ；\n\n购买赠送他人的 GPASS 会员卡也享受同等折扣价格。\n在活动期间开启连续订阅还能获得更大优惠：开启连续订阅（仅 iOS 端 机核 APP 可连续订阅）一年连续订阅用户开启订阅价格为 238 元（仅首年优惠、后续每年 288 元自动续费），半年连续订阅用户开启订阅价格为 148 元（仅首年优惠、后续每半年 178 元自动续费）。 \n&lt",
+      "source_platform": "机核",
+      "hot_rank": 9,
+      "url": "https://www.gcores.com/articles/214612",
+      "timestamp": "2026-05-26T04:30:00+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "机核"
+      ],
+      "_likely_domain": "gaming",
+      "_heat": {
+        "fingerprint": "bd798f5e3701ae94",
+        "is_new": false,
+        "is_sustained": true,
+        "is_deep": false,
+        "trend": "stable",
+        "heat_score": 3.4,
+        "appearances": 7,
+        "platforms": [
+          "机核"
+        ],
+        "span_hours": 12.013203954444444,
+        "rank_timeline": [
+          {
+            "rank": 8,
+            "time": "2026-05-26T21:02:41.923783+08:00"
+          },
+          {
+            "rank": 9,
+            "time": "2026-05-27T00:30:34.329270+08:00"
+          },
+          {
+            "rank": 9,
+            "time": "2026-05-27T00:35:48.798689+08:00"
+          },
+          {
+            "rank": 9,
+            "time": "2026-05-27T00:36:10.232944+08:00"
+          },
+          {
+            "rank": 9,
+            "time": "2026-05-27T00:36:26.665014+08:00"
+          },
+          {
+            "rank": 9,
+            "time": "2026-05-27T00:37:16.277807+08:00"
+          },
+          {
+            "rank": 9,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 10,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "三体公司原CEO许垚被执行死刑",
+      "summary": "据经济观察报报道，备受关注的投毒杀人者、三体宇宙（上海）文化发展有限公司原 CEO许垚，被执行死刑。许垚投毒致使其老板，时任游族网络股份有限公司董事长林奇中毒身亡，并造成其他至少4人中毒。在许垚被执行死刑当日，其中一位受害者在社交媒体上留言感慨：“正义，虽迟但到。” \n许垚生于1981年，贵州贵阳人，西南政法大学本科、后赴法国和美国取得硕士学位，曾在国际律所和复星集团任职。2017年他加入游族集团，2018年8月出任三体宇宙（上海）文化发展有限公司CEO，主导《三体》IP的孵化开发。然而随着三体公司财务表现不佳，许垚希望获得公司股权却始终未能如愿，与老板林奇的关系日益恶化。 司法机关认定，许垚",
+      "source_platform": "机核",
+      "hot_rank": 10,
+      "url": "https://www.gcores.com/articles/214981",
+      "timestamp": "2026-05-26T03:52:27+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "机核"
+      ],
+      "_likely_domain": "gaming",
+      "_heat": {
+        "fingerprint": "143b4754774c47b1",
+        "is_new": false,
+        "is_sustained": true,
+        "is_deep": false,
+        "trend": "stable",
+        "heat_score": 3.4,
+        "appearances": 7,
+        "platforms": [
+          "机核"
+        ],
+        "span_hours": 12.013203954444444,
+        "rank_timeline": [
+          {
+            "rank": 9,
+            "time": "2026-05-26T21:02:41.923783+08:00"
+          },
+          {
+            "rank": 10,
+            "time": "2026-05-27T00:30:34.329270+08:00"
+          },
+          {
+            "rank": 10,
+            "time": "2026-05-27T00:35:48.798689+08:00"
+          },
+          {
+            "rank": 10,
+            "time": "2026-05-27T00:36:10.232944+08:00"
+          },
+          {
+            "rank": 10,
+            "time": "2026-05-27T00:36:26.665014+08:00"
+          },
+          {
+            "rank": 10,
+            "time": "2026-05-27T00:37:16.277807+08:00"
+          },
+          {
+            "rank": 10,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 10,
+        "pass": true
+      },
+      "_needs_search": false
+    },
+    {
+      "title": "巨人业绩会答疑：大股东减持还银行贷款，《超自然行动组》出海已见成效",
+      "summary": "【GameLook专稿，禁止转载！】 GameLook报道/上个月月底，巨人网络发布了2025年财报及2026年Q1财报，巨人可谓交出了一份相当华丽的成绩单。2025年，巨人营收突...",
+      "source_platform": "GameLook",
+      "hot_rank": 6,
+      "url": "http://www.gamelook.com.cn/2026/05/593922/",
+      "timestamp": "2026-05-26T01:39:27+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "GameLook"
+      ],
+      "_likely_domain": "gaming",
+      "_heat": {
+        "fingerprint": "5b07c18be7ff87ae",
+        "is_new": false,
+        "is_sustained": true,
+        "is_deep": false,
+        "trend": "stable",
+        "heat_score": 3.4,
+        "appearances": 7,
+        "platforms": [
+          "GameLook"
+        ],
+        "span_hours": 12.013203954444444,
+        "rank_timeline": [
+          {
+            "rank": 6,
+            "time": "2026-05-26T21:02:41.923783+08:00"
+          },
+          {
+            "rank": 6,
+            "time": "2026-05-27T00:30:34.329270+08:00"
+          },
+          {
+            "rank": 6,
+            "time": "2026-05-27T00:35:48.798689+08:00"
+          },
+          {
+            "rank": 6,
+            "time": "2026-05-27T00:36:10.232944+08:00"
+          },
+          {
+            "rank": 6,
+            "time": "2026-05-27T00:36:26.665014+08:00"
+          },
+          {
+            "rank": 6,
+            "time": "2026-05-27T00:37:16.277807+08:00"
+          },
+          {
+            "rank": 6,
+            "time": "2026-05-27T09:03:29.458019+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 10,
+        "pass": true
+      },
+      "_needs_search": false
+    }
+  ],
+  "total": 30,
+  "curated_at": "2026-05-27T09:04:08.082104+08:00",
+  "push_id": "morning",
+  "run_id": "20260527_morning_ead5be8a",
+  "run_id_marker": "\n​[rid:20260527_morning_ead5be8a]"
+}
