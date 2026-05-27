@@ -109,6 +109,20 @@ CIRCUIT_BREAKER_THRESHOLD = 3  # 连续 3 个 batch 失败 → 熔断，跳过�
 
 _translate_failures = 0        # 模块级熔断计数器
 
+_EXPAND_TEMPLATE = Template("""You are a professional news editor. The following Chinese news items have very short summaries (often just a tagline or metaphor).
+
+Rewrite each item's TITLE and SUMMARY into a complete, informative Chinese sentence of about 50-80 Chinese characters.
+
+Rules:
+1. Preserve all factual details (company names, numbers, dates, percentages).
+2. If the summary is too vague or metaphorical (e.g. "风口上的猪"), draw on the title context to write a concrete, factual summary.
+3. Do NOT add information that is not implied by the title or summary.
+4. Use journalistic Chinese style — clear, objective, and fluent.
+5. Output each item as EXACTLY TWO lines: first line = rewritten title, second line = rewritten summary.
+6. Each line must be a single line (no line breaks inside).
+7. Do NOT add numbering, prefixes, or any extra commentary.
+8. Output exactly 2N lines for N input items.""")
+
 _TRANSLATE_TEMPLATE = Template("""You are a professional translator. Translate the following $source_lang news items
 into concise, natural Chinese.
 Each item contains a TITLE and a SUMMARY.
@@ -349,12 +363,116 @@ async def _batch_translate_all(
     return all_results
 
 
+async def _batch_expand_all(
+    session: aiohttp.ClientSession,
+    items_to_expand: list,
+    api_key: str,
+    batch_size: int = None,
+) -> list:
+    """Expand short Chinese summaries using AI.
+
+    items_to_expand: list of (domain, idx, item, title, summary, needs_title, needs_summary, source_lang)
+    Returns a list of (batch_items, translations_or_None, error_or_None) tuples.
+    """
+    bs = batch_size if batch_size is not None else BATCH_SIZE
+    all_results = []
+
+    # Build batches
+    batches = []
+    for batch_start in range(0, len(items_to_expand), bs):
+        batch = items_to_expand[batch_start:batch_start + bs]
+        pairs = [(item[3], item[4]) for item in batch]
+        batches.append((batch, pairs, batch_start))
+
+    async def expand_one_batch(
+        batch, pairs, batch_start
+    ) -> tuple[list, list | None, Exception | None]:
+        global _translate_failures
+        try:
+            translations = await batch_expand(session, pairs, api_key)
+            batch_end = batch_start + len(batch)
+            total = len(items_to_expand)
+            print(
+                f"[TRANSLATE] Expand batch {batch_start+1}-{batch_end}/{total}: "
+                f"expanded {len(batch)} Chinese items",
+                file=sys.stderr,
+            )
+            _translate_failures = 0
+            return (batch, translations, None)
+        except Exception as e:
+            _translate_failures += 1
+            print(
+                f"[TRANSLATE] Expand batch failed ({_translate_failures}/"
+                f"{CIRCUIT_BREAKER_THRESHOLD} strikes): {e}",
+                file=sys.stderr,
+            )
+            return (batch, None, e)
+
+    for batch, pairs, batch_start in batches:
+        result = await expand_one_batch(batch, pairs, batch_start)
+        all_results.append(result)
+
+    return all_results
+
+
+async def batch_expand(
+    session: aiohttp.ClientSession,
+    items: list[tuple[str, str]],
+    api_key: str,
+) -> list[tuple[str, str]]:
+    """Expand a batch of short Chinese summaries using AI.
+
+    Each item is (title, summary) tuple.
+    Returns list of (title_cn, summary_cn) tuples.
+    """
+    user_lines = []
+    for idx, (title, summary) in enumerate(items, 1):
+        user_lines.append(
+            f"Item {idx}:\nTITLE: {title}\nSUMMARY: {summary}"
+        )
+
+    user_message = "\n\n".join(user_lines)
+    messages = [
+        {"role": "system", "content": _EXPAND_TEMPLATE.substitute()},
+        {"role": "user", "content": user_message},
+    ]
+
+    response = await _make_request(session, api_key, messages)
+    if 'choices' not in response or not response['choices']:
+        raise ValueError(
+            f"Unexpected API response: "
+            f"{response.get('error', {}).get('message', 'unknown')}"
+        )
+    content = response["choices"][0]["message"]["content"].strip()
+
+    raw_lines = [l.strip() for l in content.split('\n')]
+    lines = [l for l in raw_lines if l]
+    # Strip model commentary lines
+    lines = [l for l in lines if not l.startswith(('Here', 'The following', 'Below', 'Note:', '以上是'))]
+
+    results = []
+    for i in range(0, len(lines), 2):
+        title_cn = lines[i] if i < len(lines) else "[扩写失败]"
+        summary_cn = lines[i + 1] if i + 1 < len(lines) else "[扩写失败]"
+        title_cn = re.sub(r'^[\[\（\(]?\d+[\]）\)]?[.、．\s]*', '', title_cn).strip()
+        summary_cn = re.sub(r'^[\[\（\(]?\d+[\]）\)]?[.、．\s]*', '', summary_cn).strip()
+        results.append((title_cn, summary_cn))
+
+    while len(results) < len(items):
+        results.append(("[扩写失败]", "[扩写失败]"))
+    results = results[:len(items)]
+
+    return results
+
+
 # ── Main processing ──────────────────────────────────────────────────────────
 
 
-def _load_and_scan(push_id: str) -> tuple[dict, list, Path]:
-    """Load curated JSON and scan for items needing translation.
-    Returns (data, items_to_translate, curated_path).
+def _load_and_scan(push_id: str) -> tuple[dict, list, list, Path]:
+    """Load curated JSON and scan for items needing translation or expansion.
+    Returns (data, items_to_translate, items_to_expand, curated_path).
+    items_to_translate: foreign items needing translation to Chinese.
+    items_to_expand: Chinese items with short summaries (< 50 chars) needing expansion.
     Each item is (domain, idx, item, title, summary, needs_title, needs_summary, source_lang).
     Prefers dated file (YYYYMMDD) to match render_markdown.py priority.
     """
@@ -384,6 +502,7 @@ def _load_and_scan(push_id: str) -> tuple[dict, list, Path]:
     from trendradar.scripts.settings import DOMAINS
     domains = DOMAINS
     items_to_translate = []
+    items_to_expand = []
 
     for domain in domains:
         items = data.get(domain, [])
@@ -393,23 +512,29 @@ def _load_and_scan(push_id: str) -> tuple[dict, list, Path]:
             has_title_cn = bool(item.get('title_cn'))
             has_summary_cn = bool(item.get('summary_cn'))
 
-            # Skip if both already translated
+            # Skip if both already translated/expanded
             if has_title_cn and has_summary_cn:
                 continue
 
             # Determine source language by platform (from translate.yaml)
             source_lang = get_source_lang(item.get('source_platform', ''))
 
-            # Only translate if we know the source language
-            needs_title = not has_title_cn and title and bool(source_lang)
-            needs_summary = not has_summary_cn and summary and bool(source_lang)
+            if source_lang:
+                # Foreign language: translate to Chinese
+                needs_title = not has_title_cn and bool(title)
+                needs_summary = not has_summary_cn and bool(summary)
+                if needs_title or needs_summary:
+                    items_to_translate.append(
+                        (domain, idx, item, title, summary, needs_title, needs_summary, source_lang)
+                    )
+            else:
+                # Chinese source: check if summary is too short (< 50 chars) and needs expansion
+                if not has_summary_cn and len(summary) > 0 and len(summary) < 50:
+                    items_to_expand.append(
+                        (domain, idx, item, title, summary, True, True, 'Chinese')
+                    )
 
-            if needs_title or needs_summary:
-                items_to_translate.append(
-                    (domain, idx, item, title, summary, needs_title, needs_summary, source_lang)
-                )
-
-    return data, items_to_translate, curated_path
+    return data, items_to_translate, items_to_expand, curated_path
 
 
 def _write_back(data: dict, curated_path: Path, push_id: str):
@@ -427,23 +552,15 @@ def _write_back(data: dict, curated_path: Path, push_id: str):
 
 
 async def process_curated(push_id: str) -> dict:
-    """Load curated JSON, translate English titles+summaries, and save back.
-    Split into _load_and_scan / _batch_translate / _write_back.
-    """
-    data, items_to_translate, curated_path = _load_and_scan(push_id)
+    """Load curated JSON, translate foreign titles+summaries and expand short Chinese summaries, then save back."""
+    data, items_to_translate, items_to_expand, curated_path = _load_and_scan(push_id)
 
-    if not items_to_translate:
+    if not items_to_translate and not items_to_expand:
         print(
-            f"[TRANSLATE] No English items found for push-id '{push_id}'",
+            f"[TRANSLATE] No items need processing for push-id '{push_id}'",
             file=sys.stderr,
         )
         return data
-
-    print(
-        f"[TRANSLATE] Found {len(items_to_translate)} items to translate "
-        f"for push-id '{push_id}'",
-        file=sys.stderr,
-    )
 
     from trendradar.scripts.settings import get_api_key
     api_key = get_api_key()
@@ -460,28 +577,56 @@ async def process_curated(push_id: str) -> dict:
     translated_count = 0
 
     async with aiohttp.ClientSession() as session:
-        batch_results = await _batch_translate_all(
-            session, items_to_translate, api_key
-        )
+        # Step 1: Translate foreign items
+        if items_to_translate:
+            print(
+                f"[TRANSLATE] Found {len(items_to_translate)} items to translate "
+                f"for push-id '{push_id}'",
+                file=sys.stderr,
+            )
+            batch_results = await _batch_translate_all(
+                session, items_to_translate, api_key
+            )
 
-    for batch, translations, error in batch_results:
-        if error:
-            continue
-        # batch: list of (domain, idx, item, title, summary, needs_title, needs_summary, source_lang)
-        # translations: list of (title_cn, summary_cn) tuples
-        for entry, (title_cn, summary_cn) in zip(batch, translations, strict=True):
-            domain, idx, item, title, summary, needs_title, needs_summary, _source_lang = entry
-            if needs_title:
-                item['title_cn'] = title_cn
-            if needs_summary:
-                item['summary_cn'] = summary_cn
-            translated_count += 1
-            total_chars += len(title) + len(summary)
+            for batch, translations, error in batch_results:
+                if error:
+                    continue
+                for entry, (title_cn, summary_cn) in zip(batch, translations, strict=True):
+                    domain, idx, item, title, summary, needs_title, needs_summary, _source_lang = entry
+                    if needs_title:
+                        item['title_cn'] = title_cn
+                    if needs_summary:
+                        item['summary_cn'] = summary_cn
+                    translated_count += 1
+                    total_chars += len(title) + len(summary)
+
+        # Step 2: Expand short Chinese summaries
+        if items_to_expand:
+            print(
+                f"[TRANSLATE] Found {len(items_to_expand)} Chinese items with short summaries to expand "
+                f"for push-id '{push_id}'",
+                file=sys.stderr,
+            )
+            expand_results = await _batch_expand_all(
+                session, items_to_expand, api_key
+            )
+
+            for batch, translations, error in expand_results:
+                if error:
+                    continue
+                for entry, (title_cn, summary_cn) in zip(batch, translations, strict=True):
+                    domain, idx, item, title, summary, needs_title, needs_summary, _source_lang = entry
+                    if needs_title and title_cn:
+                        item['title_cn'] = title_cn
+                    if needs_summary and summary_cn:
+                        item['summary_cn'] = summary_cn
+                    translated_count += 1
+                    total_chars += len(title) + len(summary)
 
     _write_back(data, curated_path, push_id)
 
     print(
-        f"[TRANSLATE] Done: {translated_count} items translated, "
+        f"[TRANSLATE] Done: {translated_count} items processed, "
         f"{total_chars} chars total",
         file=sys.stderr,
     )

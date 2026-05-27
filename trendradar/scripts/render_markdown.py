@@ -89,7 +89,7 @@ def _format_item(idx, item, push_id):
     Each line pair separated by single blank line (\n\n).
     """
     title = _shorten(item.get('title_cn') or item.get('title') or '', 80)
-    summary = _shorten(item.get('summary_cn') or item.get('summary') or '', 50)
+    summary = _shorten(item.get('summary_cn') or item.get('summary') or '', 80)
     url = (item.get('url') or '').strip()
     source = (item.get('source_platform') or '').split('+')[0].strip()
     heat = item.get('_heat')
