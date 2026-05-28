@@ -116,11 +116,11 @@ Rules:
 1. Preserve all factual details (names, numbers, dates, percentages, locations).
 2. Use journalistic Chinese style — clear, objective, and fluent.
 3. Keep proper nouns untranslated unless a widely-accepted Chinese name exists.
-4. Output each item as EXACTLY TWO lines: first line = translated title, second line = translated summary.
-5. Each line must be a single line (no line breaks inside).
-6. Do NOT add numbering, prefixes, or any extra commentary.
-7. Output exactly 2N lines for N input items.""")
-
+4. CRITICAL: You MUST translate every item. NEVER return the original text unchanged.
+5. Output each item as EXACTLY TWO lines: first line = translated title, second line = translated summary.
+6. Each line must be a single line (no line breaks inside).
+7. Do NOT add numbering, prefixes, or any extra commentary.
+8. Output exactly 2N lines for N input items.""")
 
 def get_system_prompt(source_lang: str = "English") -> str:
     """Render translation prompt template."""
@@ -311,6 +311,19 @@ async def _batch_translate_all(
                 translations = await batch_translate(session, pairs, api_key, source_lang)
                 batch_end = batch_start + len(batch)
                 total = len(items_to_translate)
+                # 检测未翻译内容：如果 title_cn==title 或 summary_cn==summary，说明模型返回了原文
+                untranslated_count = 0
+                for (entry, (tcn, scn)) in zip(batch, translations):
+                    orig_title, orig_summary = entry[3], entry[4]
+                    if tcn == orig_title or scn == orig_summary:
+                        untranslated_count += 1
+                if untranslated_count:
+                    print(
+                        f"[TRANSLATE] ⚠️ Batch {batch_start+1}-{batch_end}/{total} "
+                        f"({source_lang}): {untranslated_count}/{len(batch)} items NOT translated "
+                        f"(title_cn==title or summary_cn==summary)",
+                        file=sys.stderr,
+                    )
                 print(
                     f"[TRANSLATE] Batch {batch_start+1}-{batch_end}/{total} "
                     f"({source_lang}): translated {len(batch)} items",

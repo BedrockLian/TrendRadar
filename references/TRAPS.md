@@ -120,9 +120,9 @@ subprocess.run([pipeline_python, ...], env=penv)
 加新源只需在 `data/sources.json` 的条目中设 `language: "zh"/"en"/"ja"`，无需独立映射文件。
 
 ## 33. Agent 在简报输出中加注释 [管线运维]
-**现象**：推送内容开头出现 `Orchestrator completed with status ok, push_id=noon. No deep analysis needed.`。
-**修复**（2026-05-25 晚）：`sanity_check.py` 拦截器在推送前自动扫描 16 种禁语模式。Agent 层的冗长约束已移除。
+**现象**：推送内容开头出现 `Orchestrator completed with status ok, push_id=noon. No deep analysis needed.` 或中文 `编排器执行完成，状态 partial...`。
 
+**修复**（2026-05-25 晚）：`sanity_check.py` 拦截器在推送前自动扫描 16 种禁语模式，已补充中文模式（编排器执行完成/输出简报正文/无需深度分析等）。
 ## 34. 深度分析未走 render_deep_analysis.py 管道 [管线运维]
 **现象**：晚间深度分析输出长文段落 + `---` 横线分隔。
 **修复**：prompt 强调"必须通过管道传给 render_deep_analysis.py 格式化"，禁止添加 `---`。

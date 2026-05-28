@@ -91,6 +91,8 @@ def _format_item(idx, item, push_id):
     title = _shorten(item.get('title_cn') or item.get('title') or '', 80)
     summary = _shorten(item.get('summary_cn') or item.get('summary') or '', 50)
     url = (item.get('url') or '').strip()
+    # 防御性清洗 URL：移除空格（agent 可能错误插入）、确保格式正确
+    url = url.replace(' ', '').replace('　', '')
     source = (item.get('source_platform') or '').split('+')[0].strip()
     heat = item.get('_heat')
     track = item.get('_track') if push_id == 'evening' else None

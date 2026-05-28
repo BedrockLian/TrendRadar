@@ -32,11 +32,15 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # ── 编排器前言剥离 — 清理编排器注入的状态行 ────────────────
 ORCHESTRATOR_PREAMBLE_PATTERNS = [
     r'^Orchestrator completed.*$',
+    r'^编排器执行完成.*$',
     r'^push_id\s*[:=].*$',
     r'^DB schema v\d+',
     r'^\[PIPELINE\].*$',
     r'^\[SILENT\].*$',
     r'^Outputting the briefing.*$',
+    r'^输出简报正文.*$',
+    r'无需深度分析.*$',
+    r'^简报正文.*$',
     r'^-{3,}\s*$',
 ]
 
