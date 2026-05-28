@@ -53,7 +53,9 @@ def _foreign_sources() -> frozenset:
                      if s.get('authority', 1) >= 2 and s.get('platform') in (
         'reuters', 'bbc', 'nytimes', 'arstechnica', 'techcrunch', 'nhk',
         'VideoGamesChronicle', 'PCGamer', 'Eurogamer', 'RockPaperShotgun',
-        'GamersNexus', 'nintendoeverything', 'aftermath', 'automaton'))
+        'GamersNexus', 'nintendoeverything', 'aftermath', 'automaton',
+        'guardian', 'scmp', 'nikkei', 'japantimes', 'koreaherald', 'npr',
+    ))
 
 
 @lru_cache(maxsize=1)
@@ -133,10 +135,17 @@ def _china_kw() -> frozenset:
                        '贸易', '关税', '芯片', '半导体', '华为', 'TikTok', '支付宝', '微信',
                        '人民币', '比亚迪', '阿里巴巴', '腾讯', '宁德时代',
                        '一带一路', '大湾区', 'China', 'Chinese', 'Beijing', 'Shanghai',
-                       'Xi Jinping', 'Taiwan', 'Hong Kong', 'Sino-', 'Made in China',
-                       'tariff', 'trade war', 'supply chain', 'yuan',
+                       'Xi Jinping', 'Taiwan', 'Hong Kong', 'Macau', 'Sino-', 'Made in China',
+                       'tariff', 'trade war', 'supply chain', 'yuan', 'renminbi',
                        '美中', '中美关系', '对华', '外贸', '制裁', '出口管制',
-                       '地缘', '脱钩', '外媒', '国际'})
+                       '地缘', '脱钩', '外媒', '国际', '中概股',
+                       '字节跳动', '小红书', 'TikTok', 'DeepSeek', '百度', '小米',
+                       '中兴', '中芯', '中石油', '中石化', '工商银行',
+                       'Chinese stocks', 'China market', 'trade deficit',
+                       'technology war', 'chip ban', 'AI ban',
+                       'South China Sea', 'Xinjiang', 'Tibet',
+                       'CPTPP', 'Belt and Road', 'foreign ministry',
+                       'EVs', 'electric vehicle', 'overcapacity'})
 
 
 @lru_cache(maxsize=1)
