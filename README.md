@@ -47,42 +47,19 @@ pipeline_orchestrator.py（一键6阶段）
 
 ## 功能
 
-- **编排器一键管线** — `pipeline_orchestrator.py` v2.8.0，6 阶段自动编排，含 SSOT 自描述 + 启动自检 + SILENT 闭环
-- **多源异步抓取** — aiohttp 异步并发，两级连接池（RSSHub + 外网直连），IO 预取支持
-- **AC 自动机分类** — 505 关键词 × 6 域，frozenset O(1) 查找，比线性匹配快 4.4×
-- **UTF-8 字节分片** — `fragment_push.py` 三级递降拆分（段落→句子→硬切），3800B 严格限制防 WeCom 静默截断
-- **纯脚本渲染** — `render_markdown.py` 从 curated JSON 直接拼接，~0s，零 token 成本，格式硬编码永远一致
-- **auto-delivery 投递** — cron 中 final response 系统自动投递 WeCom
-- **日报推送** — 早/午/晚三段 Flash 管线，晚间附加 3×Pro 深度分析 + 知识图谱历史关联
-- **周报研判** — 每周一 Pro 模型深度趋势分析，含信息茧房突围
-- **月报分析** — 每月初全景复盘，聚合 4 周数据 + heat_tracker Top10 + 兴趣漂移检测
-- **兴趣偏好评分** — `config/ai_interests.yaml` 定义正面+2分/排除过滤，CLI 管理（`interest_cli.py`）+ `--suggest-interests` 自动校准
-- **来源多样性保护** — 同源 >3 条权重减半 + source_health 负反馈学习环自动淘汰低质源
-- **指纹去重** — MD5 截断指纹，48h 滑动窗口
-- **热度追踪** — SQLite 持久化，跨周期频次/平台/持续时间
-- **数据库迁移** — 轻量 SQLite 迁移引擎（`migrations/runner.py`），含 up/down 回滚
-- **Storage 统一接入** — 全模块通过 `Storage.db()` 连接池接入，强制 WAL + busy_timeout
-- **结构化日志** — 统一 logging 工厂，`[timestamp] [LEVEL] [module]` 格式
-- **退出码协议** — 脚本按 `exitcodes.py` 返回 0/2/3/10/11/12/99，Agent 依码决策
+- **编排器一键管线** — pipeline_orchestrator 自动编排 fetch→curate→翻译→渲染→分片→指纹，含 SSOT 自描述
+- **多源异步抓取** — aiohttp 并发 + AC 自动机分类（6 域），比线性匹配快 4×
+- **纯脚本渲染** — render_markdown 从 curated JSON 直接拼接，零 token 成本，格式硬编码一致
+- **UTF-8 字节分片** — 三级递降拆分（段落→句子→硬切），防 WeCom 静默截断
+- **日报/周报/月报** — 日报早/午/晚三段 + 晚间 3×Pro 深度分析；每周一 Pro 趋势研判；每月初全景复盘
+- **AI 翻译 + 中文扩写** — 外文摘要自动翻译 + 中文短摘要（<50字）AI 扩写为完整信息句
+- **兴趣偏好评分** — YAML 配置正面加分/排除过滤，CLI 管理
+- **来源多样性保护** — 同源 >3 条权重减半，source_health 负反馈学习环自动淘汰低质源
+- **指纹去重 + 热度追踪** — MD5 指纹（48h 窗口）+ SQLite 热度持久化
 - **API 熔断退避** — 翻译层指数退避 2→30s + jitter + 连续 3 失败熔断
-- **AI批量翻译** — `ai_translate.py` 外文摘要翻译 + **中文短摘要AI扩写**（<50字自动扩至完整信息句）
-- **BATCH_SIZE 可配置** — `--batch-size` CLI + `TRANSLATE_BATCH_SIZE` 环境变量，上限 20
-- **发布前拦截器** — `sanity_check.py` 禁语扫描/死链检测/敏感词脱敏
-- **BlogWatcher 桥接** — `blog_watcher_bridge.py` 对接 BlogWatcher 订阅源，统一进入推送管线
-- **假翻译清理** — `cleanup_fake_translations.py` 自动检测并修复翻译层"原样输出"的无效翻译
-- **推送时段检测** — `push_slot_detect.py` 精确判断当前时段（早/午/晚），避免投递错位
-- **自动体检** — 每日 15:00 自检，动态 CRON_JOBS 名称匹配 + sources schema 兼容 + 多 socket 路径 + Storage 连接管理
-- **推送质量优化** — 每日 21:15 评分 + 偏好收敛调优
-- **推送看门狗** — 每日 3 次巡检（3 路径 socket）+ push_log 原子写入 + 早/午/晚三时段 auto-redeliver + run_id 格式对齐
-- **管线诊断** — `diag_pipeline.sh` 一键诊断各组件健康状况，快速定位故障
-- **知识图谱** — `KNOWLEDGE_GRAPH.md` 630 行完整代码分析，含架构全景图、模块依赖、数据流图
-- **文档精简** — 41 份参考文档合并为 10 份核心文档 + 36 存档 + INDEX.md 索引，新人 onboarding 从 2 天降到 2 小时
-- **cron prompt 单源** — `gen_cron_prompt.py` 从 `--list-steps` 直接导入（无 subprocess），动态解析 PYTHON/PYTHONPATH/TRENDRADAR_HOME
-- **SKILL 引用完整性** — 38 处断裂引用已修复，rsync 同步 skills → repo
-- **翻译鲁棒性** — batch_translate 解析容错 + BATCH_SIZE 可配置 + EXIT_NO_CONTENT 不中断管线
-- **分片安全** — fragment 超 MAX_BYTES 标记 + footer 多格式兼容
-- **时区一致性** — gen_run_id CST 时区 + push_slot_detect 分钟精度
-- **CI 持续集成** — GitHub Actions 自动运行 ruff lint + bandit + mypy + pytest + refs 校验
+- **发布前拦截器** — sanity_check 禁语扫描/死链检测/敏感词脱敏
+- **自动体检 + 推送质量优化 + 看门狗** — 每日自检/评分调优/自动补投
+- **CI 持续集成** — GitHub Actions：ruff lint + bandit + mypy + pytest + refs 一致性校验
 
 ---
 
