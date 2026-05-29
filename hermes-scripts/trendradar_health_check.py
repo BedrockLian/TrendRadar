@@ -20,8 +20,8 @@ FIXES = []
 
 # ── 已知 cron job 名称（用于动态匹配，不依赖 job ID） ──────────
 CRON_JOB_NAMES = [
-    '日报推送', '性能优化器', '推送看门狗', '每日维护',
-    '自动体检', '周报推送', '月度报告',
+    '日报推送', '性能优化器', '推送降级看门狗', '每日维护',
+    '自动体检', '周报推送', '月度趋势报告',
 ]
 
 # ── 核心配置键（settings.py 必须导出的常量） ──────────────────
@@ -150,43 +150,71 @@ def check_settings_constants():
 def check_cron():
     """cron 调度器 — 所有关键 job 注册（按名称匹配，不依赖 job ID）"""
     try:
-        r = subprocess.run(['hermes', 'cron', 'list', '--json'], capture_output=True, text=True, timeout=15)
+        r = subprocess.run(['hermes', 'cron', 'list'], capture_output=True, text=True, timeout=15)
         if r.returncode == 0:
-            jobs = json.loads(r.stdout)
-            job_names = {j.get('name', '') for j in jobs if isinstance(j, dict)}
-            for name in CRON_JOB_NAMES:
-                if not any(name in jn for jn in job_names):
-                    fail('cron', 'WARN', f'job "{name}" 未注册')
-        else:
-            # Fallback: plain text match
-            for name in CRON_JOB_NAMES:
-                if name not in r.stdout:
-                    fail('cron', 'WARN', f'job "{name}" 未在输出中找到')
+            # Parse table output: lines with "Name:      xxx"
+            import re
+            job_names = set()
+            for line in r.stdout.split('\n'):
+                m = re.match(r'\s+Name:\s+(.+)', line)
+                if m:
+                    job_names.add(m.group(1).strip())
+            if not job_names:
+                # Fallback: search for known names in full output
+                for name in CRON_JOB_NAMES:
+                    if name not in r.stdout:
+                        fail('cron', 'WARN', f'job "{name}" 未注册')
+            else:
+                for name in CRON_JOB_NAMES:
+                    if not any(name in jn for jn in job_names):
+                        # Try fuzzy: name "日报推送" should match "TrendRadar 日报推送（早/午/晚）"
+                        fuzzy_found = False
+                        for jn in job_names:
+                            for token in name.split():
+                                if token in jn:
+                                    fuzzy_found = True
+                                    break
+                            if fuzzy_found:
+                                break
+                        if not fuzzy_found:
+                            fail('cron', 'WARN', f'job "{name}" 未注册')
     except Exception as e:
         fail('cron', 'WARN', f'查询失败: {e}')
 
 
 def check_gateway():
-    """WeCom gateway 连接"""
-    sock_paths = [
-        '/tmp/hermes-wecom-card.sock',
-        '/tmp/hermes_wecom.sock',
-        '/tmp/hermes_gateway.sock',
-    ]
-    found = any(Path(p).exists() for p in sock_paths)
-    if not found:
-        fail('gateway', 'WARN', f'IPC socket 不存在（检查了 {len(sock_paths)} 个路径）')
+    """WeCom gateway 连接 — 通过 systemd 状态检测"""
     try:
-        r = subprocess.run(['ps', 'aux'], capture_output=True, text=True, timeout=5)
-        gateway_lines = [l for l in r.stdout.split('\n') if 'hermes gateway' in l.lower()]
-        if gateway_lines:
-            wecom_lines = [l for l in r.stdout.split('\n') if 'wecom' in l.lower()]
-            if not wecom_lines:
-                fail('gateway', 'WARN', 'hermes 运行但无 wecom 相关进程')
+        r = subprocess.run(
+            ['systemctl', '--user', 'is-active', 'hermes-gateway.service'],
+            capture_output=True, text=True, timeout=5,
+        )
+        status = r.stdout.strip()
+        if status == 'active':
+            return  # ✅ 正常
+        elif status == 'inactive' or status == 'dead':
+            fail('gateway', 'WARN', 'hermes-gateway.service 未运行 (inactive)')
+        elif status == 'failed':
+            fail('gateway', 'WARN', 'hermes-gateway.service 已崩溃 (failed)')
         else:
-            fail('gateway', 'WARN', 'hermes gateway 进程可能未运行')
-    except Exception:
-        logging.debug("Gateway check failed, skipping")
+            # Fallback: try gateway status command
+            r2 = subprocess.run(
+                ['hermes', 'gateway', 'status'],
+                capture_output=True, text=True, timeout=10,
+            )
+            if 'is running' not in r2.stdout and 'active' not in r2.stdout:
+                fail('gateway', 'WARN', 'hermes gateway 进程可能未运行')
+    except FileNotFoundError:
+        # No systemd (Docker etc.) — fallback to socket check
+        sock_paths = [
+            '/tmp/hermes-wecom-card.sock',
+            '/tmp/hermes_wecom.sock',
+            '/tmp/hermes_gateway.sock',
+        ]
+        if not any(Path(p).exists() for p in sock_paths):
+            fail('gateway', 'WARN', f'IPC socket 不存在（检查了 {len(sock_paths)} 个路径）')
+    except Exception as e:
+        fail('gateway', 'WARN', f'检查失败: {e}')
 
 
 def check_data_freshness():
@@ -202,16 +230,21 @@ def check_data_freshness():
 
 
 def check_api():
-    """快速外网连通性测试"""
+    """快速外网连通性测试 — 用 DeepSeek API（经 NO_PROXY 直连可达）代替被代理阻断的 httpbin"""
     for url, label in [
         ('https://api.deepseek.com/v1/models', '外网 API 可达（DeepSeek）'),
-        ('https://httpbin.org/get', '外网出口'),
     ]:
         try:
+            # DeepSeek 直连（绕过代理），在 cron 环境也有效
+            env = os.environ.copy()
+            env.pop('HTTP_PROXY', None)
+            env.pop('HTTPS_PROXY', None)
+            env.pop('http_proxy', None)
+            env.pop('https_proxy', None)
             r = subprocess.run(
                 ['curl', '-s', '-o', '/dev/null', '-w', '%{http_code}',
                  '--connect-timeout', '5', url],
-                capture_output=True, text=True, timeout=10
+                capture_output=True, text=True, timeout=10, env=env
             )
             code = r.stdout.strip()
             if code not in ('200', '401', '403'):
@@ -233,7 +266,7 @@ def check_stale_processes():
             if len(parts) < 11:
                 continue
             if 'python' in line.lower() or 'python3' in line.lower():
-                for jid in CRON_JOBS:
+                for jid in CRON_JOB_NAMES:
                     if jid[:8] in line or jid[:6] in line:
                         fail('process', 'WARN', f'疑似滞留进程: {line[:120]}')
                         break
@@ -317,21 +350,23 @@ def check_pipeline():
     except Exception as e:
         fail('pipeline', 'WARN', f'push_slot_detect 异常: {e}')
 
-    # 2) RSS 源连通性
+    # 2) RSS 源连通性（跳过 localhost 源 — 本地 RSSHub 通常不运行）
     if (DATA / 'sources.json').exists():
         try:
-            import random, socket
+            import socket
             sources = json.loads((DATA / 'sources.json').read_text())
-            # Handle actual schema: {"data_sources": [{"feed_url": ..., "name": ...}, ...]}
             feeds = sources.get('data_sources', [])
             if isinstance(feeds, dict):
                 feeds = list(feeds.values())
             if not isinstance(feeds, list):
                 feeds = []
             if feeds:
-                # Filter to enabled RSS sources with feed_url
-                rss_feeds = [f for f in feeds if isinstance(f, dict) and f.get('feed_url')]
-                sample = random.sample(rss_feeds, min(3, len(rss_feeds)))
+                rss_feeds = [f for f in feeds if isinstance(f, dict) and f.get('feed_url')
+                             and f.get('enabled', True)
+                             and 'localhost' not in f.get('feed_url', '')]
+                # 取前 3 个非 localhost 的源（确定性，不随机）
+                sample = rss_feeds[:3]
+                failed_urls = []
                 for f in sample:
                     url = f.get('feed_url', '')
                     if not url:
@@ -341,8 +376,15 @@ def check_pipeline():
                         s = socket.create_connection((host, 443), timeout=5)
                         s.close()
                     except Exception:
-                        fail('pipeline', 'WARN', f'RSS 源不可达: {url[:60]}')
-                        break
+                        failed_urls.append(url[:60])
+                if failed_urls:
+                    if len(failed_urls) == len(sample):
+                        fail('pipeline', 'WARN', f'所有抽样 RSS 源不可达: {failed_urls[0]} 等 {len(failed_urls)} 个')
+                    else:
+                        # 部分失败只记录，不报 WARN（单个源不稳定是常态）
+                        logging.debug(f'RSS 抽样 {len(failed_urls)}/{len(sample)} 不可达: {failed_urls}')
+                        for url in failed_urls:
+                            print(f'[HEALTH] ⚠️ RSS 源偶发不可达: {url}', file=sys.stderr)
         except Exception:
             pass
 
