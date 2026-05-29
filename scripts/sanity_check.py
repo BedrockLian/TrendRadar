@@ -21,6 +21,7 @@ sanity_check.py — 发布前拦截器（Interceptor）
 
 import argparse
 import json
+import os
 import re
 import sys
 import urllib.request
@@ -32,13 +33,15 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # ── 编排器前言剥离 — 清理编排器注入的状态行 ────────────────
 ORCHESTRATOR_PREAMBLE_PATTERNS = [
     r'^Orchestrator completed.*$',
+    r'^Pipeline orchestrator returned.*$',
     r'^编排器执行完成.*$',
     r'^push_id\s*[:=].*$',
     r'^DB schema v\d+',
     r'^\[PIPELINE\].*$',
     r'^\[SILENT\].*$',
-    r'^Outputting the briefing.*$',
+    r'^Outputting (the )?briefing.*$',
     r'^输出简报正文.*$',
+    r'No deep analysis needed.*$',
     r'无需深度分析.*$',
     r'^简报正文.*$',
     r'^-{3,}\s*$',
@@ -62,12 +65,6 @@ def strip_orchestrator_preamble(text: str) -> str:
 
 
 # ── 禁语表 — 任何一条命中 → EXIT_FATAL ──────────────────────
-# Chinese AI model filler patterns (漏检补充)
-CN_AI_PATTERNS = [
-    '作为一个AI', '作为一个人工智能', '根据我的训练数据',
-    '我无法', '我不能', '请注意，我是一个',
-]
-
 BANNED_PHRASES = [
     "As an AI language model",
     "As an AI,",
@@ -85,6 +82,9 @@ BANNED_PHRASES = [
     "Certainly!",
     "Sure! Here",
     "Of course!",
+    # Chinese AI model filler patterns
+    '作为一个AI', '作为一个人工智能', '根据我的训练数据',
+    '我无法', '我不能', '请注意，我是一个',
 ]
 
 # ── HTML/标记残留 ──────────────────────────────────────────
@@ -132,16 +132,30 @@ def check_html_residue(text: str) -> list[str]:
     return hits
 
 
+def _build_opener():
+    """Build urllib opener respecting HTTP_PROXY/HTTPS_PROXY env vars."""
+    proxy = os.environ.get('HTTP_PROXY') or os.environ.get('HTTPS_PROXY') or \
+            os.environ.get('http_proxy') or os.environ.get('https_proxy')
+    if proxy:
+        handler = urllib.request.ProxyHandler({
+            'http': proxy,
+            'https': proxy,
+        })
+        return urllib.request.build_opener(handler)
+    return urllib.request.build_opener()
+
+
 def check_dead_links(text: str, timeout: int = 5) -> list[str]:
     """HEAD request first 3 URLs. Returns list of dead links (404/connection error)."""
     urls = _extract_urls(text)
     dead = []
+    opener = _build_opener()
 
     def _check_one(url):
         try:
             req = urllib.request.Request(url, method='HEAD')
             req.add_header('User-Agent', 'TrendRadar/2.0 SanityCheck')
-            urllib.request.urlopen(req, timeout=timeout)
+            opener.open(req, timeout=timeout)
             return None  # OK
         except urllib.error.HTTPError as e:
             if e.code == 404:
