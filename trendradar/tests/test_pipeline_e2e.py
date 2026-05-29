@@ -95,7 +95,7 @@ class TestOrchestratorSteps:
         """--list-steps 返回完整 7 阶段定义。"""
         from pipeline_orchestrator import list_pipeline_steps
         steps_info = list_pipeline_steps()
-        assert steps_info["version"] == "2.8.0"
+        assert steps_info["version"] == "2.9.0"
         steps = steps_info["steps"]
         assert len(steps) == 7
         step_names = [s["name"] for s in steps]

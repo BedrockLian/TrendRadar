@@ -135,8 +135,15 @@ def main():
     parser = argparse.ArgumentParser(description='Render TrendRadar Markdown briefing')
     parser.add_argument('--push-id', choices=['morning', 'noon', 'evening'], default='morning')
     args = parser.parse_args()
+    print(render_briefing(args.push_id))
 
-    push_id = args.push_id
+
+def render_briefing(push_id: str) -> str:
+    """Render complete Markdown briefing for a push_id. Returns raw text.
+
+    This is the pure function version — callable directly from pipeline_orchestrator
+    without subprocess overhead.
+    """
     slot_name = SLOT_NAMES.get(push_id, push_id)
     today_display = datetime.now(CST).strftime('%Y-%m-%d')
     today_file = datetime.now(CST).strftime('%Y%m%d')
@@ -157,7 +164,7 @@ def main():
             curated_path = DATA_DIR / f'curated_{push_id}.json'
     if not curated_path.exists():
         log.error(f"Curated file not found: {curated_path}")
-        sys.exit(1)
+        return ""
 
     data = json.loads(curated_path.read_text(encoding='utf-8'))
 
@@ -199,7 +206,7 @@ def main():
     except OSError as e:
         log.warning(f'存档写入失败 {archive_path}: {e}')
 
-    sys.stdout.write(output)
+    return output
 
 
 if __name__ == '__main__':

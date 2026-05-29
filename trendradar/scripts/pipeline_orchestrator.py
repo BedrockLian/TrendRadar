@@ -25,7 +25,6 @@ pipeline_orchestrator.py — 一键运行 TrendRadar 推送全流程。
 
 import json
 import os
-import subprocess
 import sys
 import time
 from datetime import datetime, timezone, timedelta
@@ -43,23 +42,13 @@ SCRIPTS_DIR = Path(__file__).resolve().parent
 TREND_DIR = SCRIPTS_DIR.parent
 DATA_DIR = TREND_DIR / "data"
 
-# Ensure PYTHONPATH is set for subprocess, whitelist env vars (stop API key leak)
-_ALLOWED_ENV = {
-    'PYTHONPATH', 'PYTHON_GIL', 'TRENDRADAR_HOME', 'TRENDRADAR_LOG_LEVEL',
-    'PATH', 'HOME', 'USER', 'LANG', 'LC_ALL', 'DEEPSEEK_API_KEY',
-    'HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY', 'http_proxy', 'https_proxy', 'no_proxy',
-}
-_ENV = {k: v for k, v in os.environ.items() if k in _ALLOWED_ENV}
-_ENV["PYTHONPATH"] = str(TREND_DIR.parent)  # /home/asus/.hermes
-_ENV["PYTHON_GIL"] = PYTHON_GIL
-
 # Pipeline version — must stay in sync with corresponding SKILL.md version
-__version__ = "2.8.0"
+__version__ = "2.9.0"  # v2.9: subprocess → direct function calls
 
 
 def _cleanup_silent(push_id: str):
     """Physically remove intermediate files for a silenced push.
-    
+
     Prevents Agent from seeing stale fragment data and "画蛇添足".
     Called on NO_SLOT, empty briefing, or EXIT_NO_CONTENT conditions.
     """
@@ -130,69 +119,17 @@ def _write_push_log(push_id: str, result: dict, errors: list):
         log.error(f"push_log write failed: {e}")
 
 
-def _run(cmd: list, timeout: int = 300, capture: bool = True) -> dict:
-    """Run a subprocess and return {ok, stdout, stderr, exit_code}."""
-    try:
-        result = subprocess.run(
-            cmd,
-            capture_output=capture,
-            text=True,
-            timeout=timeout,
-            cwd=str(TREND_DIR),
-            env=_ENV,
-        )
-        return {
-            "ok": result.returncode == 0,
-            "stdout": result.stdout.strip(),
-            "stderr": result.stderr.strip(),
-            "exit_code": result.returncode,
-        }
-    except subprocess.TimeoutExpired:
-        return {"ok": False, "stdout": "", "stderr": f"Timeout after {timeout}s", "exit_code": -1}
-    except Exception as e:
-        return {"ok": False, "stdout": "", "stderr": str(e), "exit_code": -1}
-
-
-def detect_slot() -> dict:
-    """Detect current push slot from timeline.yaml."""
-    r = _run([PYTHON, str(SCRIPTS_DIR / "push_slot_detect.py")])
-    if not r["ok"]:
-        return {"slot": None, "error": r["stderr"]}
-
-    result = {"slot": None, "dedup_flag": "", "extra": "", "filter": "keyword"}
-    for line in r["stdout"].split("\n"):
-        if "=" in line:
-            k, v = line.split("=", 1)
-            result[k.lower()] = v
-
-    result["slot"] = result.get("push_id")
-    return result
-
-
-def detect_push_id() -> tuple:
-    """Return (push_id, dedup_flag) or (None, error_msg)."""
-    slot_info = detect_slot()
-    push_id = slot_info.get("slot")
-    if push_id == "NO_SLOT" or push_id is None:
-        return None, f"NO_SLOT: current time not in push schedule. Detected: {slot_info}"
-    dedup = slot_info.get("dedup_flag", "")
-    return push_id, dedup
-
-
 def list_pipeline_steps() -> dict:
     """Return the canonical pipeline step definitions (SSOT for Agent consumption).
 
-    Instead of manually maintaining steps in SKILL.md, the Agent should call
-    `pipeline_orchestrator.py --list-steps` at startup to discover available steps.
-
-    Returns a JSON-serializable dict with step_number, name, command, and description.
+    v2.9: All stages now use direct function calls — no subprocess overhead.
     """
     return {
         "version": __version__,
         "python": PYTHON,
         "steps": [
-            {"number": 0, "name": "slot_detect", "script": "push_slot_detect.py",
-             "description": "Detect current push slot from timeline.yaml"},
+            {"number": 0, "name": "slot_detect", "func": "detect_current_slot",
+             "description": "Detect current push slot from timeline.yaml (direct call)"},
             {"number": 1, "name": "push_prepare", "script": "push_prepare.py",
              "description": "Fetch RSS feeds + curate top items (fetch + curate)"},
             {"number": 2, "name": "track_events", "script": "track_events.py",
@@ -241,22 +178,34 @@ def version_check_and_exit():
             "reason": "version_check_failed",
             "errors": result["errors"],
         }, ensure_ascii=False), file=sys.stderr)
-        sys.exit(EXIT_CONFIG_ERROR)
-    return result
+# Pipeline version — must stay in sync with corresponding SKILL.md version
+__version__ = "2.9.0"  # v2.9: subprocess → direct function calls
 
 
-def run_stage(name: str, cmd: list, timeout: int = 300) -> dict:
-    """Run a pipeline stage with timing."""
+def run_stage(name: str, func, *args, timeout: int = 300, **kwargs) -> dict:
+    """Run a pipeline stage as a direct function call with timing.
+
+    Args:
+        name: Human-readable stage name for logging
+        func: Callable to execute
+        *args, **kwargs: Passed to func
+        timeout: Not enforced for direct calls (kept for API compatibility)
+
+    Returns:
+        {'ok': bool, 'result': any, 'elapsed': float, 'error': str|None}
+    """
     log.info(f"⏳ {name}...")
     t0 = time.time()
-    result = _run(cmd, timeout=timeout)
-    elapsed = time.time() - t0
-    if result["ok"]:
+    try:
+        result = func(*args, **kwargs)
+        elapsed = time.time() - t0
         log.info(f"✅ {name} ({elapsed:.1f}s)")
-    else:
-        log.error(f"❌ {name} ({elapsed:.1f}s): {result['stderr'][:200]}")
-    result["elapsed"] = elapsed
-    return result
+        return {"ok": True, "result": result, "elapsed": elapsed, "error": None}
+    except Exception as e:
+        elapsed = time.time() - t0
+        log.error(f"❌ {name} ({elapsed:.1f}s): {e}")
+        return {"ok": False, "result": None, "elapsed": elapsed, "error": str(e)}
+
 
 
 def main():
@@ -309,88 +258,101 @@ def main():
         push_id = args.push_id
         dedup_flag = "--dedup" if push_id != "morning" else ""
     else:
-        push_id, dedup_flag = detect_push_id()
-        if push_id is None:
-            _cleanup_silent(dedup_flag.split(":")[-1].strip() if ":" in dedup_flag else "unknown")
+        from trendradar.scripts.push_slot_detect import detect_current_slot
+        slot = detect_current_slot()
+        if slot is None:
+            _cleanup_silent("unknown")
             print(json.dumps({
                 "status": "silent",
-                "reason": dedup_flag,
-                "fragments": [],  # 显式空数组，防止 Agent 画蛇添足
+                "reason": "NO_SLOT: outside push window",
+                "fragments": [],
             }, ensure_ascii=False))
             return 0
+        push_id = slot["push_id"]
+        dedup_flag = slot["dedup_flag"]
 
     stats["push_id"] = push_id
 
     # ── Stage 1: push_prepare (fetch + curate) ─────────────────
-    prep_cmd = [PYTHON, str(SCRIPTS_DIR / "push_prepare.py"), "--push-id", push_id]
-    if dedup_flag:
-        prep_cmd.append(dedup_flag)
-    if args.skip_fetch:
-        prep_cmd.append("--skip-fetch")
-
-    prep = run_stage(f"push_prepare ({push_id})", prep_cmd)
+    from trendradar.scripts.push_prepare import run_curation
+    skip_fetch = args.skip_fetch
+    prep = run_stage(f"push_prepare ({push_id})", run_curation, push_id)
     stats["stages"]["push_prepare"] = prep["elapsed"]
 
     if not prep["ok"]:
-        errors.append(f"push_prepare: {prep['stderr'][:300]}")
+        errors.append(f"push_prepare: {prep['error']}")
         print(json.dumps({"status": "error", "errors": errors, "push_id": push_id}, ensure_ascii=False))
         return 1
 
-    # Parse NEW_COUNT from prep output (appears after the curated JSON)
-    # Use regex to be robust against JSON mixed with other output
-    import re as _re
-    new_count = 0
-    nc_match = _re.search(r'NEW_COUNT=(\d+)', prep["stdout"])
-    if nc_match:
-        new_count = int(nc_match.group(1))
-
     # ── Stage 2: track_events (morning only) ───────────────────
     if push_id == "morning":
+        import track_events as _te
         curated_path = DATA_DIR / f"curated_morning_{datetime.now(CST).strftime('%Y%m%d')}.json"
         if curated_path.exists():
-            te_cmd = [PYTHON, str(SCRIPTS_DIR / "track_events.py"), "--today", str(curated_path)]
-            te = run_stage(f"track_events ({push_id})", te_cmd)
+            def _track():
+                today_items = _te.load_curated(str(curated_path))
+                yesterday_path = _te.find_yesterday_morning()
+                if not yesterday_path or not Path(yesterday_path).exists():
+                    return None
+                yesterday_items = _te.load_curated(yesterday_path)
+                return _te.compare(today_items, yesterday_items)
+
+            te = run_stage(f"track_events ({push_id})", _track)
             stats["stages"]["track_events"] = te["elapsed"]
             if not te["ok"]:
-                errors.append(f"track_events: {te['stderr'][:200]}")
+                errors.append(f"track_events: {te['error']}")
 
     # ── Stage 3: Parallel (ai_translate + batch_fetch) ─────────
-    import concurrent.futures
+    import concurrent.futures as _cf
+    import asyncio as _asyncio
 
-    curated_now_path = DATA_DIR / f"curated_{push_id}.json"
-    translate_cmd = [PYTHON, str(SCRIPTS_DIR / "ai_translate.py"), "--push-id", push_id]
-    fetch_cmd = [PYTHON, str(SCRIPTS_DIR / "batch_fetch.py"), "--push-id", push_id]
+    def _run_translate():
+        import sys, os
+        sys.argv = ['ai_translate.py', '--push-id', push_id]
+        from trendradar.scripts.ai_translate import process_curated
+        return _asyncio.run(process_curated(push_id))
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        fut_translate = executor.submit(run_stage, f"ai_translate ({push_id})", translate_cmd)
-        fut_fetch = executor.submit(run_stage, f"batch_fetch ({push_id})", fetch_cmd, 180)
+    def _run_fetch():
+        from trendradar.scripts.batch_fetch import batch_fetch as bf
+        return _asyncio.run(bf(push_id))
 
+    with _cf.ThreadPoolExecutor(max_workers=2) as executor:
+        fut_translate = executor.submit(
+            lambda: run_stage(f"ai_translate ({push_id})", _run_translate)
+        )
+        fut_fetch = executor.submit(
+            lambda: run_stage(f"batch_fetch ({push_id})", _run_fetch, timeout=180)
+        )
         translate_result = fut_translate.result()
         fetch_result = fut_fetch.result()
 
     stats["stages"]["ai_translate"] = translate_result["elapsed"]
     stats["stages"]["batch_fetch"] = fetch_result["elapsed"]
 
-    # ai_translate returns EXIT_NO_CONTENT(2) when API key missing or nothing to translate
-    # — these are not fatal, pipeline should continue with untranslated content
-    if not translate_result["ok"] and translate_result.get("exit_code") != 2:
-        errors.append(f"ai_translate: {translate_result['stderr'][:200]}")
-    elif not translate_result["ok"]:
-        log.info(f"ai_translate skipped (no content / no API key) — continuing")
+    if not translate_result["ok"]:
+        err = translate_result.get("error", "")
+        if "no content" in str(err).lower() or "no api key" in str(err).lower():
+            log.info(f"ai_translate skipped (no content / no API key) — continuing")
+        else:
+            errors.append(f"ai_translate: {str(err)[:200]}")
     if not fetch_result["ok"]:
-        errors.append(f"batch_fetch: {fetch_result['stderr'][:200]}")
+        errors.append(f"batch_fetch: {str(fetch_result.get('error', ''))[:200]}")
 
     # ── Stage 4: Render ────────────────────────────────────────
-    render_cmd = [PYTHON, str(SCRIPTS_DIR / "render_markdown.py"), "--push-id", push_id]
-    render = run_stage(f"render_markdown ({push_id})", render_cmd)
+    from trendradar.scripts.render_markdown import render_briefing
+    render = run_stage(f"render_markdown ({push_id})", render_briefing, push_id)
     stats["stages"]["render_markdown"] = render["elapsed"]
 
     if not render["ok"]:
-        errors.append(f"render_markdown: {render['stderr'][:200]}")
+        errors.append(f"render_markdown: {render['error'][:200]}")
         print(json.dumps({"status": "error", "errors": errors, "push_id": push_id}, ensure_ascii=False))
         return 1
 
-    briefing = render["stdout"]
+    briefing = render["result"]
+    if not briefing:
+        errors.append("render_markdown: empty output")
+        print(json.dumps({"status": "error", "errors": errors, "push_id": push_id}, ensure_ascii=False))
+        return 1
 
     # Check for empty briefing (no items)
     if not briefing or "共 0 条" in briefing or "[SILENT]" in briefing:
@@ -436,65 +398,24 @@ def main():
     stats["stages"]["sanity_check"] = True
 
     # ── Stage 5: Fragment ──────────────────────────────────────
-    fragment_cmd = [PYTHON, str(SCRIPTS_DIR / "fragment_push.py")]
+    from trendradar.scripts.fragment_push import split_fragments
     try:
-        fragment = subprocess.run(
-            fragment_cmd,
-            input=briefing,
-            capture_output=True,
-            text=True,
-            timeout=30,
-            cwd=str(TREND_DIR),
-            env=_ENV,
-        )
-        frag_ok = fragment.returncode == 0
-        fragments_json = fragment.stdout.strip() if frag_ok else "[]"
-    except subprocess.TimeoutExpired:
-        errors.append("fragment_push: Timeout after 30s")
-        frag_ok = False
-        fragments_json = "[]"
+        fragments = split_fragments(briefing)
+        frag_ok = True
     except Exception as e:
         errors.append(f"fragment_push: {e}")
         frag_ok = False
-        fragments_json = "[]"
-
-    # Parse fragments — fragment_push now outputs ONLY JSON on stdout
-    fragments = []
-    try:
-        # Strip any log-level prefix that may have leaked to stdout
-        # fragment_push guarantees JSON on stdout and logs on stderr
-        cleaned = fragments_json.strip()
-        if cleaned.startswith("["):
-            # Find the first complete JSON array
-            depth = 0
-            end = 0
-            for i, c in enumerate(cleaned):
-                if c == '[':
-                    depth += 1
-                elif c == ']':
-                    depth -= 1
-                    if depth == 0:
-                        end = i + 1
-                        break
-            if end > 0:
-                fragments = json.loads(cleaned[:end])
-            else:
-                fragments = json.loads(cleaned)
-        else:
-            # Fallback: if no JSON array, use as single fragment
-            fragments = [briefing]
-    except (json.JSONDecodeError, ValueError):
-        fragments = [briefing]  # fallback: single fragment
+        fragments = [briefing]
 
     stats["stages"]["fragment_push"] = 0
     stats["fragment_count"] = len(fragments)
 
     # ── Stage 6: record_fingerprints ───────────────────────────
-    record_cmd = [PYTHON, str(SCRIPTS_DIR / "record_fingerprints.py"), "--push-id", push_id]
-    record = run_stage(f"record_fingerprints ({push_id})", record_cmd)
+    from trendradar.scripts.record_fingerprints import record as record_fp
+    record = run_stage(f"record_fingerprints ({push_id})", record_fp, push_id)
     stats["stages"]["record_fingerprints"] = record["elapsed"]
     if not record["ok"]:
-        errors.append(f"record_fingerprints: {record['stderr'][:200]}")
+        errors.append(f"record_fingerprints: {record.get('error', '')[:200]}")
 
     # ── Read curated data for stats ────────────────────────────
     try:
