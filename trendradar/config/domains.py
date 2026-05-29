@@ -1,0 +1,29 @@
+"""TrendRadar 领域常量 — 板块定义、名称、限制。"""
+
+DOMAINS = ['top_headlines', 'foreign_china', 'tech', 'economy', 'gaming']
+
+DOMAIN_LABELS = {
+    'top_headlines': '📰 头条',
+    'foreign_china': '🌏 外媒看华',
+    'tech': '💻 科技',
+    'economy': '📊 经济民生',
+    'gaming': '🎮 游戏',
+}
+
+MAX_PER_DOMAIN: dict[str, int] = {
+    'top_headlines': 6,
+    'tech': 7,
+    'economy': 6,
+    'gaming': 6,
+    'foreign_china': 5,
+}
+
+DOMAIN_EMOJI = {
+    'top_headlines': '📰', 'foreign_china': '🌏',
+    'tech': '💻', 'economy': '📊', 'gaming': '🎮',
+}
+
+SLOT_NAMES = {'morning': '早报', 'noon': '午间速递', 'evening': '今日回顾'}
+
+DAILY_LIMIT = 80
+BRIEFING_RATIO = {'morning': 30, 'noon': 30, 'evening': 20}

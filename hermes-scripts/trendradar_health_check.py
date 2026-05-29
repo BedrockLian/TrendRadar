@@ -83,7 +83,7 @@ def check_scripts():
     for name in required:
         p = SCRIPTS / name
         if not p.exists():
-            fail(f'scripts/{name}', 'WARN', '文件缺失')
+            fail(f'trendradar/scripts/{name}', 'WARN', '文件缺失')
 
 
 def check_config():

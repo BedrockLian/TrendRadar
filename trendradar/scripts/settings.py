@@ -1,29 +1,106 @@
-"""TrendRadar 统一配置模块 — 替代各脚本中的硬编码路径和 API Key 加载。"""
+"""TrendRadar 统一配置 — 向后兼容 re-export 中心。
+
+所有常量定义已迁移到子模块：
+  config/domains.py  — 领域常量
+  config/scoring.py  — 评分参数
+  config/api.py      — API Key/端点/模型
+  config/translation.py — 翻译配置
+  config/fetching.py — 抓取配置
+  config/proxy.py    — 代理配置
+  config/heat_tracking.py — 热度追踪/指纹参数
+  scripts/file_utils.py   — 路径工厂/压缩 I/O
+  scripts/logging_config.py — Logger 工厂
+
+此文件为向后兼容层——所有现有 `from settings import X` 无需改动。
+"""
 from pathlib import Path
 import os
-import sys
-import tempfile
-import json as _json
-from functools import lru_cache
 
 TRENDRADAR_HOME = Path(os.environ.get('TRENDRADAR_HOME', Path.home() / '.hermes' / 'trendradar'))
 
-# ── 环境锁：Python 3.14t 必须禁用 GIL ────────────────────────────
+# ── 领域常量 ─────────────────────────────────────────────
+from trendradar.config.domains import (
+    DOMAINS, DOMAIN_LABELS, MAX_PER_DOMAIN, DOMAIN_EMOJI,
+    SLOT_NAMES, DAILY_LIMIT, BRIEFING_RATIO,
+)
+
+# ── 评分参数 ─────────────────────────────────────────────
+from trendradar.config.scoring import (
+    MIN_SCORE, MAX_SAME_SOURCE, DIVERSITY_PENALTY_FACTOR, MAX_SOURCE_PCT,
+    SCORE_HEAT_WORDS, HEAT_WORDS, SEARCH_RATIO,
+    TITLE_CLARITY_LOW, TITLE_CLARITY_HIGH,
+    RECENCY_HOURS_HIGH, RECENCY_HOURS_MID, RECENCY_HOURS_LOW,
+)
+
+# ── API 配置 ─────────────────────────────────────────────
+from trendradar.config.api import (
+    API_KEY_ENV, API_ENDPOINT_ENV, MODEL_ENV,
+    DEFAULT_ENDPOINT, DEFAULT_MODEL,
+    get_api_key, get_api_endpoint, get_model,
+)
+
+# ── 翻译配置 ─────────────────────────────────────────────
+from trendradar.config.translation import (
+    TRANSLATE_BATCH_SIZE, TRANSLATE_BATCH_MAX_CONCURRENT,
+)
+
+# ── 抓取配置 ─────────────────────────────────────────────
+from trendradar.config.fetching import (
+    RSSHUB_CONCURRENT, EXTERNAL_CONCURRENT, TIMEOUT_SEC, FETCH_RETRIES,
+    API_CALL_TIMEOUT, API_RETRIES, API_RETRY_BACKOFF,
+)
+
+# ── 代理配置 ─────────────────────────────────────────────
+from trendradar.config.proxy import (
+    PROXY_URL, DOMESTIC_PROXY_PATTERNS, needs_proxy,
+)
+
+# ── 热度追踪 ─────────────────────────────────────────────
+from trendradar.config.heat_tracking import (
+    HEAT_SLEEP_HOURS, HEAT_DEEP_CYCLES, HEAT_DEEP_SPAN,
+    HEAT_SUSTAINED_CYCLES, HEAT_SUSTAINED_SPAN,
+    FINGERPRINT_MD5_LEN, FINGERPRINT_URL_SEGMENTS, FINGERPRINT_TITLE_TRUNCATE,
+)
+
+# ── 文件工具 ─────────────────────────────────────────────
+from trendradar.scripts.file_utils import (
+    get_data_dir, get_cache_dir,
+    raw_path, curated_path, batch_path,
+    atomic_write_json, write_compressed, read_compressed,
+)
+
+# ── 日志工厂 ─────────────────────────────────────────────
+from trendradar.scripts.logging_config import get_logger  # noqa: E402, F401
+
+# ── 存储单例 ─────────────────────────────────────────────
+from functools import lru_cache as _lru_cache
+
+
+@_lru_cache()
+def get_storage():
+    """返回全局 Storage 单例（共享连接池 + WAL checkpoint）。"""
+    from trendradar.scripts.storage import Storage
+    return Storage(get_data_dir())
+
+
+# ── GIL 检查（保留原逻辑）─────────────────────────────────
+import sys as _sys
+
+
 def _check_gil():
-    """Check free-threaded Python GIL status. Sets module-level _GIL_OK flag."""
     global _GIL_OK
     _GIL_OK = True
-    if hasattr(sys, '_is_gil_enabled') and not sys._is_gil_enabled():
-        return  # GIL 已禁用，正常
-    if '3.14' in sys.version and 'free-threading' not in sys.version.lower():
+    if hasattr(_sys, '_is_gil_enabled') and not _sys._is_gil_enabled():
+        return
+    if '3.14' in _sys.version and 'free-threading' not in _sys.version.lower():
         gil = os.environ.get('PYTHON_GIL', '')
         if gil != '0':
             import warnings
             warnings.warn(
-                f"PYTHON_GIL={gil or '(unset)'} — 3.14t 建议 export PYTHON_GIL=0 "
-                "以启用 free-threading 并发性能。",
+                f"PYTHON_GIL={gil or '(unset)'} — 3.14t 建议 export PYTHON_GIL=0",
                 RuntimeWarning,
             )
+
 
 _GIL_OK = None
 
@@ -35,276 +112,8 @@ def _ensure_gil_ok():
     return _GIL_OK
 
 
-@lru_cache()
-def get_data_dir() -> Path:
-    d = TRENDRADAR_HOME / 'data'
-    d.mkdir(parents=True, exist_ok=True)
-    return d
-
-
-@lru_cache()
-def get_cache_dir() -> Path:
-    d = TRENDRADAR_HOME / 'cache'
-    d.mkdir(parents=True, exist_ok=True)
-    return d
-
-
-# ── 领域常量（C1 解耦） ─────────────────────────────────────────────
-DOMAINS = ['top_headlines', 'foreign_china', 'tech', 'economy', 'gaming']
-
-DOMAIN_LABELS = {
-    'top_headlines': '📰 头条',
-    'foreign_china': '🌏 外媒看华',
-    'tech': '💻 科技',
-    'economy': '📊 经济民生',
-    'gaming': '🎮 游戏',
-}
-
-MAX_PER_DOMAIN: dict[str, int] = {
-    'top_headlines': 6,
-    'tech': 7,
-    'economy': 6,
-    'gaming': 6,
-    'foreign_china': 5,
-}
-
-DOMAIN_EMOJI = {
-    'top_headlines': '📰', 'foreign_china': '🌏',
-    'tech': '💻', 'economy': '📊', 'gaming': '🎮',
-}
-
-SLOT_NAMES = {'morning': '早报', 'noon': '午间速递', 'evening': '今日回顾'}
-
-DAILY_LIMIT = 80
-BRIEFING_RATIO = {'morning': 30, 'noon': 30, 'evening': 20}
-
-# ── 翻译配置 ────────────────────────────────────────────
-TRANSLATE_BATCH_SIZE = int(os.environ.get('TRENDRADAR_TRANSLATE_BATCH_SIZE', 5))
-TRANSLATE_BATCH_MAX_CONCURRENT = int(os.environ.get('TRENDRADAR_TRANSLATE_CONCURRENT', 5))
-
-# ── 文件命名模板（C3 解耦） ────────────────────────────────────────
-def raw_path(date_str: str) -> Path:
-    return get_cache_dir() / f'raw_{date_str}.json'
-
-def curated_path(push_id: str, date_str: str | None = None) -> Path:
-    p = f'curated_{push_id}'
-    if date_str:
-        p += f'_{date_str}'
-    return get_data_dir() / f'{p}.json'
-
-def batch_path(push_id: str) -> Path:
-    return get_cache_dir() / f'batch_{push_id}.json'
-
-
-# ── 评分参数（C4 解耦） ──────────────────────────────────────────────
-## 精选门槛
-MIN_SCORE = 6
-
-## 多样性惩罚（C4 解耦 — 原分散在 curate_and_push.py）
-MAX_SAME_SOURCE = 3
-DIVERSITY_PENALTY_FACTOR = 0.5
-MAX_SOURCE_PCT = 0.30
-
-## 标题清晰度分档（字符数）
-TITLE_CLARITY_LOW = 10
-TITLE_CLARITY_HIGH = 40
-
-## 时效分档（小时）
-RECENCY_HOURS_HIGH = 1
-RECENCY_HOURS_MID = 6
-RECENCY_HOURS_LOW = 24
-
-## 热度信号词（评分用）
-SCORE_HEAT_WORDS = frozenset({'突发', '重磅', '紧急', '首次', '正式', '官宣', '定档', '上线', '新政', '突破'})
-
-## 热度信号词（指纹/追踪用）
-HEAT_WORDS = frozenset({'突发', '重磅', '紧急', '首次', '首发', '正式', '官宣', '确认', '定档', '上线', '发布', '新政', '突破', '里程碑', '重大', '最新', '首款', '警告', '战', '大跌', '暴涨', '全球'})
-
-## 搜索标记比例
-SEARCH_RATIO = 0.6
-
-## 连接池
-RSSHUB_CONCURRENT = 12
-EXTERNAL_CONCURRENT = 20
-TIMEOUT_SEC = 6
-FETCH_RETRIES = 3
-
-## 代理配置（米霍姆）
-PROXY_URL = os.environ.get('TRENDRADAR_PROXY', 'http://127.0.0.1:7890')
-
-# 不需要代理的源 URL 前缀/模式（国内中转）
-DOMESTIC_PROXY_PATTERNS = (
-    'plink.anyfeeder.com',  # 国内 RSS 中转
-    '.cn',                   # 国内域名
-    '.com.cn',
-    'bbc.co.uk',             # BBC: 直连可达。注意：代理节点可能屏蔽 BBC，走直连
-    'bbci.co.uk',            # BBC RSS feed 域名（同上，直连）
-)
-
-def needs_proxy(feed_url: str) -> bool:
-    """判断 RSS 源是否需要走代理。外媒直连源/RSSHub 走代理，国内中转直连。"""
-    url_lower = feed_url.lower()
-    # localhost:1200 是 RSSHub，本身不能直达外媒，需代理
-    if 'localhost:1200' in url_lower:
-        return True
-    # 国内中转/国内域名 → 直连
-    for pattern in DOMESTIC_PROXY_PATTERNS:
-        if pattern in url_lower:
-            return False
-    # 其余外网域名 → 走代理
-    return True
-
-## API 调用
-API_CALL_TIMEOUT = 60
-API_RETRIES = 3
-API_RETRY_BACKOFF = 2
-
-## 热度追踪
-HEAT_SLEEP_HOURS = 24
-HEAT_DEEP_CYCLES = 3
-HEAT_DEEP_SPAN = 12
-HEAT_SUSTAINED_CYCLES = 2
-HEAT_SUSTAINED_SPAN = 6
-
-## 指纹参数
-FINGERPRINT_MD5_LEN = 16
-FINGERPRINT_URL_SEGMENTS = 3
-FINGERPRINT_TITLE_TRUNCATE = 40
-
-API_KEY_ENV = os.environ.get('TRENDRADAR_API_KEY_ENV', 'DEEPSEEK_API_KEY')
-API_ENDPOINT_ENV = os.environ.get('TRENDRADAR_API_ENDPOINT_ENV', 'DEEPSEEK_API_ENDPOINT')
-MODEL_ENV = os.environ.get('TRENDRADAR_MODEL_ENV', 'DEEPSEEK_MODEL')
-DEFAULT_ENDPOINT = os.environ.get('TRENDRADAR_DEFAULT_ENDPOINT', 'https://api.deepseek.com/v1/chat/completions')
-DEFAULT_MODEL = os.environ.get('TRENDRADAR_DEFAULT_MODEL', 'deepseek-chat')
-
-
-def get_api_key(key_name: str | None = None) -> str | None:
-    """Get API key from env var first, fallback to .env file.
-    
-    Security: set via environment variable (CI/CD injection) when possible.
-    If using .env, ensure: chmod 600 ~/.hermes/trendradar/.env
-    """
-    key = os.environ.get(key_name or API_KEY_ENV)
-    if key:
-        return key
-    env_path = Path(os.environ.get('TRENDRADAR_ENV', TRENDRADAR_HOME / '.env'))
-    # 安全检查：必须在 TRENDRADAR_HOME 子树内
-    if (TRENDRADAR_HOME not in env_path.resolve().parents
-            and env_path.resolve() != TRENDRADAR_HOME.resolve()):
-        import warnings
-        warnings.warn(f"TRENDRADAR_ENV 路径 {env_path} 不在 TRENDRADAR_HOME 内，已忽略")
-        return None
-    if env_path.exists():
-        for line in env_path.read_text().splitlines():
-            line = line.strip()
-            if line.startswith('#') or '=' not in line:
-                continue
-            name, _, val = line.partition('=')
-            if name.strip() == (key_name or API_KEY_ENV):
-                return val.strip().strip('"').strip("'")
-    return None
-
-
-@lru_cache()
-def get_api_endpoint() -> str:
-    return os.environ.get(API_ENDPOINT_ENV, DEFAULT_ENDPOINT)
-
-
-@lru_cache()
-def get_model() -> str:
-    return os.environ.get(MODEL_ENV, DEFAULT_MODEL)
-
-
-def atomic_write_json(path: Path, data, **kwargs):
-    """原子写入 JSON：先写临时文件，再 os.replace（原子 rename）。"""
-    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix='.tmp_', suffix='.json')
-    try:
-        with os.fdopen(fd, 'w', encoding='utf-8') as f:
-            _json.dump(data, f, ensure_ascii=False, indent=2, **kwargs)
-        os.replace(tmp, path)
-    except Exception:
-        os.unlink(tmp)
-        raise
-
-
-def _get_zstd():
-    """获取可用的 zstd 实现。返回 (module, name) 或 None。"""
-    try:
-        from compression import zstd
-        return zstd, 'stdlib'
-    except (ImportError, ModuleNotFoundError):
-        pass
-    try:
-        import zstandard as zstd
-        return zstd, 'zstandard'
-    except ImportError:
-        return None
-
-
-def write_compressed(path: Path, data: dict):
-    """zstd 压缩写入 JSON，磁盘占用 ~1/6。fallback: compression.zstd → zstandard → 普通 JSON。"""
-    zstd_impl = _get_zstd()
-    if zstd_impl:
-        zstd, name = zstd_impl
-        raw = _json.dumps(data, ensure_ascii=False, indent=2).encode()
-        path.with_suffix('.json.zst').write_bytes(zstd.compress(raw, level=3))
-    else:
-        atomic_write_json(path, data)
-
-
-def read_compressed(path: Path) -> dict:
-    """zstd 解压读取 JSON。fallback: compression.zstd → zstandard → 普通 JSON。"""
-    zst_path = path.with_suffix('.json.zst')
-    if not zst_path.exists():
-        return _json.loads(path.read_text())
-    zstd_impl = _get_zstd()
-    if zstd_impl:
-        zstd, name = zstd_impl
-        return _json.loads(zstd.decompress(zst_path.read_bytes()))
-    return _json.loads(path.read_text())
-
-
-# ── 日志工厂 ─────────────────────────────────────────────────────────
-import logging as _logging
-
-_LOGGERS: dict[str, _logging.Logger] = {}
-
-def get_logger(name: str = 'trendradar') -> _logging.Logger:
-    """获取结构化 logger，按模块名复用。环境变量 TRENDRADAR_LOG_LEVEL 控制级别。
-    
-    自动注入 RUN_ID（如果 common.current_run_id 已设置）。
-    """
-    if name in _LOGGERS:
-        return _LOGGERS[name]
-    logger = _logging.getLogger(f'trendradar.{name}')
-    if not logger.handlers:
-        handler = _logging.StreamHandler(sys.stderr)
-        handler.setFormatter(_RunIdFormatter(
-            '[%(asctime)s] [%(levelname)-5s] [%(name)s] %(message)s',
-            datefmt='%Y-%m-%dT%H:%M:%S'
-        ))
-        logger.addHandler(handler)
-        level = os.environ.get('TRENDRADAR_LOG_LEVEL', 'INFO')
-        logger.setLevel(getattr(_logging, level, _logging.INFO))
-    _LOGGERS[name] = logger
-    return logger
-
-
-class _RunIdFormatter(_logging.Formatter):
-    """自动在日志中注入 RUN_ID（如果存在）。"""
-    def format(self, record):
-        try:
-            from trendradar.scripts.common import get_run_id_ctx
-            run_id = get_run_id_ctx()
-            if run_id:
-                record.msg = f"[{run_id}] {record.msg}"
-        except (ImportError, AttributeError, LookupError):
-            pass
-        return super().format(record)
-
-
-def ensure_db_migrated(db_path: Path | None = None) -> int:
-    """确保数据库 schema 为最新版本。返回当前版本号。"""
+def ensure_db_migrated(db_path=None):
+    """确保数据库 schema 为最新版本。"""
     from trendradar.migrations.runner import migrate
     if db_path is None:
         db_path = get_data_dir() / 'fingerprints.db'

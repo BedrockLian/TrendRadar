@@ -23,7 +23,9 @@ from pathlib import Path
 
 import aiohttp
 
-from trendradar.scripts.settings import get_data_dir
+from trendradar.scripts.settings import get_data_dir, get_logger
+
+log = get_logger('ai-translate')
 
 from trendradar.scripts.common import CST
 DATA_DIR = get_data_dir()
@@ -68,11 +70,7 @@ def _load_source_languages() -> tuple[frozenset, frozenset]:
         _scan(cfg)
         return frozenset(en), frozenset(ja)
     except Exception as e:
-        import sys
-        print(
-            f"[TRANSLATE] 严重: 加载 sources.json 失败，翻译功能已禁用: {e}",
-            file=sys.stderr,
-        )
+        log.error(f"加载 sources.json 失败，翻译功能已禁用: {e}")
         return frozenset(), frozenset()
 
 
@@ -121,7 +119,7 @@ RETRY_BASE_DELAY = 2.0        # 初始等待秒数
 RETRY_MAX_DELAY = 30.0        # 上限秒数
 RETRY_JITTER = 0.5            # ±50% 随机抖动
 RETRY_MAX_ATTEMPTS = 4        # 最多 5 次尝试 (初始 + 4 次重试)
-CIRCUIT_BREAKER_THRESHOLD = 3  # 连续 3 个 batch 失败 → 熔断，跳过剩余
+CIRCUIT_BREAKER_THRESHOLD = 5  # 连续 5 个 batch 失败 → 熔断（瞬态429不应触发）
 
 _translate_failures = 0        # 模块级熔断计数器
 
@@ -199,11 +197,9 @@ async def _make_request(
                 delay = min(RETRY_BASE_DELAY * (2 ** attempt), RETRY_MAX_DELAY)
                 jitter = delay * RETRY_JITTER * (random.random() * 2 - 1)
                 delay += jitter
-                print(
-                    f"[TRANSLATE] API error (attempt {attempt+1}/{RETRY_MAX_ATTEMPTS+1}), "
-                    f"retrying in {delay:.1f}s: {e}",
-                    file=sys.stderr,
-                )
+                log.warning(
+                    f"API error (attempt {attempt+1}/{RETRY_MAX_ATTEMPTS+1}), "
+                    f"retrying in {delay:.1f}s: {e}")
                 await asyncio.sleep(delay)
 
     if last_error is None:
@@ -332,29 +328,23 @@ async def _batch_translate_all(
         global _translate_failures
         try:
             if circuit_broken():
-                print(
-                    f"[TRANSLATE] ⚡ 熔断触发 — 连续 {CIRCUIT_BREAKER_THRESHOLD} 个 batch 失败，"
-                    f"跳过剩余批次",
-                    file=sys.stderr,
-                )
+                log.error(
+                    f"熔断触发 — 连续 {CIRCUIT_BREAKER_THRESHOLD} 个 batch 失败，"
+                    f"跳过剩余批次")
                 return (batch, None, RuntimeError("Circuit breaker open"))
             translations = await batch_translate(session, pairs, api_key, source_lang)
             batch_end = batch_start + len(batch)
             total = len(items_to_translate)
-            print(
-                f"[TRANSLATE] Batch {batch_start+1}-{batch_end}/{total} "
-                f"({source_lang}): translated {len(batch)} items",
-                file=sys.stderr,
-            )
+            log.info(
+                f"Batch {batch_start+1}-{batch_end}/{total} "
+                f"({source_lang}): translated {len(batch)} items")
             _translate_failures = 0
             return (batch, translations, None)
         except Exception as e:
             _translate_failures += 1
-            print(
-                f"[TRANSLATE] Batch translation failed ({_translate_failures}/"
-                f"{CIRCUIT_BREAKER_THRESHOLD} strikes): {e}",
-                file=sys.stderr,
-            )
+            log.error(
+                f"Batch translation failed ({_translate_failures}/"
+                f"{CIRCUIT_BREAKER_THRESHOLD} strikes): {e}")
             return (batch, None, e)
 
     # If only one batch overall, no semaphore overhead
@@ -408,20 +398,16 @@ async def _batch_expand_all(
             translations = await batch_expand(session, pairs, api_key)
             batch_end = batch_start + len(batch)
             total = len(items_to_expand)
-            print(
-                f"[TRANSLATE] Expand batch {batch_start+1}-{batch_end}/{total}: "
-                f"expanded {len(batch)} Chinese items",
-                file=sys.stderr,
-            )
+            log.info(
+                f"Expand batch {batch_start+1}-{batch_end}/{total}: "
+                f"expanded {len(batch)} Chinese items")
             _translate_failures = 0
             return (batch, translations, None)
         except Exception as e:
             _translate_failures += 1
-            print(
-                f"[TRANSLATE] Expand batch failed ({_translate_failures}/"
-                f"{CIRCUIT_BREAKER_THRESHOLD} strikes): {e}",
-                file=sys.stderr,
-            )
+            log.error(
+                f"Expand batch failed ({_translate_failures}/"
+                f"{CIRCUIT_BREAKER_THRESHOLD} strikes): {e}")
             return (batch, None, e)
 
     # If only one batch, no semaphore overhead
@@ -522,10 +508,8 @@ def _load_and_scan(push_id: str) -> tuple[dict, list, list, Path]:
             # Fallback 3: generic version
             curated_path = DATA_DIR / f'curated_{push_id}.json'
     if not curated_path.exists():
-        print(
-            f"[TRANSLATE] No curated file found for push-id '{push_id}'",
-            file=sys.stderr,
-        )
+        log.info(
+            f"No curated file found for push-id '{push_id}'")
         sys.exit(1)
 
     data = json.loads(curated_path.read_text())
@@ -585,20 +569,16 @@ async def process_curated(push_id: str) -> dict:
     data, items_to_translate, items_to_expand, curated_path = _load_and_scan(push_id)
 
     if not items_to_translate and not items_to_expand:
-        print(
-            f"[TRANSLATE] No items need processing for push-id '{push_id}'",
-            file=sys.stderr,
-        )
+        log.info(
+            f"No items need processing for push-id '{push_id}'")
         return data
 
     from trendradar.scripts.settings import get_api_key
     api_key = get_api_key()
     if not api_key:
-        print(
-            "[TRANSLATE] DEEPSEEK_API_KEY not set — skipping translation "
-            "(graceful degradation)",
-            file=sys.stderr,
-        )
+        log.warning(
+            "DEEPSEEK_API_KEY not set — skipping translation "
+            "(graceful degradation)")
         from trendradar.scripts.exitcodes import EXIT_NO_CONTENT
         sys.exit(EXIT_NO_CONTENT)
 
@@ -608,11 +588,9 @@ async def process_curated(push_id: str) -> dict:
     async with aiohttp.ClientSession() as session:
         # Step 1: Translate foreign items
         if items_to_translate:
-            print(
-                f"[TRANSLATE] Found {len(items_to_translate)} items to translate "
-                f"for push-id '{push_id}'",
-                file=sys.stderr,
-            )
+            log.info(
+                f"Found {len(items_to_translate)} items to translate "
+                f"for push-id '{push_id}'")
             batch_results = await _batch_translate_all(
                 session, items_to_translate, api_key
             )
@@ -631,11 +609,9 @@ async def process_curated(push_id: str) -> dict:
 
         # Step 2: Expand short Chinese summaries
         if items_to_expand:
-            print(
-                f"[TRANSLATE] Found {len(items_to_expand)} Chinese items with short summaries to expand "
-                f"for push-id '{push_id}'",
-                file=sys.stderr,
-            )
+            log.info(
+                f"Found {len(items_to_expand)} Chinese items with short summaries to expand "
+                f"for push-id '{push_id}'")
             expand_results = await _batch_expand_all(
                 session, items_to_expand, api_key
             )
@@ -654,11 +630,9 @@ async def process_curated(push_id: str) -> dict:
 
     _write_back(data, curated_path, push_id)
 
-    print(
-        f"[TRANSLATE] Done: {translated_count} items processed, "
-        f"{total_chars} chars total",
-        file=sys.stderr,
-    )
+    log.info(
+        f"Done: {translated_count} items processed, "
+        f"{total_chars} chars total")
 
     return data
 

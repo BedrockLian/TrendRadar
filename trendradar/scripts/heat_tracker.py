@@ -13,13 +13,12 @@ import threading
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, List, Tuple
 
-from trendradar.scripts.settings import get_data_dir
-from trendradar.scripts.storage import Storage
+from trendradar.scripts.settings import get_data_dir, get_storage
 
 from functools import lru_cache
 
 DB_PATH = str(get_data_dir() / 'fingerprints.db')
-_STORE = Storage(get_data_dir())  # 统一存储入口
+_STORE = get_storage()  # 统一存储入口（单例）
 _INITIALIZED = False
 _local = threading.local()  # per-thread connection storage
 

@@ -135,6 +135,14 @@ class Storage:
         # VACUUM 会重建数据库文件，需要重建连接
         self.close_db(filename)
 
+    def checkpoint_db(self, filename: str):
+        """将 WAL 内容合并回主 DB 文件 (TRUNCATE mode)。
+
+        定期调用防止 WAL 文件无限增长。建议每 10 次写入后调用。
+        """
+        conn = self.db(filename)
+        conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+
     def close_db(self, filename: Optional[str] = None):
         """关闭数据库连接。不传 filename 则关闭全部。"""
         with self._db_lock:

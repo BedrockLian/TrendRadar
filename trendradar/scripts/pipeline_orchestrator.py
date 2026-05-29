@@ -32,7 +32,11 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 from trendradar.scripts.exitcodes import EXIT_CONFIG_ERROR
+from trendradar.scripts.settings import get_logger
 
+log = get_logger('orchestrator')
+
+CST = timezone(timedelta(hours=8))
 PYTHON = os.environ.get("PYTHON", sys.executable)
 PYTHON_GIL = os.environ.get("PYTHON_GIL", "0")
 SCRIPTS_DIR = Path(__file__).resolve().parent
@@ -73,7 +77,7 @@ def _cleanup_silent(push_id: str):
             except OSError:
                 pass
     if removed:
-        print(f"[SILENT] Cleaned up: {', '.join(removed)}", file=sys.stderr)
+        log.info(f"Cleaned up: {', '.join(removed)}")
 
 
 def _write_push_log(push_id: str, result: dict, errors: list):
@@ -123,7 +127,7 @@ def _write_push_log(push_id: str, result: dict, errors: list):
             _os.unlink(tmp)
             raise
     except Exception as e:
-        print(f"[PIPELINE] ⚠️ push_log write failed: {e}", file=sys.stderr)
+        log.error(f"push_log write failed: {e}")
 
 
 def _run(cmd: list, timeout: int = 300, capture: bool = True) -> dict:
@@ -243,14 +247,14 @@ def version_check_and_exit():
 
 def run_stage(name: str, cmd: list, timeout: int = 300) -> dict:
     """Run a pipeline stage with timing."""
-    print(f"[{datetime.now(CST).strftime('%H:%M:%S')}] ⏳ {name}...", file=sys.stderr)
+    log.info(f"⏳ {name}...")
     t0 = time.time()
     result = _run(cmd, timeout=timeout)
     elapsed = time.time() - t0
     if result["ok"]:
-        print(f"[{datetime.now(CST).strftime('%H:%M:%S')}] ✅ {name} ({elapsed:.1f}s)", file=sys.stderr)
+        log.info(f"✅ {name} ({elapsed:.1f}s)")
     else:
-        print(f"[{datetime.now(CST).strftime('%H:%M:%S')}] ❌ {name} ({elapsed:.1f}s): {result['stderr'][:200]}", file=sys.stderr)
+        log.error(f"❌ {name} ({elapsed:.1f}s): {result['stderr'][:200]}")
     result["elapsed"] = elapsed
     return result
 
@@ -287,9 +291,9 @@ def main():
         if db_path.exists():
             ver = migrate(db_path)
             if ver > 0:
-                print(f"[PIPELINE] DB schema v{ver}", file=sys.stderr)
+                log.info(f"DB schema v{ver}")
     except Exception as e:
-        print(f"[PIPELINE] ⚠️ DB migration skipped: {e}", file=sys.stderr)
+        log.warning(f"DB migration skipped: {e}")
         # Non-fatal — continue with existing schema
 
     errors = []
@@ -372,7 +376,7 @@ def main():
     if not translate_result["ok"] and translate_result.get("exit_code") != 2:
         errors.append(f"ai_translate: {translate_result['stderr'][:200]}")
     elif not translate_result["ok"]:
-        print(f"[PIPELINE] ai_translate skipped (no content / no API key) — continuing", file=sys.stderr)
+        log.info(f"ai_translate skipped (no content / no API key) — continuing")
     if not fetch_result["ok"]:
         errors.append(f"batch_fetch: {fetch_result['stderr'][:200]}")
 
@@ -392,7 +396,7 @@ def main():
     if not briefing or "共 0 条" in briefing or "[SILENT]" in briefing:
         # Still run sanity check if any content was produced (defensive)
         if briefing and len(briefing) > 50:
-            print(f"[PIPELINE] Empty briefing detected, running sanity check anyway", file=sys.stderr)
+            log.info(f"Empty briefing detected, running sanity check anyway")
         _cleanup_silent(push_id)
         # Also clean up any partial fetch/curate artifacts
         for pattern in [f"fetch_*{push_id}*.json", f"curated_{push_id}*.json"]:
@@ -417,7 +421,7 @@ def main():
     banned = check_banned_phrases(clean_briefing)
     if banned:
         errors.append(f"sanity_check: 禁语命中 {banned}")
-        print(f"[SANITY] ❌ 禁语: {banned}", file=sys.stderr)
+        log.error(f"禁语: {banned}")
         # FATAL — reject push
         print(json.dumps({
             "status": "error",
@@ -427,7 +431,7 @@ def main():
         return 1
     residue = check_html_residue(clean_briefing)
     if residue:
-        print(f"[SANITY] ⚠️ HTML残留: {residue}", file=sys.stderr)
+        log.warning(f"HTML残留: {residue}")
         # Not fatal, but logged
     stats["stages"]["sanity_check"] = True
 
@@ -503,7 +507,7 @@ def main():
                 stats["per_domain"][d] = len(curated_data.get(d, []))
             stats["run_id"] = curated_data.get("run_id", "")
     except (FileNotFoundError, json.JSONDecodeError) as e:
-        print(f"[PIPELINE] 读取精选统计失败: {e}", file=sys.stderr)
+        log.error(f"读取精选统计失败: {e}")
 
     # ── Build output ───────────────────────────────────────────
     total_elapsed = sum(v for k, v in stats["stages"].items() if isinstance(v, (int, float)))
