@@ -222,6 +222,55 @@ def get_latest_push_for_slot(slot: str) -> dict | None:
     return None
 
 
+def _send_from_archive(archive_path: Path, alerts: list[str], slot_name: str) -> bool:
+    """从 archive 文件读取内容并通过 hermes send 投递。返回成功/失败。"""
+    try:
+        content = archive_path.read_text(encoding='utf-8').strip()
+        if not content:
+            alerts.append(f"  ⚠️ {slot_name} 存档内容为空")
+            return False
+        import subprocess, tempfile
+        tmp = Path(tempfile.gettempdir()) / f'{archive_path.stem}_redeliver.md'
+        tmp.write_text(content)
+        result = subprocess.run(
+            ['hermes', 'send', '--to', 'wecom:bl', '--file', str(tmp)],
+            capture_output=True, text=True, timeout=30,
+            env={**os.environ, 'PYTHON_GIL': '1'}
+        )
+        if result.returncode == 0:
+            alerts.append(f"  ✅ {slot_name} 已补发至 WeCom")
+            return True
+        # fallback GIL
+        result = subprocess.run(
+            ['hermes', 'send', '--to', 'wecom:bl', '--file', str(tmp)],
+            capture_output=True, text=True, timeout=30,
+            env={**os.environ, 'PYTHON_GIL': '0'}
+        )
+        if result.returncode == 0:
+            alerts.append(f"  ✅ {slot_name} 已补发至 WeCom")
+            return True
+        alerts.append(f"  ❌ {slot_name} 补发失败 (hermes send exit={result.returncode})")
+        return False
+    except Exception as e:
+        alerts.append(f"  ⚠️ {slot_name} 补发异常: {e}")
+        return False
+
+
+def _write_marker(today: str, push_id: str) -> None:
+    """写入投递确认水印。"""
+    _ensure_marker_dir()
+    marker_path = MARKER_DIR / f'{today}_{push_id}.marker'
+    marker_path.write_text(
+        json.dumps({
+            'push_id': push_id,
+            'date': today,
+            'delivered': True,
+            'delivered_at': datetime.now(CST).isoformat(),
+            'verified_by': 'delivery_watchdog',
+        })
+    )
+
+
 def auto_redeliver_slot(alerts: list[str], push_id: str, slot_name: str, max_age_hours: int = 6) -> None:
     """检查某个 slot 的推送是否投递成功，未投递则自动补发。
     
@@ -231,7 +280,19 @@ def auto_redeliver_slot(alerts: list[str], push_id: str, slot_name: str, max_age
         max_age_hours: 超过此时限的推送不补发
     """
     latest = get_latest_push_for_slot(push_id)
+    
     if not latest:
+        # push_log 不存在或没有该 slot 记录 → 退一步检查 archive
+        today = datetime.now(CST).strftime('%Y-%m-%d')
+        archive_path = TRENDRADAR_HOME / 'archive' / today / f'{push_id}.md'
+        if archive_path.exists():
+            # 检查水印 — 避免重复补发
+            marker_path = MARKER_DIR / f'{today}_{push_id}.marker'
+            if marker_path.exists():
+                return  # 已标记投递
+            alerts.append(f"🔄 {slot_name} ({today}) push_log 无记录但存档存在 → 从 archive 补发...")
+            if _send_from_archive(archive_path, alerts, slot_name):
+                _write_marker(today, push_id)
         return
 
     run_id = get_run_id_from_push(latest)
