@@ -96,6 +96,10 @@ SOURCE_DOMAIN_OVERRIDE = {
 
 **重要：每条分析作为独立 final response 分别输出，不得与简报正文拼接在一起。** 简报走 step 3, 分析走 step 4, 互不干扰。
 
+**格式化铁律**：每个 delegate_task 返回的分析文本必须通过 `render_deep_analysis.py` 管道格式化——`echo "$ANALYSIS_TEXT" | $PYTHON scripts/render_deep_analysis.py --topic "主题" --push-id evening --context`。禁止直接输出原始分析文本。格式化后的输出包含 `🔬 **主题**` 标题和 `📌 相关回顾` 部分，这是正确的格式。
+
+**3 条分开投递**：趋势、跨域、风险各作为一条独立 final response 分别输出，不要合并成一条。
+
 **子 Agent 沙箱陷阱**：`delegate_task` 子 Agent 在 cron 上下文中有独立的进程上下文，其 `terminal`/`read_file` 等工具**无法读取父 session 的文件系统**。文件路径传递（如 `cat /path/to/report.md`）会返回空。子 Agent 必须通过 inline 文本传递内容——将分析文本放在 prompt 的 `context` 字段中，而不是让子 Agent 自己去读文件。详见 `references/PIPELINE.md  # was deep-analysis-subagent-sandbox → pipeline`。
 
 ## 交付验证（新增！）
@@ -136,10 +140,10 @@ ls -la data/delivery_markers/$(date +%Y-%m-%d)_*.marker
 
 ## 输出规范（脚本固化 + `sanity_check.py` 拦截）
 
-简报和深度分析由纯脚本生成，Agent 只做透传。`sanity_check.py` 在发布前自动：
-`sanity_check.py` 在发布前自动：剥离编排器前言（中文：编排器执行完成/输出简报正文/无需深度分析/简报正文 + 英文：Orchestrator completed/Pipeline orchestrator returned/push_id/DB schema v/\\[PIPELINE]/\\[SILENT]/Outputting briefing/No deep analysis needed/---），共 13 种正则模式，再执行禁语/死链/敏感词/HTML残留扫描
+简报和深度分析由纯脚本生成，Agent 只做透传。`sanity_check.py` 在发布前自动剥离编排器前言（中文：编排器执行完成/输出简报正文/无需深度分析/简报正文 + 英文：Orchestrator completed/Pipeline orchestrator returned/push_id/DB schema v/\\[PIPELINE]/\\[SILENT]/Outputting briefing/No deep analysis needed/---），共 13 种正则模式，再执行禁语/死链/敏感词/HTML残留扫描
 - 编排器元数据不会误触 BANNED_PHRASES
-- 2026-05-28 新增 4 条中文前缀正则（编排器执行完成/输出简报正文/无需深度分析/简报正文），防止 Agent 在 final response 前注入状态描述行
+- 2026-05-28 新增 4 条中文前缀正则（编排器执行完成/输出简报正文/无需深度分析/简报正文）
+- 2026-05-29 新增 Pipeline orchestrator returned/Outputting(可选the)briefing/No deep analysis needed 三条英文模式
 
 1. **透传简报** — 输出 JSON `briefing` 字段内容本身。`sanity_check.py` 自动拦截 "As an AI language model" / "Here is your report" 等禁语。
 2. **链接格式** — `[【媒体名】](url)`，不加"查看原文"前缀。URL 中包含空格或全角空格时，`render_markdown.py` 会在渲染前自动清除（2026-05-28 修复：`url.replace(' ', '').replace('　', '')`，防止 Agent 输出时在 URL 中插入空格导致链接断裂）。
