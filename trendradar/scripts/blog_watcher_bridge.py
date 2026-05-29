@@ -1,3 +1,4 @@
+from trendradar.scripts.common import CST
 #!/usr/bin/env python3
 from trendradar.scripts.settings import get_logger
 log = get_logger('blog-watcher-bridge')
@@ -14,7 +15,6 @@ from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
 # ── paths ──────────────────────────────────────────────────────────────
-CST = timezone(timedelta(hours=8))
 BLOGWATCHER_DB = Path.home() / '.blogwatcher-cli' / 'blogwatcher-cli.db'
 from trendradar.scripts.settings import get_data_dir, get_cache_dir
 TR_DATA_DIR = get_data_dir()

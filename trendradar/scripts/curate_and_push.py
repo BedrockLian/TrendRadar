@@ -1,3 +1,4 @@
+from trendradar.scripts.common import CST
 #!/usr/bin/env python3
 """TrendRadar Curator — 全局重分类 + 并行精选（frozenset加速 + cache）"""
 from trendradar.scripts.settings import get_logger
@@ -7,7 +8,6 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from functools import lru_cache, cache
 
-CST = timezone(timedelta(hours=8))
 from trendradar.scripts.settings import get_data_dir, get_cache_dir, MIN_SCORE, MAX_PER_DOMAIN, DOMAINS, TRENDRADAR_HOME, BRIEFING_RATIO, SCORE_HEAT_WORDS, MAX_SAME_SOURCE, DIVERSITY_PENALTY_FACTOR, MAX_SOURCE_PCT
 from trendradar.config.keywords import has_keyword_match, ALL_KEYWORDS
 DATA_DIR = get_data_dir()
@@ -176,8 +176,8 @@ def load_penalty_file(path: str):
             factor = entry.get('penalty_factor', 1.0)
             if src:
                 _penalty_map[src] = factor
-    except Exception:
-        pass
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"[curate] 加载 diversity 惩罚配置失败: {e}", file=sys.stderr)
 
 
 def _get_source_penalty(platform: str) -> float:
@@ -214,8 +214,8 @@ def load_source_health(path: str = None):
     try:
         data = json.loads(Path(path).read_text())
         _source_health = data.get('sources', {})
-    except Exception:
-        pass
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"[curate] 加载 source_health 失败: {e}", file=sys.stderr)
 
 
 def _get_health_penalty(platform: str) -> float:

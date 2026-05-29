@@ -1,3 +1,4 @@
+from trendradar.scripts.common import CST
 #!/usr/bin/env python3
 """
 pipeline_orchestrator.py — 一键运行 TrendRadar 推送全流程。
@@ -32,15 +33,19 @@ from pathlib import Path
 
 from trendradar.scripts.exitcodes import EXIT_CONFIG_ERROR
 
-CST = timezone(timedelta(hours=8))
-PYTHON = os.environ.get("PYTHON", "/usr/local/bin/python3.14t")
+PYTHON = os.environ.get("PYTHON", sys.executable)
 PYTHON_GIL = os.environ.get("PYTHON_GIL", "0")
 SCRIPTS_DIR = Path(__file__).resolve().parent
 TREND_DIR = SCRIPTS_DIR.parent
 DATA_DIR = TREND_DIR / "data"
 
-# Ensure PYTHONPATH is set for subprocess
-_ENV = os.environ.copy()
+# Ensure PYTHONPATH is set for subprocess, whitelist env vars (stop API key leak)
+_ALLOWED_ENV = {
+    'PYTHONPATH', 'PYTHON_GIL', 'TRENDRADAR_HOME', 'TRENDRADAR_LOG_LEVEL',
+    'PATH', 'HOME', 'USER', 'LANG', 'LC_ALL', 'DEEPSEEK_API_KEY',
+    'HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY', 'http_proxy', 'https_proxy', 'no_proxy',
+}
+_ENV = {k: v for k, v in os.environ.items() if k in _ALLOWED_ENV}
 _ENV["PYTHONPATH"] = str(TREND_DIR.parent)  # /home/asus/.hermes
 _ENV["PYTHON_GIL"] = PYTHON_GIL
 
@@ -253,7 +258,8 @@ def run_stage(name: str, cmd: list, timeout: int = 300) -> dict:
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="TrendRadar 推送全流程编排器")
-    parser.add_argument("--push-id", help="强制指定时段 (morning/noon/evening)，跳过自动检测")
+    parser.add_argument("--push-id", choices=['morning', 'noon', 'evening'],
+                        help="强制指定时段，跳过自动检测")
     parser.add_argument("--skip-fetch", action="store_true", help="跳过 fetch（使用已有缓存）")
     parser.add_argument("--output", choices=["json", "text"], default="json", help="输出格式")
     parser.add_argument("--list-steps", action="store_true",
@@ -403,6 +409,28 @@ def main():
         }, ensure_ascii=False))
         return 0
 
+    # ── Stage 4.5: sanity_check ────────────────────────────────
+    from trendradar.scripts.sanity_check import (
+        check_banned_phrases, check_html_residue, strip_orchestrator_preamble,
+    )
+    clean_briefing = strip_orchestrator_preamble(briefing)
+    banned = check_banned_phrases(clean_briefing)
+    if banned:
+        errors.append(f"sanity_check: 禁语命中 {banned}")
+        print(f"[SANITY] ❌ 禁语: {banned}", file=sys.stderr)
+        # FATAL — reject push
+        print(json.dumps({
+            "status": "error",
+            "reason": "banned_phrase_detected",
+            "banned": banned,
+        }, ensure_ascii=False))
+        return 1
+    residue = check_html_residue(clean_briefing)
+    if residue:
+        print(f"[SANITY] ⚠️ HTML残留: {residue}", file=sys.stderr)
+        # Not fatal, but logged
+    stats["stages"]["sanity_check"] = True
+
     # ── Stage 5: Fragment ──────────────────────────────────────
     fragment_cmd = [PYTHON, str(SCRIPTS_DIR / "fragment_push.py")]
     try:
@@ -474,8 +502,8 @@ def main():
             for d in domains:
                 stats["per_domain"][d] = len(curated_data.get(d, []))
             stats["run_id"] = curated_data.get("run_id", "")
-    except Exception:
-        pass
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"[PIPELINE] 读取精选统计失败: {e}", file=sys.stderr)
 
     # ── Build output ───────────────────────────────────────────
     total_elapsed = sum(v for k, v in stats["stages"].items() if isinstance(v, (int, float)))

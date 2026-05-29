@@ -1,3 +1,4 @@
+from trendradar.scripts.common import CST
 #!/usr/bin/env python3
 """
 blind_spot_audit.py — 信息茧房盲点检测
@@ -14,7 +15,6 @@ import argparse, json, os, sys, re
 from datetime import datetime, timezone, timedelta, date
 from collections import Counter, defaultdict
 
-CST = timezone(timedelta(hours=8))
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(os.path.dirname(SCRIPTS_DIR), 'data')
 
@@ -261,7 +261,8 @@ def _update_source_health(files, sources, total):
             with open(health_path) as f:
                 data = json.load(f)
                 existing = data.get('sources', {})
-        except Exception:
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"[blind_spot] 加载现有分析数据失败: {e}", file=sys.stderr)
             pass
 
     # Count appearances and curated appearances

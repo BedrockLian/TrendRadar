@@ -1,3 +1,4 @@
+from trendradar.scripts.common import CST
 #!/usr/bin/env python3
 """
 TrendRadar 热度追踪器 - 跨周期持久化追踪新闻热度变化
@@ -17,7 +18,6 @@ from trendradar.scripts.storage import Storage
 
 from functools import lru_cache
 
-CST = timezone(timedelta(hours=8))
 DB_PATH = str(get_data_dir() / 'fingerprints.db')
 _STORE = Storage(get_data_dir())  # 统一存储入口
 _INITIALIZED = False
@@ -90,7 +90,8 @@ def make_fingerprint(title: str, url: str = '') -> str:
             segments = [s for s in parsed.path.split('/') if s][:FINGERPRINT_URL_SEGMENTS]
             url_key = parsed.netloc + '/' + '/'.join(segments)
             norm += url_key.lower()
-        except Exception:
+        except (ValueError, AttributeError):
+            # URL parse failed — use raw URL as-is
             pass
     from trendradar.scripts.settings import FINGERPRINT_MD5_LEN
     return hashlib.md5(norm.encode()).hexdigest()[:FINGERPRINT_MD5_LEN]

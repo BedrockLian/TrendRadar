@@ -142,7 +142,7 @@ class Storage:
                 for conn in self._db_connections.values():
                     try:
                         conn.close()
-                    except Exception:
+                    except sqlite3.Error:
                         pass
                 self._db_connections.clear()
             else:
@@ -151,7 +151,7 @@ class Storage:
                 if conn:
                     try:
                         conn.close()
-                    except Exception:
+                    except sqlite3.Error:
                         pass
 
     # ── Path helpers ─────────────────────────────────────────

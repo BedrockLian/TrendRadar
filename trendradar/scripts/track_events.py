@@ -1,3 +1,4 @@
+from trendradar.scripts.common import CST
 #!/usr/bin/env python3
 """TrendRadar 事件跟踪 — 跨日比对热度变化。
 比较今天与昨天早报的精选数据，标记：新事件/热度上升/事件进展/热度下降。
@@ -10,7 +11,6 @@ from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from trendradar.scripts.heat_tracker import make_fingerprint as fingerprint
 
-CST = timezone(timedelta(hours=8))
 from trendradar.scripts.settings import get_data_dir
 DATA_DIR = get_data_dir()
 

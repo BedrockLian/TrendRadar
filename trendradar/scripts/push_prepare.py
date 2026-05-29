@@ -1,3 +1,4 @@
+from trendradar.scripts.common import CST
 #!/usr/bin/env python3
 from trendradar.scripts.settings import get_logger
 log = get_logger('push-prepare')
@@ -8,7 +9,6 @@ from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from concurrent.futures import ThreadPoolExecutor
 
-CST = timezone(timedelta(hours=8))
 from trendradar.scripts.settings import get_data_dir, get_cache_dir, TRENDRADAR_HOME, DOMAINS
 SCRIPTS_DIR = TRENDRADAR_HOME / 'scripts'
 DATA_DIR = get_data_dir()

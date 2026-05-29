@@ -37,3 +37,17 @@ def set_run_id_ctx(run_id: str):
 def get_run_id_ctx() -> str:
     """获取当前 contextvar 中的 RUN_ID。"""
     return current_run_id.get()
+
+# ── Public API aliases (was trace.py, merged into common) ──────────────
+
+def set_run_id(run_id: str):
+    """Set current RUN_ID (public interface)."""
+    current_run_id.set(run_id)
+
+def get_run_id() -> str:
+    """Get current RUN_ID (public interface)."""
+    return current_run_id.get()
+
+__all__ = ['CST', 'current_run_id', 'gen_run_id', 'parse_run_id',
+           'run_id_marker', 'set_run_id', 'get_run_id',
+           'set_run_id_ctx', 'get_run_id_ctx']

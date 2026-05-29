@@ -1,3 +1,4 @@
+from trendradar.scripts.common import CST
 #!/usr/bin/env python3
 """
 aggregate_monthly.py — 月度统计聚合 + 兴趣漂移检测
@@ -16,7 +17,6 @@ import argparse, json, os, sys, re
 from datetime import datetime, timezone, timedelta
 from collections import Counter, defaultdict
 
-CST = timezone(timedelta(hours=8))
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(os.path.dirname(SCRIPTS_DIR), 'data')
 TRENDRADAR_HOME = os.path.dirname(SCRIPTS_DIR)
@@ -81,7 +81,8 @@ def _load_current_interests() -> tuple[set, set]:
                 positive.add(item)
             for item in data.get('negative', []):
                 negative.add(item)
-        except Exception:
+        except (KeyError, TypeError, FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"[aggregate_monthly] 加载热度数据失败: {e}", file=sys.stderr)
             pass
     return positive, negative
 

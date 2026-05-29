@@ -1,3 +1,4 @@
+from trendradar.scripts.common import CST
 #!/usr/bin/env python3
 """
 render_deep_analysis.py — 格式化 Pro 深度分析用于 WeCom 推送。
@@ -20,7 +21,6 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from collections import Counter
 
-CST = timezone(timedelta(hours=8))
 DATA_DIR = Path(__file__).resolve().parent.parent / 'data'
 
 

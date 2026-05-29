@@ -1,3 +1,4 @@
+from trendradar.scripts.common import CST
 #!/usr/bin/env python3
 from trendradar.scripts.settings import get_logger
 log = get_logger('push-slot-detect')
@@ -14,7 +15,6 @@ import sys
 import json
 import yaml
 
-CST = timezone(timedelta(hours=8))
 import os as _os
 _TIMELINE_DIR = Path(_os.environ.get('TRENDRADAR_HOME', Path(__file__).resolve().parent.parent))
 TIMELINE_PATH = _TIMELINE_DIR / 'config' / 'timeline.yaml'

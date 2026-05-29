@@ -12,13 +12,20 @@ import feedparser
 import aiohttp
 import concurrent.futures
 
-try:
-    _PARSE_POOL = concurrent.futures.InterpreterPoolExecutor(max_workers=12)
-except (ImportError, AttributeError):
-    _PARSE_POOL = concurrent.futures.ThreadPoolExecutor(max_workers=12)
-    log.warning('InterpreterPoolExecutor 不可用，降级为 ThreadPoolExecutor')
+_PARSE_POOL = None
 
-CST = timezone(timedelta(hours=8))
+def _get_parse_pool():
+    global _PARSE_POOL
+    if _PARSE_POOL is None:
+        try:
+            _PARSE_POOL = concurrent.futures.InterpreterPoolExecutor(max_workers=12)
+        except (ImportError, AttributeError):
+            _PARSE_POOL = concurrent.futures.ThreadPoolExecutor(max_workers=12)
+            log.warning('InterpreterPoolExecutor 不可用，降级为 ThreadPoolExecutor')
+    return _PARSE_POOL
+
+from trendradar.scripts.common import CST
+
 from trendradar.scripts.settings import get_data_dir, get_cache_dir, write_compressed
 from trendradar.scripts.settings import RSSHUB_CONCURRENT, EXTERNAL_CONCURRENT, TIMEOUT_SEC
 from trendradar.scripts.settings import PROXY_URL, needs_proxy
@@ -114,7 +121,7 @@ async def _fetch_one(session: aiohttp.ClientSession, name: str, url: str,
         return name, []
     max_items = 40 if is_rsshub else 25
     loop = asyncio.get_running_loop()
-    items = await loop.run_in_executor(_PARSE_POOL, _parse_rss, data, name, max_items, freshness_days)
+    items = await loop.run_in_executor(_get_parse_pool(), _parse_rss, data, name, max_items, freshness_days)
     return name, items
 
 
@@ -150,18 +157,19 @@ async def fetch_all(push_id: str = '') -> dict:
                 result[name] = outcome if isinstance(outcome, list) else []
         return result
 
-    # 直连 batch
+    # 直连 + 代理并行两批 (WAS: serial)
     direct_conn = aiohttp.TCPConnector(limit=20, limit_per_host=8)
-    async with aiohttp.ClientSession(connector=direct_conn,
-                                     headers={'User-Agent': USER_AGENT}) as direct_session:
-        direct_results = await _fetch_batch(direct_sources, direct_session)
-
-    # 代理 batch — 用独立 connector，避免 session 关闭污染共享连接池
     proxy_conn = aiohttp.TCPConnector(limit=20, limit_per_host=8)
-    async with aiohttp.ClientSession(connector=proxy_conn,
-                                     headers={'User-Agent': USER_AGENT},
-                                     proxy=PROXY_URL) as proxy_session:
-        proxy_results = await _fetch_batch(proxy_sources, proxy_session)
+    async with (
+        aiohttp.ClientSession(connector=direct_conn,
+                              headers={'User-Agent': USER_AGENT}) as direct_session,
+        aiohttp.ClientSession(connector=proxy_conn,
+                              headers={'User-Agent': USER_AGENT},
+                              proxy=PROXY_URL) as proxy_session,
+    ):
+        direct_task = _fetch_batch(direct_sources, direct_session)
+        proxy_task = _fetch_batch(proxy_sources, proxy_session)
+        direct_results, proxy_results = await asyncio.gather(direct_task, proxy_task)
 
     all_results = {**direct_results, **proxy_results}
     failures = sum(1 for v in all_results.values() if not v)

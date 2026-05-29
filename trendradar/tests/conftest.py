@@ -17,7 +17,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 CST = timezone(timedelta(hours=8))
-TEST_DATE = '20260521'
+TEST_DATE = datetime.now(CST).strftime('%Y%m%d')
 
 
 @pytest.fixture

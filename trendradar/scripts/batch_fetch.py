@@ -1,3 +1,4 @@
+from trendradar.scripts.common import CST
 #!/usr/bin/env python3
 """批量直连抓取 — 10 并发抓取头条+外媒 URL 全文（aiohttp + curl 兜底 + 100%命中）"""
 from trendradar.scripts.settings import get_logger
@@ -12,7 +13,6 @@ try:
 except ImportError:
     _HAS_CHARSET_NORMALIZER = False
 
-CST = timezone(timedelta(hours=8))
 from trendradar.scripts.settings import get_data_dir, get_cache_dir, write_compressed
 DATA_DIR = get_data_dir()
 CACHE_DIR = get_cache_dir()
@@ -63,7 +63,7 @@ def _decode(raw: bytes) -> str | None:
             result = charset_normalizer.from_bytes(raw)
             if result.best():
                 return str(result.best())
-        except Exception:
+        except (ImportError, AttributeError, ValueError):
             pass
     # 无损兜底排最后 — latin-1 从不抛异常
     return raw.decode('latin-1')

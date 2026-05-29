@@ -1,3 +1,4 @@
+from trendradar.scripts.common import CST
 #!/usr/bin/env python3
 """记录本次推送指纹到 DB，供后续时段去重。通过 Storage 统一接入 DB。"""
 from trendradar.scripts.settings import get_logger
@@ -9,7 +10,6 @@ from datetime import datetime, timezone, timedelta
 from trendradar.scripts.heat_tracker import make_fingerprint
 from trendradar.scripts.storage import Storage
 
-CST = timezone(timedelta(hours=8))
 from trendradar.scripts.settings import get_data_dir, DOMAINS
 DATA_DIR = get_data_dir()
 DB_NAME = 'fingerprints.db'

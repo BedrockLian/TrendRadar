@@ -25,8 +25,14 @@ def _check_gil():
                 RuntimeWarning,
             )
 
-_GIL_OK = True
-_check_gil()
+_GIL_OK = None
+
+
+def _ensure_gil_ok():
+    global _GIL_OK
+    if _GIL_OK is None:
+        _check_gil()
+    return _GIL_OK
 
 
 @lru_cache()
@@ -182,6 +188,12 @@ def get_api_key(key_name: str | None = None) -> str | None:
     if key:
         return key
     env_path = Path(os.environ.get('TRENDRADAR_ENV', TRENDRADAR_HOME / '.env'))
+    # 安全检查：必须在 TRENDRADAR_HOME 子树内
+    if (TRENDRADAR_HOME not in env_path.resolve().parents
+            and env_path.resolve() != TRENDRADAR_HOME.resolve()):
+        import warnings
+        warnings.warn(f"TRENDRADAR_ENV 路径 {env_path} 不在 TRENDRADAR_HOME 内，已忽略")
+        return None
     if env_path.exists():
         for line in env_path.read_text().splitlines():
             line = line.strip()
@@ -286,7 +298,7 @@ class _RunIdFormatter(_logging.Formatter):
             run_id = get_run_id_ctx()
             if run_id:
                 record.msg = f"[{run_id}] {record.msg}"
-        except Exception:
+        except (ImportError, AttributeError, LookupError):
             pass
         return super().format(record)
 

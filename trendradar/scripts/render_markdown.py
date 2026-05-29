@@ -1,3 +1,4 @@
+from trendradar.scripts.common import CST
 #!/usr/bin/env python3
 """
 render_markdown.py — 纯脚本渲染 TrendRadar 简报，无需 LLM API。
@@ -26,7 +27,6 @@ import json, sys
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
-CST = timezone(timedelta(hours=8))
 from trendradar.scripts.settings import get_data_dir, DOMAINS, DOMAIN_LABELS, SLOT_NAMES
 
 DATA_DIR = get_data_dir()

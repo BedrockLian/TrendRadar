@@ -24,6 +24,8 @@ from pathlib import Path
 import aiohttp
 
 from trendradar.scripts.settings import get_data_dir
+
+from trendradar.scripts.common import CST
 DATA_DIR = get_data_dir()
 
 
@@ -65,11 +67,24 @@ def _load_source_languages() -> tuple[frozenset, frozenset]:
                     _scan(item)
         _scan(cfg)
         return frozenset(en), frozenset(ja)
-    except Exception:
+    except Exception as e:
+        import sys
+        print(
+            f"[TRANSLATE] 严重: 加载 sources.json 失败，翻译功能已禁用: {e}",
+            file=sys.stderr,
+        )
         return frozenset(), frozenset()
 
 
-_EN_PLATFORMS, _JA_PLATFORMS = _load_source_languages()
+_EN_PLATFORMS = None
+_JA_PLATFORMS = None
+
+
+def _get_source_languages():
+    global _EN_PLATFORMS, _JA_PLATFORMS
+    if _EN_PLATFORMS is None:
+        _EN_PLATFORMS, _JA_PLATFORMS = _load_source_languages()
+    return _EN_PLATFORMS, _JA_PLATFORMS
 
 
 def get_source_lang(source_platform: str) -> str | None:
@@ -78,6 +93,7 @@ def get_source_lang(source_platform: str) -> str | None:
     Matched by substring: platform in source_platform.lower().
     Japanese keywords checked first (NHK could contain English keyword too).
     """
+    _get_source_languages()
     plat = source_platform.lower().strip()
     for kw in _JA_PLATFORMS:
         if kw in plat:
@@ -169,7 +185,7 @@ async def _make_request(
     last_error = None
     for attempt in range(RETRY_MAX_ATTEMPTS + 1):
         # Increase timeout on retries (stream drops may need longer)
-        timeout_seconds = 120 + (attempt * 30)
+        timeout_seconds = 30 + len(messages) * 3 + (attempt * 15)
         timeout = aiohttp.ClientTimeout(total=timeout_seconds)
 
         try:
@@ -296,69 +312,69 @@ async def _batch_translate_all(
     """
     # Group by source_lang to keep language-specific prompts correct
     groups: dict[str, list] = {}
+    all_results = []
     for item in items_to_translate:
         lang = item[7] or 'English'
         groups.setdefault(lang, []).append(item)
 
+    # Flatten all batches across languages into one concurrent pool
     bs = batch_size if batch_size is not None else BATCH_SIZE
-    all_results = []
+    all_batches = []
     for lang, group_items in groups.items():
-        # Build batches within this language group
-        batches = []
         for batch_start in range(0, len(group_items), bs):
             batch = group_items[batch_start:batch_start + bs]
             pairs = [(item[3], item[4]) for item in batch]
-            batches.append((batch, pairs, batch_start, lang))
+            all_batches.append((batch, pairs, batch_start, lang))
 
-        async def translate_one_batch(
-            batch, pairs, batch_start, source_lang
-        ) -> tuple[list, list | None, Exception | None]:
-            global _translate_failures
-            try:
-                if circuit_broken():
-                    print(
-                        f"[TRANSLATE] ⚡ 熔断触发 — 连续 {CIRCUIT_BREAKER_THRESHOLD} 个 batch 失败，"
-                        f"跳过剩余批次",
-                        file=sys.stderr,
-                    )
-                    return (batch, None, RuntimeError("Circuit breaker open"))
-                translations = await batch_translate(session, pairs, api_key, source_lang)
-                batch_end = batch_start + len(batch)
-                total = len(items_to_translate)
+    async def translate_one_batch(
+        batch, pairs, batch_start, source_lang
+    ) -> tuple[list, list | None, Exception | None]:
+        global _translate_failures
+        try:
+            if circuit_broken():
                 print(
-                    f"[TRANSLATE] Batch {batch_start+1}-{batch_end}/{total} "
-                    f"({source_lang}): translated {len(batch)} items",
+                    f"[TRANSLATE] ⚡ 熔断触发 — 连续 {CIRCUIT_BREAKER_THRESHOLD} 个 batch 失败，"
+                    f"跳过剩余批次",
                     file=sys.stderr,
                 )
-                _translate_failures = 0
-                return (batch, translations, None)
-            except Exception as e:
-                _translate_failures += 1
-                print(
-                    f"[TRANSLATE] Batch translation failed ({_translate_failures}/"
-                    f"{CIRCUIT_BREAKER_THRESHOLD} strikes): {e}",
-                    file=sys.stderr,
-                )
-                return (batch, None, e)
+                return (batch, None, RuntimeError("Circuit breaker open"))
+            translations = await batch_translate(session, pairs, api_key, source_lang)
+            batch_end = batch_start + len(batch)
+            total = len(items_to_translate)
+            print(
+                f"[TRANSLATE] Batch {batch_start+1}-{batch_end}/{total} "
+                f"({source_lang}): translated {len(batch)} items",
+                file=sys.stderr,
+            )
+            _translate_failures = 0
+            return (batch, translations, None)
+        except Exception as e:
+            _translate_failures += 1
+            print(
+                f"[TRANSLATE] Batch translation failed ({_translate_failures}/"
+                f"{CIRCUIT_BREAKER_THRESHOLD} strikes): {e}",
+                file=sys.stderr,
+            )
+            return (batch, None, e)
 
-        # If only one batch in this group, no semaphore overhead
-        if len(batches) == 1:
-            batch, pairs, batch_start, lang = batches[0]
-            result = await translate_one_batch(batch, pairs, batch_start, lang)
-            all_results.append(result)
-            continue
+    # If only one batch overall, no semaphore overhead
+    if len(all_batches) == 1:
+        batch, pairs, batch_start, lang = all_batches[0]
+        result = await translate_one_batch(batch, pairs, batch_start, lang)
+        all_results.append(result)
+        return all_results
 
-        # Multiple batches: run concurrently with semaphore
-        semaphore = asyncio.Semaphore(MAX_CONCURRENT_BATCHES)
+    # Multiple batches: run all languages concurrently with one semaphore
+    semaphore = asyncio.Semaphore(MAX_CONCURRENT_BATCHES)
 
-        async def bounded_translate(batch, pairs, batch_start, source_lang):
-            async with semaphore:
-                return await translate_one_batch(batch, pairs, batch_start, source_lang)
+    async def bounded_translate(batch, pairs, batch_start, source_lang):
+        async with semaphore:
+            return await translate_one_batch(batch, pairs, batch_start, source_lang)
 
-        results = await asyncio.gather(*[
-            bounded_translate(b, p, bs, l) for b, p, bs, l in batches
-        ])
-        all_results.extend(results)
+    results = await asyncio.gather(*[
+        bounded_translate(b, p, bs, l) for b, p, bs, l in all_batches
+    ])
+    all_results.extend(results)
 
     return all_results
 
@@ -408,9 +424,24 @@ async def _batch_expand_all(
             )
             return (batch, None, e)
 
-    for batch, pairs, batch_start in batches:
+    # If only one batch, no semaphore overhead
+    if len(batches) == 1:
+        batch, pairs, batch_start = batches[0]
         result = await expand_one_batch(batch, pairs, batch_start)
         all_results.append(result)
+        return all_results
+
+    # Multiple batches: run concurrently with semaphore (aligned with _batch_translate_all)
+    semaphore = asyncio.Semaphore(MAX_CONCURRENT_BATCHES)
+
+    async def bounded_expand(batch, pairs, batch_start):
+        async with semaphore:
+            return await expand_one_batch(batch, pairs, batch_start)
+
+    results = await asyncio.gather(*[
+        bounded_expand(b, p, bs) for b, p, bs in batches
+    ])
+    all_results.extend(results)
 
     return all_results
 
@@ -476,8 +507,7 @@ def _load_and_scan(push_id: str) -> tuple[dict, list, list, Path]:
     Each item is (domain, idx, item, title, summary, needs_title, needs_summary, source_lang).
     Prefers dated file (YYYYMMDD) to match render_markdown.py priority.
     """
-    from datetime import datetime, timezone, timedelta
-    CST = timezone(timedelta(hours=8))
+    from datetime import datetime
     today_file = datetime.now(CST).strftime('%Y%m%d')
     curated_path = DATA_DIR / f'curated_{push_id}_{today_file}.json'
     if not curated_path.exists():
@@ -542,8 +572,7 @@ def _write_back(data: dict, curated_path: Path, push_id: str):
     from trendradar.scripts.settings import atomic_write_json
     atomic_write_json(curated_path, data)
 
-    from datetime import datetime, timezone, timedelta
-    CST = timezone(timedelta(hours=8))
+    from datetime import datetime
     today = datetime.now(CST).strftime('%Y%m%d')
     dated_path = DATA_DIR / f'curated_{push_id}_{today}.json'
     if dated_path.exists():
