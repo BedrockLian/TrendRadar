@@ -110,6 +110,50 @@ if not runtests():
 
 **教训**: 修复一类脚本的解释器问题时，必须平行检查同项目的所有 C 级脚本（所有 no_agent cron 脚本）。2026-05-24 之前只有健康检查修复了解释器，maintenance 脚本遗漏了。
 
+## 11. `check_stale_processes()` 引用未定义变量
+
+**现象**：`NameError: name 'CRON_JOBS' is not defined` → 健康检查崩溃。
+
+**根因**：函数中使用 `CRON_JOBS` 但模块级定义的变量是 `CRON_JOB_NAMES`。
+
+**修复**（2026-05-28）：`CRON_JOBS` → `CRON_JOB_NAMES`。
+
+## 12. `check_cron()` `--json` 参数不存在
+
+**现象**：`hermes cron list --json` 返回 `unrecognized arguments: --json`。所有 job 报"未在输出中找到"的假阳性（7条）。
+
+**根因**：此版本 Hermes CLI 不支持 `--json` 输出模式。
+
+**修复**（2026-05-28）：去掉 `--json`，改解析表格输出的 `Name: xxx` 行（`re.match(r'\s+Name:\s+(.+)', line)` → job_names）。CRON_JOB_NAMES 必须与 job 实际名称匹配：
+- `'推送看门狗'` → `'推送降级看门狗'`
+- `'月度报告'` → `'月度趋势报告'`
+
+## 13. `check_gateway()` `ps aux` 找不到 systemd 服务
+
+**现象**：Gateway 作为 systemd user service 运行，`ps aux` 中进程名是 `python -m hermes_cli.main gateway run`，不含 "hermes gateway" 字符串→假阳性。
+
+**修复**（2026-05-28）：改用 `systemctl --user is-active hermes-gateway.service`。兜底 `hermes gateway status`。无 systemd 环境回落 socket 文件检查。
+
+## 14. `check_api()` httpbin 走代理必超时
+
+**现象**：`httpbin.org` 通过 `HTTP_PROXY` 代理走 → 代理节点 i/o timeout → HTTP 000。
+
+**根因**：WSL 无直连互联网，所有外网流量必须走 `http://127.0.0.1:7890`，代理节点不可达时全部超时。DeepSeek 因在 `NO_PROXY` 中可以直连。
+
+**修复**（2026-05-28）：删除 httpbin.org 检测。DeepSeek 检测时清除 `HTTP_PROXY`/`HTTPS_PROXY` env var 确保直连。
+
+## 15. `check_pipeline()` RSS 连通性随机采样假阳性
+
+**现象**：健康检查随机抽到 `localhost:1200`（RSSHub 通常未运行）的源时报错，每次结果不一致。
+
+**修复**（2026-05-28）：
+- 过滤 `feed_url` 含 `localhost` 的源
+- 改为确定性取前 3 个源而非 `random.sample`
+- 同时过滤 `enabled=False` 的源
+- 不再第一个失败就 `break`：统计全部 3 个源
+  - 全部失败 → 报 WARN
+  - 部分失败 → 仅 debug 日志
+
 **验证**:
 ```bash
 # 维护脚本全量跑一次

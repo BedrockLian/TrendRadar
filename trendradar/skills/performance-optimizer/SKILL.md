@@ -23,6 +23,14 @@ metadata:
 2. **跳过** — 若连续 3 次 API 调用失败，输出 `API 不可达，跳过本轮` 而非崩溃
 3. **交付验证** — 优化报告通过 cron final response auto-delivery 投递。若当天 Gateway 不稳定，优化报告可能不送达——参考 delivery_watchdog.py 的自动补发机制
 
+## 网络层超时诊断
+
+优化器在 cron 中表现为 `RuntimeError: Request timed out` 时，原因可能在**网络层而非 API 层**：
+- **症状**：优化器和日报推送同时超时（如同 2026-05-27 两台 cron 同时 timeout）
+- **常见根因**：直连互联网中断但代理可用（WSL 环境常见，Google/Guardian 报 `Network is unreachable`，但 DeepSeek API 直连可能仍正常）
+- **排查**：`curl -s -o /dev/null -w '%{http_code}' --max-time 10 https://www.google.com` — 000/超时则直连不通
+- **修复**：检查 `~/.config/systemd/user/hermes-gateway.service.d/override.conf` 是否有 `HTTP_PROXY`/`HTTPS_PROXY` 环境变量注入。若无则添加并 `systemctl --user daemon-reload && systemctl --user restart hermes-gateway.service`
+
 ## 质量协议
 
 **评分** (>85 达标): 空摘要<5%(+15)、重复<3%(+10)、头条命中≥60%(+10)、每板块≥3条(+10)、外媒满14条(+5)、分布均匀(+10)。扣分: 空摘要≥20%(-15)、板块为0(-20)、单源≥50%(-15)（代码层已有硬上限30%/slot）。

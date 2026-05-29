@@ -34,6 +34,23 @@ RSS 采集 (fetch_feeds.py)
 | 外媒直连代理 | BBC/NYT/Guardian/SCMP/PC Gamer/4Gamer/NHK/Japan Times | 米霍姆 |
 | feedx.net 中转 | 法广(rfi)、共同网(kyodo) | 米霍姆 |
 
+## Gateway 级别代理（Hermes web 工具）
+
+除了 pipeline 内部代理，Hermes 自身的 web 工具（`web_search`/`web_extract`）也需要代理访问外网。这些工具由 cron job 的 LLM agent 调用，**不经过** pipeline 的 `PROXY_URL` 配置。
+
+**配置位置**：`~/.config/systemd/user/hermes-gateway.service.d/override.conf`
+
+```ini
+[Service]
+Environment="HTTP_PROXY=http://127.0.0.1:7890"
+Environment="HTTPS_PROXY=http://127.0.0.1:7890"
+Environment="NO_PROXY=localhost,127.0.0.1,api.deepseek.com"
+```
+
+修改后需重载并重启：`systemctl --user daemon-reload && systemctl --user restart hermes-gateway.service`
+
+**直连互联网不可用时**（Errno 101 Network is unreachable），TrendRadar pipeline 脚本因内部 `PROXY_URL` 配置仍可正常工作（RSS 采集走代理），但 cron job 的 LLM agent 如果调用 web_search/web_extract 会超时。2026-05-27 曾因此导致日报推送和性能优化器两台 cron job 同时超时。
+
 ## 代理不可达的后果
 
 - `fetch_feeds.py`：外媒源和 RSSHub 源采集全部失败 → 日报只有国内源内容

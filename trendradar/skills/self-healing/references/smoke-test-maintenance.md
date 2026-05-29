@@ -156,6 +156,33 @@ if item.get('title_cn') == item.get('title'):
     item.pop('title_cn', None)
 ```
 
+### 9. 兴趣排除词滑窗误触 — 测试数据含通用词被 stopwords 遗漏
+
+**症状**: `test_diversity_penalty_same_source` 失败，断言 `Expected at least 2 penalized items from same source, got 0`。
+同一故障可导致 `test_respects_max_per_domain` 返回空结果（0 items）。
+
+**根因**: `_load_interests()` 对 YAML 中的排除短语（如"游戏评测（除非是行业重大新闻）"）用滑窗提取所有 2-3 字中文子串。当 stopwords 未覆盖「新闻」「游戏」「体育」「行业」「重大」等通用词时，它们进入排除集 → 测试标题含「新闻」直接被 `score=0` 过滤 → 所有 items 被移除 → 多样性惩罚逻辑永远执行不到。
+
+```
+排除短语: "游戏评测（除非是行业重大新闻）"
+    ↓ 滑窗提取 2-3 字子串
+排除词: {'游戏', '评测', '除非', '非是', ... '新闻', '行业', '重大', ...}
+    ↓ 测试标题含"新闻"
+score=0, pass=False → items 被过滤 → diversity_penalty 无从触发
+```
+
+**修复**: 在 `_load_interests()` 的 stopwords 集合中添加 `'新闻', '游戏', '体育', '行业', '重大', '娱乐', '明星'` 等高频通用词。
+
+**预防**: `config/ai_interests.yaml` 的 `negative` 列表每新增一条中文短语，需评估滑窗会抽出哪些通用词，确认已加入 stopwords。手动验证：
+```python
+from trendradar.scripts.curate_and_push import _load_interests
+pos, neg = _load_interests()
+# 检查 '新闻'、'游戏'等是否意外进入排除集
+assert '新闻' not in neg, f'新闻意外在排除集中! {sorted(neg)[:30]}'
+```
+
+**副本同步陷阱**: `~/TrendRadar/trendradar/scripts/curate_and_push.py`（工作副本）和 `~/.hermes/trendradar/trendradar/scripts/curate_and_push.py`（运行时副本）是两份独立文件。只修工作副本推 GitHub ≠ cron 下次运行修复。必须同步到运行时副本。
+
 ## 工具限制（在 TrendRadar 仓库调试时）
 
 - **`read_file`**: 可能返回空内容（0 total_lines），改用 `execute_code` + `subprocess.run(["head"...])`

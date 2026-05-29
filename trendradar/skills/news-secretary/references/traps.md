@@ -117,3 +117,30 @@ subprocess.run([pipeline_python, ...], env=penv)
 **信号**：商业/政治/经济源的文章大量被标记为 `_likely_domain=tech` 或 `gaming`，而非正确的 `top_headlines`/`economy`。
 
 **修复**：`config/keywords.py` 中移除 FF/AI/AR。完整名（`Final Fantasy`）已在 GAME_KW。ChatGPT/LLM/大模型 等已覆盖 AI 相关检测。
+
+## 33. Agent 在简报输出前加状态注释 [管线运维]
+**现象**：推送内容开头出现 `Orchestrator completed with status ok, push_id=noon. No deep analysis needed.` 或中文 `编排器执行完成，状态 partial（batch_fetch 非致命错误，简报正常生成）。30 条内容，推送时段为午间（noon），needs_deep_analysis=false，无需深度分析。输出简报正文：`。
+
+**根因**：cron Agent 解析 pipeline_orchestrator.py 的 JSON 输出后，在输出 `briefing` 字段之前先用自己的话描述了执行状态。
+
+**修复**（2026-05-25 晚）：`sanity_check.py` 拦截器在推送前自动扫描 16 种禁语模式。
+2026-05-27 更新：新增中文前缀正则（编排器执行完成/输出简报正文/无需深度分析/简报正文）。Agent 层的冗长约束已移除——sanity_check 兜底拦截。
+
+**验证**：模拟含前缀的简报文本通过 `sanity_check.py` 后应被剥离。输出规范已同步。特别注意—如果 Agent 换了新的前缀措辞，需追加对应正则。
+
+## 34. 翻译批处理部分失败 — 摘要已翻但标题原文残留 [翻译管线]
+**现象**：同源（如 NHK）的多条新闻中，部分条目 `summary_cn` 正确翻译但 `title_cn` 仍为日文/英文原文。render 输出显示「已翻译摘要 + 原始标题」的混合状态。
+
+**根因**：`ai_translate.py` 的批处理将 N 个条目拼成 2N 行（标题+摘要交替），API 返回的行数可能少于 2N（模型输出不完整）。行数不足时，后续条目的配对偏移：前一个条目标题占用下一条的摘要行，导致部分条目标题落空而摘要配对正常。
+
+**信号**：render 输出中某个条目的摘要内容正常（`summary_cn` 写入）但标题为原文（`title_cn` 为空）。查看 curated JSON 确认 `title_cn` 缺失但 `summary_cn` 存在。
+
+**修复**：重跑 `ai_translate.py --push-id {slot}` 会跳过已有 `title_cn` 的条目，只填补缺失项。若缺失条目未能自动补齐，可手动触发翻译：
+```bash
+# 清空该条目的 title_cn 后重跑 ai_translate
+python3 -c "import json; d=json.load(open('data/curated_{slot}_{date}.json')); [item.pop('title_cn',None) for domain in d for item in d[domain] if isinstance(d[domain],list) and item.get('source_platform','').startswith('NHK') and not item.get('title_cn')]; json.dump(d,open('data/curated_{slot}_{date}.json','w'),ensure_ascii=False)"
+python3 scripts/ai_translate.py --push-id {slot}
+python3 scripts/render_markdown.py --push-id {slot}
+```
+
+**预防**：`BATCH_SIZE=5`（当前值）在 DeepSeek 上已验证 batch ≤5 时标题/摘要均翻译完整。若仍出现，考虑降低到 3-4 或增加 retry 粒度到单条目级别。
