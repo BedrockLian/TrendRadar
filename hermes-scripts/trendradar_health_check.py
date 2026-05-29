@@ -565,7 +565,7 @@ def generate_report():
 
     if any(i['severity'] == 'CRITICAL' for i in ISSUES):
         lines.append('🔴 **状态: 异常** — 需要人工介入')
-    elif ISSUES:
+    elif any(i['severity'] in ('CRITICAL', 'WARN') for i in ISSUES):
         lines.append('🟡 **状态: 亚健康** — 警告项需关注')
     else:
         lines.append('🟢 **状态: 健康**')
