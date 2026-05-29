@@ -22,9 +22,11 @@ TEST_DATE = datetime.now(CST).strftime('%Y%m%d')
 
 @pytest.fixture
 def tmp_db():
-    """创建临时 fingerprints.db，返回 (conn, db_path)。"""
-    fd, path = tempfile.mkstemp(suffix='.db')
-    conn = sqlite3.connect(path)
+    """创建临时目录，内含 fingerprints.db（含完整表结构），返回 (conn, tmp_dir)。"""
+    import shutil
+    tmp_dir = Path(tempfile.mkdtemp())
+    db_path = tmp_dir / 'fingerprints.db'
+    conn = sqlite3.connect(str(db_path))
     conn.execute('''CREATE TABLE IF NOT EXISTS fingerprints (
         fingerprint TEXT PRIMARY KEY,
         title TEXT,
@@ -36,9 +38,9 @@ def tmp_db():
         created_at TEXT
     )''')
     conn.commit()
-    yield conn, Path(path)
+    yield conn, tmp_dir
     conn.close()
-    Path(path).unlink(missing_ok=True)
+    shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
 @pytest.fixture

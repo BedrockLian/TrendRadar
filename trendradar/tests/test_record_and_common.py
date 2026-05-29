@@ -7,7 +7,6 @@
 import json
 import sqlite3
 import sys
-import tempfile
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from unittest.mock import patch
@@ -79,18 +78,20 @@ class TestRunIdMarker:
 # ── record_fingerprints ──────────────────────────────────────────────────────
 
 class TestRecordFingerprints:
+    """tmp_db fixture 返回 (conn, tmp_dir)，tmp_dir 内含 fingerprints.db + 表结构。
+    monkeypatch DATA_DIR 和 _store.base_dir 都指向 tmp_dir，确保 DB 和 curated 文件在同一目录。"""
+
     def test_insert_includes_run_id(self, tmp_db, sample_curated, monkeypatch):
         """新记录应包含 run_id 字段"""
-        conn, db_path = tmp_db
-        tmp_data = Path(tempfile.mkdtemp())
+        conn, tmp_dir = tmp_db
 
         curated_with_rid = {**sample_curated, 'run_id': '20260521_evening_test1234'}
-        curated_file = tmp_data / f'curated_evening_{TEST_DATE}.json'
-        curated_file.write_text(json.dumps(curated_with_rid, ensure_ascii=False))
+        (tmp_dir / f'curated_evening_{TEST_DATE}.json').write_text(
+            json.dumps(curated_with_rid, ensure_ascii=False))
 
         import record_fingerprints as rf
-        monkeypatch.setattr(rf, 'DATA_DIR', tmp_data)
-        monkeypatch.setattr(rf._store, 'base_dir', tmp_data)
+        monkeypatch.setattr(rf, 'DATA_DIR', tmp_dir)
+        monkeypatch.setattr(rf._store, 'base_dir', tmp_dir)
 
         record_fp('evening')
         rows = conn.execute("SELECT run_id FROM fingerprints LIMIT 1").fetchall()
@@ -98,15 +99,14 @@ class TestRecordFingerprints:
 
     def test_insert_new_items(self, tmp_db, sample_curated, monkeypatch):
         """插入新条目，计数增加"""
-        conn, db_path = tmp_db
+        conn, tmp_dir = tmp_db
 
-        tmp_data = Path(tempfile.mkdtemp())
-        curated_file = tmp_data / f'curated_evening_{TEST_DATE}.json'
-        curated_file.write_text(json.dumps(sample_curated, ensure_ascii=False))
+        (tmp_dir / f'curated_evening_{TEST_DATE}.json').write_text(
+            json.dumps(sample_curated, ensure_ascii=False))
 
         import record_fingerprints as rf
-        monkeypatch.setattr(rf, 'DATA_DIR', tmp_data)
-        monkeypatch.setattr(rf._store, 'base_dir', tmp_data)
+        monkeypatch.setattr(rf, 'DATA_DIR', tmp_dir)
+        monkeypatch.setattr(rf._store, 'base_dir', tmp_dir)
 
         before = conn.execute("SELECT COUNT(*) FROM fingerprints").fetchone()[0]
         record_fp('evening')
@@ -117,15 +117,14 @@ class TestRecordFingerprints:
 
     def test_idempotent(self, tmp_db, sample_curated, monkeypatch):
         """INSERT OR IGNORE：重复插入应不改变计数"""
-        conn, db_path = tmp_db
+        conn, tmp_dir = tmp_db
 
-        tmp_data = Path(tempfile.mkdtemp())
-        curated_file = tmp_data / f'curated_evening_{TEST_DATE}.json'
-        curated_file.write_text(json.dumps(sample_curated, ensure_ascii=False))
+        (tmp_dir / f'curated_evening_{TEST_DATE}.json').write_text(
+            json.dumps(sample_curated, ensure_ascii=False))
 
         import record_fingerprints as rf
-        monkeypatch.setattr(rf, 'DATA_DIR', tmp_data)
-        monkeypatch.setattr(rf._store, 'base_dir', tmp_data)
+        monkeypatch.setattr(rf, 'DATA_DIR', tmp_dir)
+        monkeypatch.setattr(rf._store, 'base_dir', tmp_dir)
 
         record_fp('evening')
         count1 = conn.execute("SELECT COUNT(*) FROM fingerprints").fetchone()[0]
@@ -136,12 +135,11 @@ class TestRecordFingerprints:
 
     def test_missing_curated_file(self, monkeypatch, tmp_db):
         """curated 文件不存在时，record 应优雅返回不崩溃"""
-        conn, db_path = tmp_db
-        tmp_data = Path(tempfile.mkdtemp())
+        conn, tmp_dir = tmp_db
 
         import record_fingerprints as rf
-        monkeypatch.setattr(rf, 'DATA_DIR', tmp_data)
-        monkeypatch.setattr(rf._store, 'base_dir', tmp_data)
+        monkeypatch.setattr(rf, 'DATA_DIR', tmp_dir)
+        monkeypatch.setattr(rf._store, 'base_dir', tmp_dir)
 
         record_fp('morning')
         count = conn.execute("SELECT COUNT(*) FROM fingerprints").fetchone()[0]
@@ -149,8 +147,7 @@ class TestRecordFingerprints:
 
     def test_empty_title_skipped(self, tmp_db, monkeypatch):
         """title 为空的条目跳过"""
-        conn, db_path = tmp_db
-        tmp_data = Path(tempfile.mkdtemp())
+        conn, tmp_dir = tmp_db
 
         curated = {
             'tech': [
@@ -160,12 +157,12 @@ class TestRecordFingerprints:
                  'url': 'https://y.com/1'},
             ],
         }
-        (tmp_data / f'curated_evening_{TEST_DATE}.json').write_text(
+        (tmp_dir / f'curated_evening_{TEST_DATE}.json').write_text(
             json.dumps(curated, ensure_ascii=False))
 
         import record_fingerprints as rf
-        monkeypatch.setattr(rf, 'DATA_DIR', tmp_data)
-        monkeypatch.setattr(rf._store, 'base_dir', tmp_data)
+        monkeypatch.setattr(rf, 'DATA_DIR', tmp_dir)
+        monkeypatch.setattr(rf._store, 'base_dir', tmp_dir)
 
         record_fp('evening')
         count = conn.execute("SELECT COUNT(*) FROM fingerprints").fetchone()[0]
