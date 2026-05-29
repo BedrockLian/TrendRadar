@@ -57,7 +57,7 @@ pipeline_orchestrator.py（一键6阶段）
 - **来源多样性保护** — 同源 >3 条权重减半，source_health 负反馈学习环自动淘汰低质源
 - **指纹去重 + 热度追踪** — MD5 指纹（48h 窗口）+ SQLite 热度持久化
 - **API 熔断退避** — 翻译层指数退避 2→30s + jitter + 连续 3 失败熔断
-- **发布前拦截器** — sanity_check 禁语扫描/死链检测/敏感词脱敏
+- **发布前拦截器** — sanity_check 编排器前言剥离/中英文禁语扫描/HTML残留检测/死链检测(代理感知)/敏感词脱敏
 - **自动体检 + 推送质量优化 + 看门狗** — 每日自检/评分调优/自动补投
 - **CI 持续集成** — GitHub Actions：ruff lint + bandit + mypy + pytest + refs 一致性校验
 
@@ -106,7 +106,7 @@ TrendRadar/
 │   │   ├── render_markdown.py           # 纯脚本渲染（摘要80字上限+句号边界截断）
 │   │   ├── render_deep_analysis.py      # Pro 深度分析 + 知识图谱
 │   │   ├── fragment_push.py             # UTF-8 字节计数分片
-│   │   ├── sanity_check.py              # 发布前拦截器
+│   │   ├── sanity_check.py              # 发布前拦截器(前言剥离/禁语/HTML/死链/脱敏)
 │   │   ├── blind_spot_audit.py          # 信息茧房盲点检测
 │   │   ├── aggregate_monthly.py         # 月度统计 + 兴趣漂移
 │   │   ├── record_fingerprints.py       # 指纹记录（Storage）
