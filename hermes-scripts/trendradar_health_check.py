@@ -577,6 +577,6 @@ def generate_report():
 
 
 if __name__ == '__main__':
-    run_checks()
     run_repairs()
+    run_checks()
     print(generate_report())
