@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
 from trendradar.scripts.common import CST
+#!/usr/bin/env python3
 """批量直连抓取 — 10 并发抓取头条+外媒 URL 全文（aiohttp + curl 兜底 + 100%命中）"""
 from trendradar.scripts.settings import get_logger
 log = get_logger('batch-fetch')
@@ -34,7 +34,7 @@ def load_items(push_id: str) -> list[dict]:
             data = json.loads(p.read_text())
             items = []
             for domain, entries in data.items():
-                if domain in ('curated_at', 'push_id', 'total', 'run_id', 'run_id_marker'):
+                if domain in ('curated_at', 'push_id', 'total', 'run_id', 'run_id_marker', 'truncated'):
                     continue
                 for item in entries:
                     if item.get('search') or item.get('_needs_search'):
