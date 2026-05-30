@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "last_updated": "2026-05-20T15:00:00+08:00",
+  "last_updated": "2026-05-30T11:30:00+08:00",
   "data_sources": [
     {
       "id": "ifanr",
@@ -69,52 +69,6 @@
       "language": "zh"
     },
     {
-      "id": "chinanews",
-      "name": "中国新闻网",
-      "platform": "chinanews",
-      "type": "rss",
-      "category": "news",
-      "enabled": true,
-      "feed_url": "http://localhost:1200/chinanews",
-      "desc": "国家级新闻通讯社（通过本地RSSHub）",
-      "authority": 3,
-      "language": "zh"
-    },
-    {
-      "id": "banyuetan",
-      "name": "半月谈",
-      "platform": "banyuetan",
-      "type": "rss",
-      "category": "news",
-      "enabled": true,
-      "feed_url": "http://localhost:1200/banyuetan",
-      "desc": "党政民生深度（通过本地RSSHub）",
-      "authority": 3,
-      "language": "zh"
-    },
-    {
-      "id": "reuters_business",
-      "name": "路透社·商业",
-      "platform": "reuters",
-      "type": "rss",
-      "category": "economy",
-      "enabled": true,
-      "feed_url": "http://localhost:1200/reuters/business",
-      "authority": 3,
-      "language": "en"
-    },
-    {
-      "id": "reuters_tech",
-      "name": "路透社·科技",
-      "platform": "reuters",
-      "type": "rss",
-      "category": "tech",
-      "enabled": true,
-      "feed_url": "http://localhost:1200/reuters/technology",
-      "authority": 3,
-      "language": "en"
-    },
-    {
       "id": "tmtpost",
       "name": "钛媒体",
       "platform": "tmtpost",
@@ -134,30 +88,6 @@
       "enabled": true,
       "feed_url": "http://www.gamelook.com.cn/rss",
       "authority": 2,
-      "language": "zh"
-    },
-    {
-      "id": "gamersky",
-      "name": "游民星空",
-      "platform": "gamersky",
-      "type": "rss",
-      "category": "game",
-      "enabled": true,
-      "feed_url": "http://localhost:1200/gamersky/news",
-      "desc": "综合游戏新闻（通过本地RSSHub）",
-      "authority": 2,
-      "language": "zh"
-    },
-    {
-      "id": "chuapp",
-      "name": "触乐",
-      "platform": "chuapp",
-      "type": "rss",
-      "category": "game",
-      "enabled": true,
-      "feed_url": "http://localhost:1200/chuapp",
-      "desc": "游戏文化深度（通过本地RSSHub）",
-      "authority": 3,
       "language": "zh"
     },
     {
@@ -291,17 +221,6 @@
       "language": "en"
     },
     {
-      "id": "reuters_china",
-      "name": "路透社·中国",
-      "platform": "reuters",
-      "type": "rss",
-      "category": "news",
-      "enabled": true,
-      "feed_url": "http://localhost:1200/reuters/world/china",
-      "authority": 3,
-      "language": "en"
-    },
-    {
       "id": "bbc_business",
       "name": "BBC 商务",
       "platform": "bbc",
@@ -381,18 +300,6 @@
       "language": "en"
     },
     {
-      "id": "nikkei_asia",
-      "name": "日经亚洲",
-      "platform": "nikkei",
-      "type": "rss",
-      "category": "news",
-      "enabled": true,
-      "feed_url": "http://localhost:1200/nikkei/asia",
-      "desc": "日经亚洲版，亚洲商业与政治（通过本地RSSHub）",
-      "authority": 3,
-      "language": "en"
-    },
-    {
       "id": "4gamer",
       "name": "4Gamer",
       "platform": "4gamer",
@@ -439,17 +346,6 @@
       "desc": "日本英文新闻，偏外交/政治/中日关系",
       "authority": 2,
       "language": "en"
-    },
-    {
-      "id": "sspai",
-      "name": "少数派",
-      "platform": "sspai",
-      "type": "rss",
-      "category": "tech",
-      "enabled": true,
-      "feed_url": "http://localhost:1200/sspai/index",
-      "authority": 2,
-      "language": "zh"
     },
     {
       "id": "rfi",
@@ -606,15 +502,16 @@
       "language": "en"
     },
     {
-      "id": "reuters_world",
-      "name": "路透社·国际",
-      "platform": "reuters",
+      "id": "nikkei-asia",
+      "name": "日经亚洲",
+      "platform": "nikkei-asia",
       "type": "rss",
       "category": "foreign_china",
       "enabled": true,
-      "feed_url": "http://localhost:1200/reuters/world",
+      "feed_url": "https://asia.nikkei.com/rss/feed/nar",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "desc": "亚洲商业、政治、科技新闻"
     }
   ],
   "exploration_sources": [],
