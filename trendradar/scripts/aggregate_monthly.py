@@ -13,6 +13,8 @@ aggregate_monthly.py — 月度统计聚合 + 兴趣漂移检测
 用法: python3 aggregate_monthly.py [--days 32] [--suggest-interests]
 输出: JSON 到 stdout
 """
+from trendradar.scripts.settings import get_logger
+log = get_logger('aggregate-monthly')
 import argparse, json, os, sys, re
 from datetime import datetime, timezone, timedelta
 from collections import Counter, defaultdict
@@ -82,7 +84,7 @@ def _load_current_interests() -> tuple[set, set]:
             for item in data.get('negative', []):
                 negative.add(item)
         except (KeyError, TypeError, FileNotFoundError, json.JSONDecodeError) as e:
-            print(f"[aggregate_monthly] 加载热度数据失败: {e}", file=sys.stderr)
+            log.warning("加载热度数据失败: %s", e)
             pass
     return positive, negative
 

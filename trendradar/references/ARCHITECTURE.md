@@ -104,7 +104,7 @@ foreach item:
 
 ## 4. 关键词架构（v4.7 — 505 词，6 个领域）
 
-双位置维护：`curate_and_push.py::_kw()`（全集）/ `fetch_feeds.py::_kw_sets()`（约 150 词子集，仅 game/tech/economy）
+双位置维护：`config/keywords.py::KEYWORDS`（全集，v4.7 — 505 词，6 个领域）/ `fetch_feeds.py::_kw_sets()`（约 150 词子集，仅 game/tech/economy）
 
 | 领域 | 数量 | 语言 |
 |------|------|------|
@@ -300,7 +300,7 @@ Cron `c987a2883174`，每日 15:00，no_agent=true，静默运行。
 | `0b14c67429ba` | 月报 | LLM |
 
 ### 自动修复
-- `auto_repair_missing_table()` — 调用 `repair_missing_tables()` + `migrate()` 重建 fingerprint/heat 表
+- `auto_repair_missing_table()` — 调用 `migrate()` 重建 fingerprint/heat 表
 - `auto_repair_empty_db()` — 删除 0 字节 DB 文件
 - 迁移引擎幂等安全，版本记录到 `_migrations` 表
 

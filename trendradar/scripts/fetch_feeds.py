@@ -106,7 +106,7 @@ async def _fetch_one(session: aiohttp.ClientSession, name: str, url: str,
                             break
                         elif attempt < max_retries:
                             log.warning(f'{name}: HTTP {resp.status} (重试 {attempt+1}/{max_retries})')
-                            await asyncio.sleep(1)
+                            await asyncio.sleep(1 * (2 ** attempt))
                             continue
                         else:
                             return name, []

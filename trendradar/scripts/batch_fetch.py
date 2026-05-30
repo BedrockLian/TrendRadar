@@ -13,12 +13,12 @@ try:
 except ImportError:
     _HAS_CHARSET_NORMALIZER = False
 
-from trendradar.scripts.settings import get_data_dir, get_cache_dir, write_compressed
+from trendradar.scripts.settings import get_data_dir, get_cache_dir, write_compressed, PROXY_URL
 DATA_DIR = get_data_dir()
 CACHE_DIR = get_cache_dir()
 CONCURRENCY = 10
 TIMEOUT = 15
-PROXY = os.environ.get('HTTP_PROXY') or os.environ.get('HTTPS_PROXY') or 'http://127.0.0.1:7890'
+PROXY = PROXY_URL
 _MIHOMO_CHECKED = False
 _MIHOMO_ALIVE = None
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
@@ -119,7 +119,7 @@ def fetch_curl(item: dict) -> dict | None:
     if not url: return None
     try:
         r = subprocess.run(['curl', '-sL', '--connect-timeout', '10', '--max-time', '15',
-                            '-H', f'User-Agent: {UA}', '-H', 'Accept: text/html,*/*', url],
+                            '-H', f'User-Agent: {UA}', '-H', 'Accept: text/html,*/*', '--', url],
                            capture_output=True, text=True, timeout=20)
         if r.returncode != 0:
             log.warning(f'curl 兜底失败: {url[:60]} (exit={r.returncode})')

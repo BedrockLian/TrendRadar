@@ -102,9 +102,10 @@ def fallback(push_id: str) -> str:
              '--push-id', push_id],
             capture_output=True, text=True, timeout=30,
             env={
-                **os.environ,
                 'PYTHONPATH': str(TRENDRADAR_HOME.parent),
                 'PYTHON_GIL': '0',
+                'PATH': os.environ.get('PATH', ''),
+                'HOME': os.environ.get('HOME', ''),
             },
         )
         if result.returncode == 0 and result.stdout.strip():

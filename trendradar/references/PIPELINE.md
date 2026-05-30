@@ -9,7 +9,7 @@ Agent 可通过 `--list-steps` 动态获取管道步骤定义（SSOT），不再
 
 ## 性能要点
 
-- **RSS 抓取**：`TCPConnector(limit=40)` ≥ Semaphore 容量，防连接槽缺口
+- **RSS 抓取**：`TCPConnector(limit=20 per connector ×2)` ≥ Semaphore 容量，防连接槽缺口
 - **关键词分类**：AC 自动机替代 `any()`，curation CPU 4.4x
 - **AI 翻译 ∥ 全文抓取**：`ThreadPoolExecutor(max_workers=2)` 真并行（替代旧 Shell `& wait`），省 5-8s
 - **DB 层**：WAL + `synchronous=NORMAL` + mmap=256MB + 复合索引 `(status, last_seen)`

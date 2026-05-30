@@ -23,7 +23,6 @@
 移入 `_archive/` 的文件：
 - `traps-archive.md` — 历史已修复陷阱（保留供参考）
 - `weekly-format.md` — 周报模板（被 weekly-report 技能引用）
-- `monthly-template.md` — 月报模板（被 monthly-report 技能引用）
 
 ## 原始文件 → 新位置映射
 

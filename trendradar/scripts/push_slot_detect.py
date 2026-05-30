@@ -18,8 +18,9 @@ from trendradar.scripts.common import CST
 from trendradar.scripts.settings import get_logger
 log = get_logger('push-slot-detect')
 
-_TIMELINE_DIR = Path(_os.environ.get('TRENDRADAR_HOME', Path(__file__).resolve().parent.parent))
-TIMELINE_PATH = _TIMELINE_DIR / 'config' / 'timeline.yaml'
+_TR_HOME = Path(_os.environ.get('TRENDRADAR_HOME',
+                                 Path.home() / '.hermes' / 'trendradar'))
+TIMELINE_PATH = _TR_HOME / 'config' / 'timeline.yaml'
 
 
 def slot_match(target_h, target_m, now_h, now_m):

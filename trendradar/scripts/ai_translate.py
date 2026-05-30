@@ -218,6 +218,12 @@ def reset_circuit():
     _translate_failures = 0
 
 
+def increment_failures():
+    """Increment circuit breaker counter."""
+    global _translate_failures
+    _translate_failures += 1
+
+
 async def batch_translate(
     session: aiohttp.ClientSession,
     items: list,
@@ -298,22 +304,15 @@ async def _batch_translate_all(
     api_key: str,
     batch_size: int = None,
 ) -> list:
-    """Translate all items using concurrent batches when > BATCH_SIZE items.
+    """Translate all items using concurrent batches (via batch_utils)."""
+    from trendradar.scripts.batch_utils import process_batches
 
-    items_to_translate: list of (domain, idx, item, title, summary, needs_title, needs_summary, source_lang)
-    Returns a list of (batch_items, translations_or_None, error_or_None) tuples.
-    
-    Items are grouped by source_lang to prevent language mixing (e.g. Japanese items
-    translated with English prompt).
-    """
     # Group by source_lang to keep language-specific prompts correct
     groups: dict[str, list] = {}
-    all_results = []
     for item in items_to_translate:
         lang = item[7] or 'English'
         groups.setdefault(lang, []).append(item)
 
-    # Flatten all batches across languages into one concurrent pool
     bs = batch_size if batch_size is not None else BATCH_SIZE
     all_batches = []
     for lang, group_items in groups.items():
@@ -322,51 +321,20 @@ async def _batch_translate_all(
             pairs = [(item[3], item[4]) for item in batch]
             all_batches.append((batch, pairs, batch_start, lang))
 
-    async def translate_one_batch(
-        batch, pairs, batch_start, source_lang
-    ) -> tuple[list, list | None, Exception | None]:
-        global _translate_failures
-        try:
-            if circuit_broken():
-                log.error(
-                    f"熔断触发 — 连续 {CIRCUIT_BREAKER_THRESHOLD} 个 batch 失败，"
-                    f"跳过剩余批次")
-                return (batch, None, RuntimeError("Circuit breaker open"))
-            translations = await batch_translate(session, pairs, api_key, source_lang)
-            batch_end = batch_start + len(batch)
-            total = len(items_to_translate)
-            log.info(
-                f"Batch {batch_start+1}-{batch_end}/{total} "
-                f"({source_lang}): translated {len(batch)} items")
-            _translate_failures = 0
-            return (batch, translations, None)
-        except Exception as e:
-            _translate_failures += 1
-            log.error(
-                f"Batch translation failed ({_translate_failures}/"
-                f"{CIRCUIT_BREAKER_THRESHOLD} strikes): {e}")
-            return (batch, None, e)
-
-    # If only one batch overall, no semaphore overhead
-    if len(all_batches) == 1:
-        batch, pairs, batch_start, lang = all_batches[0]
-        result = await translate_one_batch(batch, pairs, batch_start, lang)
-        all_results.append(result)
-        return all_results
-
-    # Multiple batches: run all languages concurrently with one semaphore
-    semaphore = asyncio.Semaphore(MAX_CONCURRENT_BATCHES)
-
-    async def bounded_translate(batch, pairs, batch_start, source_lang):
-        async with semaphore:
-            return await translate_one_batch(batch, pairs, batch_start, source_lang)
-
-    results = await asyncio.gather(*[
-        bounded_translate(b, p, bs, l) for b, p, bs, l in all_batches
-    ])
-    all_results.extend(results)
-
-    return all_results
+    return await process_batches(
+        session=session,
+        batches=all_batches,
+        items_to_process=items_to_translate,
+        batch_func=batch_translate,
+        api_key=api_key,
+        max_concurrent=MAX_CONCURRENT_BATCHES,
+        batch_size=bs,
+        circuit_broken=circuit_broken,
+        circuit_reset=reset_circuit,
+        circuit_fail=increment_failures,
+        log_prefix="Translate batch",
+        group_by_lang=True,
+    )
 
 
 async def _batch_expand_all(
@@ -375,61 +343,30 @@ async def _batch_expand_all(
     api_key: str,
     batch_size: int = None,
 ) -> list:
-    """Expand short Chinese summaries using AI.
+    """Expand short Chinese summaries using AI (via batch_utils)."""
+    from trendradar.scripts.batch_utils import process_batches
 
-    items_to_expand: list of (domain, idx, item, title, summary, needs_title, needs_summary, source_lang)
-    Returns a list of (batch_items, translations_or_None, error_or_None) tuples.
-    """
     bs = batch_size if batch_size is not None else BATCH_SIZE
-    all_results = []
-
-    # Build batches
     batches = []
     for batch_start in range(0, len(items_to_expand), bs):
         batch = items_to_expand[batch_start:batch_start + bs]
         pairs = [(item[3], item[4]) for item in batch]
-        batches.append((batch, pairs, batch_start))
+        batches.append((batch, pairs, batch_start, None))
 
-    async def expand_one_batch(
-        batch, pairs, batch_start
-    ) -> tuple[list, list | None, Exception | None]:
-        global _translate_failures
-        try:
-            translations = await batch_expand(session, pairs, api_key)
-            batch_end = batch_start + len(batch)
-            total = len(items_to_expand)
-            log.info(
-                f"Expand batch {batch_start+1}-{batch_end}/{total}: "
-                f"expanded {len(batch)} Chinese items")
-            _translate_failures = 0
-            return (batch, translations, None)
-        except Exception as e:
-            _translate_failures += 1
-            log.error(
-                f"Expand batch failed ({_translate_failures}/"
-                f"{CIRCUIT_BREAKER_THRESHOLD} strikes): {e}")
-            return (batch, None, e)
-
-    # If only one batch, no semaphore overhead
-    if len(batches) == 1:
-        batch, pairs, batch_start = batches[0]
-        result = await expand_one_batch(batch, pairs, batch_start)
-        all_results.append(result)
-        return all_results
-
-    # Multiple batches: run concurrently with semaphore (aligned with _batch_translate_all)
-    semaphore = asyncio.Semaphore(MAX_CONCURRENT_BATCHES)
-
-    async def bounded_expand(batch, pairs, batch_start):
-        async with semaphore:
-            return await expand_one_batch(batch, pairs, batch_start)
-
-    results = await asyncio.gather(*[
-        bounded_expand(b, p, bs) for b, p, bs in batches
-    ])
-    all_results.extend(results)
-
-    return all_results
+    return await process_batches(
+        session=session,
+        batches=batches,
+        items_to_process=items_to_expand,
+        batch_func=batch_expand,
+        api_key=api_key,
+        max_concurrent=MAX_CONCURRENT_BATCHES,
+        batch_size=bs,
+        circuit_broken=circuit_broken,
+        circuit_reset=reset_circuit,
+        circuit_fail=increment_failures,
+        log_prefix="Expand batch",
+        group_by_lang=False,
+    )
 
 
 async def batch_expand(

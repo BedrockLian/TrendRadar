@@ -36,9 +36,9 @@ def ensure_raw_exists(push_id: str):
                 else:
                     cache_valid = True
                     log.info(f"HIT raw_{today}.json (龄{age_hours:.1f}h, {raw_path.stat().st_size:,} bytes, {item_count} items)")
-            except Exception:
-                cache_valid = True  # parse failure → trust cache to avoid blocking
-                log.info(f"HIT raw_{today}.json (龄{age_hours:.1f}h, {raw_path.stat().st_size:,} bytes)")
+            except Exception as e:
+                log.warning(f"raw_{today}.json 损坏（{e}），强制刷新")
+                cache_valid = False
     
     if cache_valid:
         return
@@ -122,7 +122,7 @@ def run_curation(push_id: str) -> dict:
             f1.result()
         except Exception as e:
             fetch_err = e
-            log.info(f"fetch 失败: {e}")
+            log.warning(f"fetch 失败: {e}")
         
         try:
             blog_items_result = f2.result() or []
