@@ -176,7 +176,7 @@ export PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GI
 | `scripts/curate_and_push.py` |
 | `references/deep-analysis-delivery-failure.md` | 深度分析未格式化 + 简报未送达排查手册 |
 | `scripts/archive_resend.py` | 安全补发：从 `archive/` 读纯 markdown 投递 |
-| `scripts/gen_cron_prompt.py` | 从 --list-steps 自动生成 cron prompt |
+| `hermes-scripts/gen_cron_prompt.py` | 从 --list-steps 自动生成 cron prompt |
 
 ## 兴趣偏好
 `config/ai_interests.yaml` — 正面+2分，排除=0分过滤。CLI: `python3 scripts/interest_cli.py {list,add,remove,exclude}`。
