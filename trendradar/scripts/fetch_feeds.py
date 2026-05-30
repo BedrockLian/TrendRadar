@@ -257,12 +257,20 @@ def _preclassify(items: list) -> list:
             continue
         
         text = f"{item.get('title', '')} {item.get('summary', '')}"
-        domain = next((d for kw, d in domains
-                       if has_keyword_match_ci(text, d, kw)), None)
-        if domain:
-            item['_likely_domain'] = domain
-            continue
-        # 关键词未命中 → 按源 category 兜底
+        
+        # 游戏关键词假阳性过滤
+        _game_false_positives = frozenset({'改变游戏规则', 'ゲームチェンジ'})
+        if has_keyword_match_ci(text, 'game', _game_false_positives):
+            # 假阳性命中 → 跳过 gaming 关键词匹配，走兜底
+            pass
+        else:
+            domain = next((d for kw, d in domains
+                           if has_keyword_match_ci(text, d, kw)), None)
+            if domain:
+                item['_likely_domain'] = domain
+                continue
+        
+        # 关键词未命中或假阳性 → 按源 category 兜底
         cat = src_cat.get(platform, '')
         if cat == 'game':
             item['_likely_domain'] = 'gaming'

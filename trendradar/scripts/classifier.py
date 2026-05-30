@@ -18,7 +18,7 @@ def classify_items(raw: list) -> tuple[list, list, list]:
     SRC_DOMAIN = _source_domain()
     ALL_SRC_CAT = _all_source_category()
     # False positive patterns for game keyword matching
-    _GAME_FALSE_POSITIVES = frozenset({'改变游戏规则'})
+    _GAME_FALSE_POSITIVES = frozenset({'改变游戏规则', 'ゲームチェンジ'})
     # Also skip game classification if the only game keyword match is '索尼' in a music context
     _is_sony_music = lambda t: '索尼' in t and '音乐' in t
     headline, remaining, foreign_china = [], [], []
