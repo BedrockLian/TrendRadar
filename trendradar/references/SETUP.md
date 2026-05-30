@@ -1,8 +1,6 @@
-<!-- version: 2.8.0 | consolidated: 2026-05-27 | source: 9 docs merged -->
+<!-- version: 2.9.0 | consolidated: 2026-05-27 -->
 
 # TrendRadar 安装与运维
-
-合并自: proxy-config.md, cache-cleanup.md, cron-operations.md, migration-rollback.md, cron-prompt-canonical.md, cron-sendmessage-fallback.md, sources-management.md, sources-format.md
 
 ---
 

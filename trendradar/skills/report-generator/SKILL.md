@@ -69,5 +69,4 @@ metadata:
 | 文件 | 内容 |
 |------|------|
 | `references/report-templates.md` | 周报+月报格式模板 & 空行规范 |
-| `../news-secretary/references/pipeline.md` | 日报管线流程（共享参考） |
-| `../news-secretary/references/render-format.md` | 简报格式规范（共享参考） |
+| `../../references/PIPELINE.md` | 管线流程 + 渲染格式规范 |

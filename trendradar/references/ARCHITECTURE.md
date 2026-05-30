@@ -1,8 +1,6 @@
-<!-- version: 2.8.0 | consolidated: 2026-05-27 | source: 9 docs merged -->
+<!-- version: 2.9.0 | consolidated: 2026-05-27 -->
 
 # TrendRadar 架构
-
-合并自: classification-architecture.md, import-architecture.md, script-rendering.md, render-markdown.md, orchestrator-notes.md, keyword-architecture.md, migration-mechanism.md, health-check-design.md, api-backoff-circuit-breaker.md
 
 ---
 

@@ -24,9 +24,4 @@
 
 ## 已删除（内容已合并或过时）
 
-| 文件 | 理由 |
-|------|------|
-| `cron-prompt-generated.md` | 自动生成产物，内容已在 SETUP.md §6；可运行 `gen_cron_prompt.py` 重新生成 |
-| `qwen-audit-prompt.md` | 与 `reports/qwen-audit-prompt.md` 完全重复 |
-| `_archive/weekly-format.md` | `skills/weekly-report/references/` 中已有副本 |
-| `_archive/monthly-template.md` | 文件不存在于仓库中 |
+> 历史删除记录见 git log 2026-05-27 ~ 2026-05-30 提交。

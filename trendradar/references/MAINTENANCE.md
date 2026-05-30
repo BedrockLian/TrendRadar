@@ -27,7 +27,7 @@ find skills/*/references -name "xxx.md" -exec cp references/xxx.md {} \;
 
 ```bash
 # 检查所有同名文件是否一致
-for f in traps.md pipeline.md translate*.md render-format.md; do
+for f in TRAPS.md PIPELINE.md ARCHITECTURE.md SETUP.md; do
     echo "=== $f ==="
     find references/ skills/*/references/ -name "$f" -exec md5sum {} \;
 done
