@@ -13,7 +13,8 @@ fi
 
 echo ""
 echo "=== 压缩缓存文件 ==="
-ls -lh /home/asus/.hermes/trendradar/cache/*.zst 2>/dev/null || echo "(无 .zst 压缩文件)"
+TR_HOME="${TRENDRADAR_HOME:-$HOME/.hermes/trendradar}"
+ls -lh "$TR_HOME/cache/"*.zst 2>/dev/null || echo "(无 .zst 压缩文件)"
 echo ""
 echo "=== JSON 缓存文件 ==="
-ls -lh /home/asus/.hermes/trendradar/cache/*.json 2>/dev/null | head -10 || echo "(无 JSON 缓存文件)"
+ls -lh "$TR_HOME/cache/"*.json 2>/dev/null | head -10 || echo "(无 JSON 缓存文件)"

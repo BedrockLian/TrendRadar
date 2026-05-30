@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-"""兴趣配置管理 CLI — ai_interests.yaml 的增删查改。"""
-import sys, os
+from trendradar.scripts.settings import get_logger
+log = get_logger('interest-cli')
+import json
+import sys
+import os
 from pathlib import Path
 
 TR = Path(os.environ.get('TRENDRADAR_HOME', Path.home() / '.hermes' / 'trendradar'))
@@ -64,8 +67,8 @@ def cmd_remove(args):
                 item = data[key].pop(idx)
                 print(f'[OK] 已从 {key} 删除: {item}')
                 removed = True
-        except ValueError:
-            pass
+        except ValueError as e:
+            log.debug("索引解析失败: %s", e)
         # Try text match
         for item in data[key][:]:
             if query in item:

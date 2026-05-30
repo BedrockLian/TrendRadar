@@ -64,7 +64,7 @@ def _cleanup_silent(push_id: str):
                 p.unlink()
                 removed.append(str(p.name))
             except OSError:
-                pass
+                log.warning(f"清理失败: {p}")
     if removed:
         log.info(f"Cleaned up: {', '.join(removed)}")
 
@@ -286,7 +286,7 @@ def main():
 
     # ── Stage 2: track_events (morning only) ───────────────────
     if push_id == "morning":
-        import track_events as _te
+        from trendradar.scripts import track_events as _te
         curated_path = DATA_DIR / f"curated_morning_{datetime.now(CST).strftime('%Y%m%d')}.json"
         if curated_path.exists():
             def _track():
@@ -366,7 +366,7 @@ def main():
                 try:
                     f.unlink()
                 except OSError:
-                    pass
+                    log.warning(f"清理失败: {f}")
         print(json.dumps({
             "status": "silent",
             "reason": "no new items",

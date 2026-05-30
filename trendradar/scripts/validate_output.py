@@ -16,8 +16,11 @@ import json
 import os
 import re
 import sys
+import logging
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+
+log = logging.getLogger('validate-output')
 
 CST = timezone(timedelta(hours=8))
 TRENDRADAR_HOME = Path(os.environ.get(
@@ -106,8 +109,8 @@ def fallback(push_id: str) -> str:
         )
         if result.returncode == 0 and result.stdout.strip():
             return result.stdout.strip()
-    except Exception:
-        pass
+    except Exception as e:
+        log.warning("重渲染失败: %s", e)
 
     # 完全不可用
     print(f"[VALIDATE ERROR] 无法生成 {push_id} 简报 — 存档和渲染均失败", file=sys.stderr)

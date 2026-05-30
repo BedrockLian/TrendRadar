@@ -31,7 +31,7 @@ def record(push_id: str):
             try:
                 curated = json.loads(p.read_text())
                 break
-            except (json.JSONDecodeError, Exception):
+            except (json.JSONDecodeError):
                 continue
     if not curated:
         log.info(f'未找到 {push_id} 精选数据')

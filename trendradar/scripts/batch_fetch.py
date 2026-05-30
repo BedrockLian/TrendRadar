@@ -64,7 +64,7 @@ def _decode(raw: bytes) -> str | None:
             if result.best():
                 return str(result.best())
         except (ImportError, AttributeError, ValueError):
-            pass
+            log.debug("charset_normalizer 检测失败，走 latin-1 兜底")
     # 无损兜底排最后 — latin-1 从不抛异常
     return raw.decode('latin-1')
 
@@ -91,6 +91,9 @@ def _proxy_alive() -> bool:
         return _MIHOMO_ALIVE
     except Exception:
         _MIHOMO_ALIVE = False
+        host = parsed.hostname or '127.0.0.1'
+        port = parsed.port or 7890
+        log.warning(f"代理检测异常: {host}:{port}")
         return False
 
 

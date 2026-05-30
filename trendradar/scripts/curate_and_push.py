@@ -215,7 +215,7 @@ def load_source_health(path: str = None):
         data = json.loads(Path(path).read_text())
         _source_health = data.get('sources', {})
     except (FileNotFoundError, json.JSONDecodeError) as e:
-        print(f"[curate] 加载 source_health 失败: {e}", file=sys.stderr)
+        log.warning("加载 source_health 失败: %s", e)
 
 
 def _get_health_penalty(platform: str) -> float:

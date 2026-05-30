@@ -5,6 +5,9 @@ TrendRadar 热度追踪器 - 跨周期持久化追踪新闻热度变化
 功能：时间轴追踪 / 热度变化 / 新热点检测 / 持续性分析 / 跨平台对比
 """
 
+from trendradar.scripts.settings import get_logger
+log = get_logger('heat-tracker')
+
 import sqlite3
 import hashlib
 import json
@@ -46,7 +49,8 @@ def get_db() -> sqlite3.Connection:
         # 优先通过 Storage 统一入口建立连接
         try:
             _local.conn = _STORE.db('fingerprints.db', row_factory=sqlite3.Row)
-        except Exception:
+        except Exception as e:
+            log.warning(f"Storage.db 失败，直连兜底: {e}")
             # 兜底：直接连接（兼容测试/非标准部署）
             _local.conn = sqlite3.connect(DB_PATH)
             _local.conn.row_factory = sqlite3.Row
@@ -90,8 +94,7 @@ def make_fingerprint(title: str, url: str = '') -> str:
             url_key = parsed.netloc + '/' + '/'.join(segments)
             norm += url_key.lower()
         except (ValueError, AttributeError):
-            # URL parse failed — use raw URL as-is
-            pass
+            log.debug("URL 解析失败，使用原始 URL: %s", url)
     from trendradar.scripts.settings import FINGERPRINT_MD5_LEN
     return hashlib.md5(norm.encode()).hexdigest()[:FINGERPRINT_MD5_LEN]
 

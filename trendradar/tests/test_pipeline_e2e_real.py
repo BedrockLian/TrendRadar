@@ -24,7 +24,7 @@ import pytest
 TRENDRADAR_DIR = Path(__file__).resolve().parent.parent
 SCRIPTS_DIR = TRENDRADAR_DIR / 'scripts'
 DATA_DIR = TRENDRADAR_DIR / 'data'
-HERMES_DIR = TRENDRADAR_DIR.parent  # /home/asus/.hermes
+HERMES_DIR = TRENDRADAR_DIR.parent  # derived from __file__, not hardcoded
 
 # Ensure imports work
 sys.path.insert(0, str(HERMES_DIR))

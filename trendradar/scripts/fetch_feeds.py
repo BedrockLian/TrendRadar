@@ -158,14 +158,17 @@ async def fetch_all(push_id: str = '') -> dict:
         return result
 
     # 直连 + 代理并行两批 (WAS: serial)
+    tout = aiohttp.ClientTimeout(total=30)
     direct_conn = aiohttp.TCPConnector(limit=20, limit_per_host=12)
     proxy_conn = aiohttp.TCPConnector(limit=20, limit_per_host=12)
     async with (
         aiohttp.ClientSession(connector=direct_conn,
-                              headers={'User-Agent': USER_AGENT}) as direct_session,
+                              headers={'User-Agent': USER_AGENT},
+                              timeout=tout) as direct_session,
         aiohttp.ClientSession(connector=proxy_conn,
                               headers={'User-Agent': USER_AGENT},
-                              proxy=PROXY_URL) as proxy_session,
+                              proxy=PROXY_URL,
+                              timeout=tout) as proxy_session,
     ):
         direct_task = _fetch_batch(direct_sources, direct_session)
         proxy_task = _fetch_batch(proxy_sources, proxy_session)
