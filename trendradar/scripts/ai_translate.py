@@ -537,11 +537,17 @@ async def process_curated(push_id: str) -> dict:
                     continue
                 for entry, (title_cn, summary_cn) in zip(batch, translations, strict=True):
                     domain, idx, item, title, summary, needs_title, needs_summary, _source_lang = entry
-                    if needs_title:
+                    # Skip bogus translations (model echoed original back)
+                    if title_cn and title_cn.strip() == title.strip():
+                        title_cn = ''
+                    if summary_cn and summary_cn.strip() == summary.strip():
+                        summary_cn = ''
+                    if needs_title and title_cn:
                         item['title_cn'] = title_cn
-                    if needs_summary:
+                    if needs_summary and summary_cn:
                         item['summary_cn'] = summary_cn
-                    translated_count += 1
+                    if title_cn or summary_cn:
+                        translated_count += 1
                     total_chars += len(title) + len(summary)
 
         # Step 2: Expand short Chinese summaries
