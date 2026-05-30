@@ -1,7 +1,7 @@
 ---
 name: news-secretary
 slug: news-secretary
-version: 6.13.0
+version: 6.15.0
 description: 聚合多RSS源+博客，推送Markdown简报至企业微信。编排器一键管线 + 晚间Pro深度分析。
 author: Hermes Agent
 metadata:
@@ -9,7 +9,7 @@ metadata:
     tags: [news, trend, RSS, wecom]
     delivery: wecom
     push_schedule: { merged: "0 9,12,21 * * *" }
-    companion_skills: [self-healing, weekly-report, monthly-report, performance-optimizer, system-config]
+    companion_skills: [self-healing, report-generator, system-config]
 ---
 
 ## 触发
@@ -18,7 +18,7 @@ cron `0 9,12,21 * * *` (morning 30条 / noon 30条 / evening 20条, 日上限80)
 ## 管线
 
 ```
-pipeline_orchestrator.py（v2.8.0 — 一键7阶段）
+pipeline_orchestrator.py（v2.9.0 — 一键7阶段）
   ① push_slot_detect → ② push_prepare(fetch+curate) → ③ 并行(ai_translate ∥ batch_fetch)
   → ④ render_markdown → ⑤ fragment_push（UTF-8 字节计数分片） → ⑥ record_fingerprints（Storage 统一接入）
   → 输出 JSON: {status, fragments, briefing, stats, needs_deep_analysis}
@@ -71,22 +71,13 @@ SOURCE_DOMAIN_OVERRIDE = {
 3. **render 优先 title_cn** — `render_markdown.py` `_format_item` 取 `title_cn`/`summary_cn`，不回落到原始 title/summary。
 4. **BATCH_SIZE 上限 5** — DeepSeek 在 batch >5 时只翻译摘要不翻译标题（标题保持原文不变但摘要正确翻译）。`ai_translate.py` `BATCH_SIZE = 5`。若未来换模型需重新验证。
 
-5. **日→中翻译返回原文陷阱** — DeepSeek 在处理日文→中文批量翻译时，有时直接返回原文不变（`title_cn == title`，`summary_cn == summary`），不报错不告警。2026-05-28 午间推送中 5/6 条 NHK 条目出现此问题。区别性特征：英文翻译正常，仅日文条目 `title_cn == title`。
-   - **原因**：模型对引理对齐但未执行语言转换。
-   - **首次修复**：prompt 新增规则 `CRITICAL: You MUST translate every item. NEVER return the original text unchanged.`
-   - **二次防护**：`translate_one_batch()` 添加循环检测，逐条对比 `title_cn==orig_title || summary_cn==orig_summary`，命中时输出 `⚠️ N items NOT translated` 警告日志。
-   - **未来方向**：如频发，可考虑将日文与英文分开调 API（不同 temperature），或回落至专用翻译模型。
+5. **日→中翻译返回原文陷阱** — DeepSeek 处理日文→中文批量翻译时可能直接返回原文不变（`title_cn == title`），不报错不告警。`translate_one_batch()` 已添加逐条检测并输出警告日志。
 6. **中文短摘要 AI 扩写**（v6.10.0） — `ai_translate.py` 新增中文条目短摘要扩写通道。对中文源（source_lang 为 None）中原始摘要 `<50 字` 的条目，自动用 AI 扩写成 50-80 字的完整信息句。扩写 prompt 在 `_EXPAND_TEMPLATE` 中，约束：不虚构事实、基于标题上下文展开、保持新闻风格。2026-05-27 用户反馈摘要过短后添加，虎嗅/钛媒体短条目从 23/26 字扩至 37/51 字。
 7. **摘要长度与 render 联动** — `render_markdown.py` 的 `_shorten(max_len=80)` 控制最终展示长度（参见输出规范第5条）。英文/日文翻译产出通常 40-70 字，render 基本保留；中文条目从 `summary` 字段取前 80 字（旧 50 字截断的改进，但 300 字长摘要仍会被截）。扩写通道只覆盖 `<50 字` 的极短条目。用户反馈摘要过短时，需同步检查两个配置点：`ai_translate.py` 的扩写逻辑和 `render_markdown.py` 的 `max_len`。
-8. **cron prompt 直接输出 BRIEFING** — `send_message` 在 cron context 不可用。prompt 第7步直接输出脚本渲染结果，不经过 LLM 重写。
+8. **cron context 投递机制：auto-delivery 协议** — `send_message` 在 cron context 不可用。所有投递通过 final response auto-delivery 完成：pipeline 产出简报 → Agent 将简报原文作为 final response 返回 → 系统自动投递到 WeCom。prompt 第7步直接输出脚本渲染结果，不经过 LLM 重写。错误做法：❌ 在 cron 中调用 send_message、❌ 返回 [SILENT]、❌ Agent 重写简报、❌ 只返回 fragments JSON 不输出实际内容。
 9. **items_to_translate tuple** — `needs_title`/`needs_summary` 由 `bool(source_lang)` 驱动（非 None 就翻译），第8个元素 `source_lang` (`'English'`/`'Japanese'`/`None`) 必须存在。来源语言由 `data/sources.json` 每个源的 `language` 字段决定（`_scan()` 提取 `en`/`ja` 源的 `platform`+`name` 做子串匹配）。`translate.yaml` 已淘汰（2026-05-25）。旧 CJK 启发式函数（`_is_cjk`/`cjk_ratio`/`needs_translation`/`detect_source_lang`）已于 2026-05-25 全部移除。
-10. **TITLE:/SUMMARY: 前缀残留陷阱** — DeepSeek 翻译返回的 title_cn/summary_cn 可能包含 `TITLE: xxx` / `SUMMARY: xxx` 前缀（模型忠实执行 prompt 中的标记）。2026-05-27 晚间 NHK 条目出现此问题。手动修复命令：
-   ```bash
-   python3 -c "import json; d=json.load(open('data/curated_evening_20260527.json')); [item.update({k:item[k].replace(k.split('_')[0].upper()+': ','',1)}) for domain in ['top_headlines','foreign_china','tech','economy','gaming'] for item in d.get(domain,[]) for k in ['title_cn','summary_cn'] if item.get(k,'').startswith(('TITLE: ','SUMMARY: '))]; json.dump(d,open('data/curated_evening_20260527.json','w'),ensure_ascii=False,indent=2)"
-   python3 scripts/render_markdown.py --push-id evening
-   ```
-   长期方案需 `ai_translate.py` 写入前 strip 掉这些前缀。
-11. **手动运行 ai_translate.py 需显式传 DEEPSEEK_API_KEY** — 脚本从 `TRENDRADAR_HOME/.env`（`~/.hermes/trendradar/.env`）读取 API key，但实际 key 在 `~/.hermes/.env`。手动运行时需 `export DEEPSEEK_API_KEY=$(grep '^DEEPSEEK_API_KEY=' ~/.hermes/.env | cut -d= -f2- | tr -d '"')`，或设置 `TRENDRADAR_ENV=~/.hermes/.env`。
+10. **TITLE:/SUMMARY: 前缀残留陷阱** — DeepSeek 翻译返回可能包含 `TITLE: ` / `SUMMARY: ` 前缀。`ai_translate.py` 写入前应 strip 这些前缀。
+11. **手动运行 ai_translate.py 需显式传 DEEPSEEK_API_KEY** — 脚本从 `TRENDRADAR_HOME/.env`（`~/.hermes/trendradar/.env`）读取 API key，但实际 key 在 `~/.hermes/.env`。手动运行时需 `export DEEPSEEK_API_KEY=$(grep '^DEEPSEEK_API_KEY=' ~/.hermes/.env | cut -d= -f2- | tr -d '\"')`，或设置 `TRENDRADAR_ENV=~/.hermes/.env`。
 
 ## 晚间深度分析
 
@@ -100,7 +91,7 @@ SOURCE_DOMAIN_OVERRIDE = {
 
 **3 条分开投递**：趋势、跨域、风险各作为一条独立 final response 分别输出，不要合并成一条。
 
-**子 Agent 沙箱陷阱**：`delegate_task` 子 Agent 在 cron 上下文中有独立的进程上下文，其 `terminal`/`read_file` 等工具**无法读取父 session 的文件系统**。文件路径传递（如 `cat /path/to/report.md`）会返回空。子 Agent 必须通过 inline 文本传递内容——将分析文本放在 prompt 的 `context` 字段中，而不是让子 Agent 自己去读文件。详见 `references/PIPELINE.md  # was deep-analysis-subagent-sandbox → pipeline`。
+**子 Agent 沙箱陷阱**：`delegate_task` 子 Agent 在 cron 上下文中有独立的进程上下文，其 `terminal`/`read_file` 等工具**无法读取父 session 的文件系统**。文件路径传递（如 `cat /path/to/report.md`）会返回空。子 Agent 必须通过 inline 文本传递内容——将分析文本放在 prompt 的 `context` 字段中，而不是让子 Agent 自己去读文件。详见 `references/PIPELINE.md`。
 
 ## 交付验证（新增！）
 
@@ -110,94 +101,61 @@ SOURCE_DOMAIN_OVERRIDE = {
 2. **auto-delivery 未送达**：cron 的 final response 靠 Gateway 转发 WeCom。如果 Gateway 在处理投递时崩溃，pipeline 依旧报告 ok
 3. **DeepSeek API 流中断**：`RemoteProtocolError: peer closed connection without sending complete message body` → 只返回 stub response，半篇丢失
 
-**投递后验证**：
-- Cron 结束后，检查 delivery_watchdog 是否会捕获失败
-- 用户反馈"没收到"时：优先走 `archive_resend.py`（见下一节），不要查 cron 输出日志。——cron 输出文件（`cron/output/`）混有 pipeline 日志和 skill 上下文，读到源名容易产生"有这个源就有内容"的虚假印象，是幻觉高危来源。**存档（`archive/YYYY-MM-DD/{slot}.md`）是纯 markdown，是你唯一应该查的数据源。**
+**投递后验证**：\n- Cron 结束后，检查 delivery_watchdog 是否会捕获失败\n- 用户反馈"没收到"时：优先走 `archive_resend.py`（见下一节），不要查 cron 输出日志。——cron 输出文件（`cron/output/`）混有 pipeline 日志和 skill 上下文，读到源名容易产生"有这个源就有内容"的虚假印象，是幻觉高危来源。**存档（`archive/YYYY-MM-DD/{slot}.md`）是纯 markdown，是你唯一应该查的数据源。**
 
-## 手动补发纪律（2026-05-27 更新 — 硬约束）
+### Agent 输出格式违规（2026-05-29 案例）
 
-### 标准路径（优先）：archive_resend.py
+2026-05-29 晚间 cron agent 输出 briefing 前添加了"好消息——所有三个深度分析均已完成格式化"前缀，还把 3 篇深度分析混入同一条 final response。auto-delivery 把格式异常的内容推到 WeCom，用户没收到可读简报，但系统标记 last_status=ok + delivery_error=null（静默失败）。
 
-```bash
-# 列出可用存档
-python3 scripts/archive_resend.py --list
+**修复**：scripts/validate_output.py 作为 cron prompt 步骤 3.5 的 pipe 拦截器。检测违规前缀（"好消息""所有三个""Pipeline returned""编排器执行完成"等）或内容不以 "### Hermes日报"/"🔬" 开头时，自动 fallback 到 archive/YYYY-MM-DD/{slot}.md 或重跑 render_markdown.py。
 
-# 补发某日某时段
-export PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GIL=0
-$PYTHON scripts/archive_resend.py --date YYYY-MM-DD --slot morning
-```
+**看门狗时序**：原 22:00 才查，已改为 0,30 10,14,21,22——21:30 加一班，30 分钟内捕获。
 
-`archive_resend.py` 会自动：
-1. 读 `archive/YYYY-MM-DD/{slot}.md`（纯 markdown，由 `render_markdown.py` 每次推送时自动存档）
-2. 校验文件存在且非空（不存在时报错退出——**禁止自行生成内容**）
-3. 打印前 200 字预览
-4. 走 `hermes send --to wecom:bl` 投递
+**诊断线索**：last_status=ok 但用户说没收到 → 查 cron/output/90a2866775df/ 中 agent 的 final response 是否包含违规前缀。
 
-**安全约束**：存档不存在时直接报错，不生成替代内容。这是防幻觉的第一道防线。
+**快速补发**：cat archive/YYYY-MM-DD/evening.md | PYTHON_GIL= hermes send --to wecom:bl（必须 unset PYTHON_GIL，否则 config_read_gil 崩溃）
 
-> **archive_resend.py 路径不一致陷阱**：`archive_resend.py` 用自己的 `__file__` 解析 `TRENDRADAR_HOME`（指向 `~/TrendRadar/`），而 `render_markdown.py` 使用 `settings.py` 的 `TRENDRADAR_HOME`（指向 `~/.hermes/trendradar/`）。存档写到了 `~/.hermes/trendradar/archive/`，但补发脚本去 `~/TrendRadar/archive/` 找。修复：设置 `TRENDRADAR_HOME` 覆盖路径，或直接用 `hermes send` 管道投递。
+## 手动补发
 
-### 回退路径（存档缺失时）
+详见 `references/archive-resend-mechanism.md`。
 
-存档缺失通常意味着当天 pipeline 没跑成功。手工重建：
+## 投递水印机制
 
-1. **还原数据** — 从 `backups/trendradar/{date}/` 恢复 `curated_{slot}.json` 到 `data/` 目录
-2. **跑翻译** — `ai_translate.py --push-id {slot}` 必须成功。验证 `title_cn`/`summary_cn` 已写入
-3. **跑渲染** — `render_markdown.py --push-id {slot}` → 自动写 archive + 输出 stdout
-4. **补发** — `archive_resend.py --date YYYY-MM-DD --slot {slot}`（存档已就绪）
+详见 `references/DELIVERY-WATERMARK.md`。
 
-### 禁止事项
+## 输出规范
 
-- **严禁编造标题、摘要、来源**。The Verge/OpenAI/RTX 等虚构条目用户一眼能识别。
-- **严禁从 cron 输出日志读取内容**。cron 输出文件混有 pipeline 日志和 skill 上下文，不是可信数据源。
-- **严禁拼接虚构新闻**。觉得"这个源今天怎么没新闻"时，检查 raw JSON 确认该源是否被抓取、是否被预分类分流到其他域。不要自行填充。
-- **不要改动条目顺序和内容结构**。保持原始顺序，只做格式适配（分片、长度裁剪）。
-
-## 投递水印机制（delivery_marker）
-
-pipeline 报告 `status=ok` 不等于用户收到了简报。投递水印（delivery_marker）作为投递确认的真值源。
-
-### MarkerDir: `data/delivery_markers/`
-
-每次推送创建 `{date}_{slot}.marker`：`{"push_id":"morning","delivered":true,"delivered_at":"...","verified_by":"delivery_watchdog"}`
-
-### delivery_watchdog.py 自动补投
-
-看门狗 cron (`cab79825520e`, `no_agent=true`) 每 15 分钟检查 `push_log.json`：
-- 有 pipeline 记录但无水印 → 自动从 `archive/{date}/{slot}.md` 补投
-- 水印 `delivered: false` → 同上
-- 补投成功 → 更新水印
-
-### 手动标记
-
-```bash
-mkdir -p data/delivery_markers
-echo '{"push_id":"morning","date":"2026-05-27","delivered":true,"verified_by":"manual"}' \
-  > data/delivery_markers/2026-05-27_morning.marker
-ls -la data/delivery_markers/$(date +%Y-%m-%d)_*.marker
-```
-
-完整文档：`references/DELIVERY-WATERMARK.md`。
-
-## 输出规范（脚本固化 + `sanity_check.py` 拦截）
-
-简报和深度分析由纯脚本生成，Agent 只做透传。`sanity_check.py` 在发布前自动剥离编排器前言（中文：编排器执行完成/输出简报正文/无需深度分析/简报正文 + 英文：Orchestrator completed/Pipeline orchestrator returned/push_id/DB schema v/\\[PIPELINE]/\\[SILENT]/Outputting briefing/No deep analysis needed/---），共 13 种正则模式，再执行禁语/死链/敏感词/HTML残留扫描
-- 编排器元数据不会误触 BANNED_PHRASES
-- 2026-05-28 新增 4 条中文前缀正则（编排器执行完成/输出简报正文/无需深度分析/简报正文）
-- 2026-05-29 新增 Pipeline orchestrator returned/Outputting(可选the)briefing/No deep analysis needed 三条英文模式
+简报和深度分析由纯脚本生成，Agent 只做透传。`sanity_check.py` 发布前自动剥离编排器前言并执行禁语/死链/敏感词扫描。`validate_output.py` 检测 agent 输出格式并自动 fallback。拦截器维护详见 `references/sanity-check-maintenance.md`。
 
 1. **透传简报** — 输出 JSON `briefing` 字段内容本身。`sanity_check.py` 自动拦截 "As an AI language model" / "Here is your report" 等禁语。
 2. **链接格式** — `[【媒体名】](url)`，不加"查看原文"前缀。URL 中包含空格或全角空格时，`render_markdown.py` 会在渲染前自动清除（2026-05-28 修复：`url.replace(' ', '').replace('　', '')`，防止 Agent 输出时在 URL 中插入空格导致链接断裂）。
 3. **深度分析独立投递** — 晚间 3 条深度分析各自作为单独 final response 输出。
-4. **空行铁律** — 板块标题后 `\n\n\n`，条目间 `\n\n\n`，全文无 `---`/`***` 横线。
-
+4. **空行铁律** — 板块标题后 `\\n\\n\\n`，条目间 `\\n\\n\\n`，全文无 `---`/`***` 横线。
 5. **摘要约束** — 每条摘要 80 字内且为逻辑自洽的完整句子，不允许断句（不能被 `…` 截断成半截话）。由 `render_markdown.py` 的 `_shorten(max_len=80)` 保证，无句号时优先找逗号边界，最后兜底干净截断不加 `…`。
 6. **格式契约** — 完整规则在 `render_markdown.py` 模块 docstring 中，修改格式必须先更新契约。
+
+## 质量自愈（吸收自 performance-optimizer）
+
+### 质量评分协议
+评分 >85 达标。加分: 空摘要<5%(+15)、重复<3%(+10)、头条命中≥60%(+10)、每板块≥3条(+10)、外媒满14条(+5)、分布均匀(+10)。扣分: 空摘要≥20%(-15)、板块为0(-20)、单源≥50%(-15)（curate_all() 已有全局 30%/slot 硬上限）。集中度预警(≥40%) 标注但不建议稀释。
+
+杠杆: MIN_SCORE(5-8,±1)、MAX_PER_DOMAIN(±2)、blog recency(1-3,±1)、关键词(±5词)、白名单(增/删)。
+
+交互: 评分<85 → 列出扣分项+建议 → 问修哪个(编号/all/跳过)。单参数调整，3轮无改善→收敛，跳过 7 天恢复。"全修"模式并行执行全部建议。
+
+### 推送偏好协议
+基准: `settings.py` 的 `BRIEFING_RATIO`（早30/午30/晚20）和 `DAILY_LIMIT=80`。5 板块: top_headlines/foreign_china/tech/economy/gaming。
+
+偏差检测: 总量±30%→偏差；板块连续多天<3条→饿死；同源连续首位→垄断；单源≥40%→来源集中。交互: 列出偏差+选项 → 问"怎么调"。
+
+已验证修复脚本: `references/fix-recipes.md`（短摘要扩写、tech 上限、foreign_china 扩充、tirith 关闭、cron 技能名匹配）。
 
 ## 运行时
 ```bash
 export PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GIL=0
 ```
+
+**双副本同步要点**：scripts/ 目录修改后需同步到两个位置：(1) /home/asus/TrendRadar/ — 工作副本，推 GitHub；(2) ~/.hermes/trendradar/ — cron 运行时副本（TRENDRADAR_HOME）。遗忘同步会导致 cron 跑旧代码。
 
 ## 关键参考
 
@@ -207,16 +165,18 @@ export PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GI
 |------|--------|
 | `references/ARCHITECTURE.md` | 系统架构全貌（分类/关键词/渲染/迁移/体检/API模式） |
 | `references/PIPELINE.md` | 管线流程 + 性能瓶颈 + 简报/深度分析格式规范 |
-| `references/SETUP.md` | 代理配置/Cron运维/迁移回滚/源管理/投递协议 |
+| `references/SETUP.md` | 代理配置/RSSHub/Cron运维/迁移回滚/源管理/投递协议 |
 | `references/TRAPS.md` | 已知陷阱全集（48 个） |
 | `references/REPO-SYNC.md` | Git 仓库同步（三处路径流程） |
-| `references/REFERENCES-CONSISTENCY-GUIDE.md` | References 一致性维护 |
-| `references/SKILL-AUDIT.md` | Skill 修改后审计（7 维度检查表） |
+| `references/MAINTENANCE.md` | References 一致性维护 + Skill 审计清单 |
+| `references/fix-recipes.md` | 已验证质量修复脚本（短摘要扩写、tech上限、foreign_china扩充、tirith关闭） |
 | `references/DELIVERY-WATERMARK.md` | 投递水印机制：MarkerDir + delivery_watchdog + 手动标记 |
 | `references/cron-prompt-generated.md` | 日报 cron prompt（自动生成，SSOT） |
 | `scripts/render_markdown.py` | 格式契约 docstring |
-| `scripts/sanity_check.py` | 发布前拦截器 |
+| `scripts/sanity_check.py` | 发布前拦截器（前言剥离 + 禁语/死链/敏感词） |
+| `scripts/validate_output.py` | cron agent 输出格式验证 — 异常时 fallback 到 archive |
 | `references/sanity-check-maintenance.md` | 拦截器维护：前言模式/禁语表/死链代理/双副本同步 |
+| `references/deep-analysis-delivery-failure.md` | 深度分析未格式化 + 简报未送达排查手册 |
 | `scripts/archive_resend.py` | 安全补发：从 `archive/` 读纯 markdown 投递 |
 | `scripts/gen_cron_prompt.py` | 从 --list-steps 自动生成 cron prompt |
 

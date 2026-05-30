@@ -45,8 +45,7 @@ pipeline_python = os.environ.get('PYTHON', '/usr/local/bin/python3.14t')
 if not os.access(pipeline_python, os.X_OK):
     pipeline_python = sys.executable  # fallback
 penv = os.environ.copy()
-penv['PYTHONPATH'] = str(TR.parent)     # /home/asus/.hermes
-penv.setdefault('PYTHON_GIL', '0')
+penv['PYTHONPATH'] = str(TR.parent)     # /home/asus/.hermes/trendradar
 subprocess.run([pipeline_python, ...], env=penv)
 ```
 
@@ -144,7 +143,7 @@ if not runtests():
 
 ## 15. `check_pipeline()` RSS 连通性随机采样假阳性
 
-**现象**：健康检查随机抽到 `localhost:1200`（本地通常未运行）的源时报错，每次结果不一致。
+**现象**：健康检查随机抽到 `localhost:1200`（RSSHub 通常未运行）的源时报错，每次结果不一致。
 
 **修复**（2026-05-28）：
 - 过滤 `feed_url` 含 `localhost` 的源
@@ -160,6 +159,22 @@ if not runtests():
 python3 ~/.hermes/scripts/trendradar_maintenance.py
 # 预期输出摘要行 + 烟雾测试通过（无 WARNING）
 ```
+
+## 16. 修复→检查顺序颠倒 — 已修项仍报异常
+
+**现象**：`auto_repair_missing_table()` 修好了数据库表，但 `ISSUES` 中残留修复前的错误记录。即使全部自动修复成功，报告仍显示"亚健康"或"异常"。
+
+**根因**：`main()` 中 `run_checks()` → `run_repairs()` 顺序。修复跑在检查之后，修复的项已经在 ISSUES 里了。
+
+**修复**（2026-05-29）：改为 `run_repairs()` → `run_checks()`。修完再查，修好的项不会进入 ISSUES。
+
+## 17. INFO 级别项触发"亚健康"状态
+
+**现象**：`fail(component, 'INFO', msg)` 添加的条目（如 `source_health.json` 首次运行不存在）被 `elif ISSUES:` 判定分支捕获 → 报告显示"亚健康"。
+
+**根因**：`generate_report()` 中判断条件 `elif ISSUES:` 会匹配任何非空列表，包括仅有 INFO 级提示的列表。
+
+**修复**（2026-05-29）：`elif ISSUES:` → `elif any(i['severity'] in ('CRITICAL', 'WARN') for i in ISSUES):`。仅 CRITICAL/WARN 级别触发"亚健康"。
 
 ## 9. `git clean -fd` 破坏后恢复（嵌套包结构）
 
@@ -231,3 +246,39 @@ penv['PYTHONPATH'] = str(TRENDRADAR_HOME)   # 而非 TRENDRADAR_HOME.parent
 ```
 
 详见 `smoke-test-maintenance.md` #8。
+
+## 18. `PYTHON_GIL=0` 导致子进程 crash（Python 3.14t）
+
+**现象**：健康检查中所有子进程调用（push_slot_detect、import check、sanity_check、blind_spot）全部报 `exit=1`，stderr 为 `Fatal Python error: config_read_gil: Disabling the GIL is not supported by this build`。
+
+**根因**：脚本中 4 处使用 `env.setdefault('PYTHON_GIL', '0')`，在 Python 3.14t 上主动注入 GIL 禁用指令导致 crash。
+
+**修复**（2026-05-30）：删除所有 4 处 `env.setdefault('PYTHON_GIL', '0')`。PYTHON_GIL 应由 cron 环境按需设置，健康检查不应主动注入。
+
+```python
+# 修复前（4 处）：
+env = os.environ.copy()
+env.setdefault('PYTHON_GIL', '0')  # ← 删除此行
+
+# 修复后：
+env = os.environ.copy()
+# PYTHON_GIL 由外层 cron 环境控制，不主动设置
+```
+
+## 19. `push_slot_detect` NO_SLOT 时 exit=1 被误判为失败
+
+**现象**：每日 15:00 自动体检报告持续报 `push_slot_detect 执行失败 (exit=1)`，但脚本实际正常运行。
+
+**根因**：`push_slot_detect.py` 在非推送时段输出 `NO_SLOT` 并 exit=1（正常行为），但 `check_pipeline()` 的 `if r.returncode != 0:` 判断不区分 exit=1 的原因，一律报 WARN。
+
+**修复**（2026-05-30）：增加 `stdout` 判断——仅当 exit≠0 且 stdout 不是 `NO_SLOT` 时才报错：
+
+```python
+# 修复前：
+if r.returncode != 0:
+    fail('pipeline', 'WARN', f'push_slot_detect 执行失败 (exit={r.returncode})')
+
+# 修复后：
+if r.returncode != 0 and r.stdout.strip() != 'NO_SLOT':
+    fail('pipeline', 'WARN', f'push_slot_detect 执行失败 (exit={r.returncode})')
+```
