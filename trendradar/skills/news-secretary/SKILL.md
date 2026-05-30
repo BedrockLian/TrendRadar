@@ -107,7 +107,7 @@ SOURCE_DOMAIN_OVERRIDE = {
 
 2026-05-29 晚间 cron agent 输出 briefing 前添加了"好消息——所有三个深度分析均已完成格式化"前缀，还把 3 篇深度分析混入同一条 final response。auto-delivery 把格式异常的内容推到 WeCom，用户没收到可读简报，但系统标记 last_status=ok + delivery_error=null（静默失败）。
 
-**修复**：scripts/validate_output.py 作为 cron prompt 步骤 3.5 的 pipe 拦截器。检测违规前缀（"好消息""所有三个""Pipeline returned""编排器执行完成"等）或内容不以 "### Hermes日报"/"🔬" 开头时，自动 fallback 到 archive/YYYY-MM-DD/{slot}.md 或重跑 render_markdown.py。
+**修复**：`sanity_check.py` 作为发布前拦截器检测违规前缀（"好消息""所有三个""Pipeline returned""编排器执行完成"等）或内容不以 "### Hermes日报"/"🔬" 开头时，自动 fallback 到 archive/YYYY-MM-DD/{slot}.md 或重跑 render_markdown.py。
 
 **看门狗时序**：原 22:00 才查，已改为 0,30 10,14,21,22——21:30 加一班，30 分钟内捕获。
 
@@ -125,7 +125,7 @@ SOURCE_DOMAIN_OVERRIDE = {
 
 ## 输出规范
 
-简报和深度分析由纯脚本生成，Agent 只做透传。`sanity_check.py` 发布前自动剥离编排器前言并执行禁语/死链/敏感词扫描。`validate_output.py` 检测 agent 输出格式并自动 fallback。拦截器维护详见 `references/sanity-check-maintenance.md`。
+简报和深度分析由纯脚本生成，Agent 只做透传。`sanity_check.py` 发布前自动剥离编排器前言、执行禁语/死链/敏感词扫描、检测 agent 输出格式并自动 fallback。拦截器维护详见 `references/sanity-check-maintenance.md`。
 
 1. **透传简报** — 输出 JSON `briefing` 字段内容本身。`sanity_check.py` 自动拦截 "As an AI language model" / "Here is your report" 等禁语。
 2. **链接格式** — `[【媒体名】](url)`，不加"查看原文"前缀。URL 中包含空格或全角空格时，`render_markdown.py` 会在渲染前自动清除（2026-05-28 修复：`url.replace(' ', '').replace('　', '')`，防止 Agent 输出时在 URL 中插入空格导致链接断裂）。
@@ -171,11 +171,9 @@ export PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GI
 | `references/MAINTENANCE.md` | References 一致性维护 + Skill 审计清单 |
 | `references/fix-recipes.md` | 已验证质量修复脚本（短摘要扩写、tech上限、foreign_china扩充、tirith关闭） |
 | `references/DELIVERY-WATERMARK.md` | 投递水印机制：MarkerDir + delivery_watchdog + 手动标记 |
-| `references/cron-prompt-generated.md` | 日报 cron prompt（自动生成，SSOT） |
-| `scripts/render_markdown.py` | 格式契约 docstring |
-| `scripts/sanity_check.py` | 发布前拦截器（前言剥离 + 禁语/死链/敏感词） |
-| `scripts/validate_output.py` | cron agent 输出格式验证 — 异常时 fallback 到 archive |
-| `references/sanity-check-maintenance.md` | 拦截器维护：前言模式/禁语表/死链代理/双副本同步 |
+| `references/sanity-check-maintenance.md` |
+| `scripts/sanity_check.py` | 发布前拦截器 — 禁语/死链/敏感词扫描 + 输出格式验证 |
+| `scripts/curate_and_push.py` |
 | `references/deep-analysis-delivery-failure.md` | 深度分析未格式化 + 简报未送达排查手册 |
 | `scripts/archive_resend.py` | 安全补发：从 `archive/` 读纯 markdown 投递 |
 | `scripts/gen_cron_prompt.py` | 从 --list-steps 自动生成 cron prompt |
