@@ -3,7 +3,7 @@
 These files were consolidated into the new reference structure on 2026-05-27.
 See `../INDEX.md` for the mapping of original files to their new homes.
 
-Consolidation reduced 41 reference documents to 9 (+ this archive):
+Consolidation reduced 41 reference documents to 8 (+ this archive):
 - ARCHITECTURE.md, PIPELINE.md, SETUP.md, TRAPS.md
 - REPO-SYNC.md, REFERENCES-CONSISTENCY-GUIDE.md, SKILL-AUDIT.md
 - DELIVERY-WATERMARK.md
