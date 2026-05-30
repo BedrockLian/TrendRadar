@@ -110,7 +110,48 @@ SOURCE_DOMAIN_OVERRIDE = {
 2. **auto-delivery 未送达**：cron 的 final response 靠 Gateway 转发 WeCom。如果 Gateway 在处理投递时崩溃，pipeline 依旧报告 ok
 3. **DeepSeek API 流中断**：`RemoteProtocolError: peer closed connection without sending complete message body` → 只返回 stub response，半篇丢失
 
-**投递后验证**：\n- Cron 结束后，检查 delivery_watchdog 是否会捕获失败\n- 用户反馈"没收到"时：优先走 `archive_resend.py`（见下一节），不要查 cron 输出日志。——cron 输出文件（`cron/output/`）混有 pipeline 日志和 skill 上下文，读到源名容易产生"有这个源就有内容"的虚假印象，是幻觉高危来源。**存档（`archive/YYYY-MM-DD/{slot}.md`）是纯 markdown，是你唯一应该查的数据源。**\n\n## 手动补发纪律（2026-05-27 更新 — 硬约束）\n\n### 标准路径（优先）：archive_resend.py\n\n```bash\n# 列出可用存档\npython3 scripts/archive_resend.py --list\n\n# 补发某日某时段\nexport PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GIL=0\n$PYTHON scripts/archive_resend.py --date YYYY-MM-DD --slot morning\n```\n\n`archive_resend.py` 会自动：\n1. 读 `archive/YYYY-MM-DD/{slot}.md`（纯 markdown，由 `render_markdown.py` 每次推送时自动存档）\n2. 校验文件存在且非空（不存在时报错退出——**禁止自行生成内容**）\n3. 打印前 200 字预览\n4. 走 `hermes send --to wecom:bl` 投递\n\n**安全约束**：存档不存在时直接报错，不生成替代内容。这是防幻觉的第一道防线。\n\n> **archive_resend.py 路径不一致陷阱**：`archive_resend.py` 用自己的 `__file__` 解析 `TRENDRADAR_HOME`（指向 `~/TrendRadar/`），而 `render_markdown.py` 使用 `settings.py` 的 `TRENDRADAR_HOME`（指向 `~/.hermes/trendradar/`）。存档写到了 `~/.hermes/trendradar/archive/`，但补发脚本去 `~/TrendRadar/archive/` 找。修复：设置 `TRENDRADAR_HOME` 覆盖路径，或直接用 `hermes send` 管道投递。\n\n### 回退路径（存档缺失时）\n\n存档缺失通常意味着当天 pipeline 没跑成功。手工重建：\n\n1. **还原数据** — 从 `backups/trendradar/{date}/` 恢复 `curated_{slot}.json` 到 `data/` 目录\n2. **跑翻译** — `ai_translate.py --push-id {slot}` 必须成功。验证 `title_cn`/`summary_cn` 已写入\n3. **跑渲染** — `render_markdown.py --push-id {slot}` → 自动写 archive + 输出 stdout\n4. **补发** — `archive_resend.py --date YYYY-MM-DD --slot {slot}`（存档已就绪）\n\n### 禁止事项\n\n- **严禁编造标题、摘要、来源**。The Verge/OpenAI/RTX 等虚构条目用户一眼能识别。\n- **严禁从 cron 输出日志读取内容**。cron 输出文件混有 pipeline 日志和 skill 上下文，不是可信数据源。\n- **严禁拼接虚构新闻**。觉得"这个源今天怎么没新闻"时，检查 raw JSON 确认该源是否被抓取、是否被预分类分流到其他域。不要自行填充。\n- **不要改动条目顺序和内容结构**。保持原始顺序，只做格式适配（分片、长度裁剪）。
+**投递后验证**：
+- Cron 结束后，检查 delivery_watchdog 是否会捕获失败
+- 用户反馈"没收到"时：优先走 `archive_resend.py`（见下一节），不要查 cron 输出日志。——cron 输出文件（`cron/output/`）混有 pipeline 日志和 skill 上下文，读到源名容易产生"有这个源就有内容"的虚假印象，是幻觉高危来源。**存档（`archive/YYYY-MM-DD/{slot}.md`）是纯 markdown，是你唯一应该查的数据源。**
+
+## 手动补发纪律（2026-05-27 更新 — 硬约束）
+
+### 标准路径（优先）：archive_resend.py
+
+```bash
+# 列出可用存档
+python3 scripts/archive_resend.py --list
+
+# 补发某日某时段
+export PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GIL=0
+$PYTHON scripts/archive_resend.py --date YYYY-MM-DD --slot morning
+```
+
+`archive_resend.py` 会自动：
+1. 读 `archive/YYYY-MM-DD/{slot}.md`（纯 markdown，由 `render_markdown.py` 每次推送时自动存档）
+2. 校验文件存在且非空（不存在时报错退出——**禁止自行生成内容**）
+3. 打印前 200 字预览
+4. 走 `hermes send --to wecom:bl` 投递
+
+**安全约束**：存档不存在时直接报错，不生成替代内容。这是防幻觉的第一道防线。
+
+> **archive_resend.py 路径不一致陷阱**：`archive_resend.py` 用自己的 `__file__` 解析 `TRENDRADAR_HOME`（指向 `~/TrendRadar/`），而 `render_markdown.py` 使用 `settings.py` 的 `TRENDRADAR_HOME`（指向 `~/.hermes/trendradar/`）。存档写到了 `~/.hermes/trendradar/archive/`，但补发脚本去 `~/TrendRadar/archive/` 找。修复：设置 `TRENDRADAR_HOME` 覆盖路径，或直接用 `hermes send` 管道投递。
+
+### 回退路径（存档缺失时）
+
+存档缺失通常意味着当天 pipeline 没跑成功。手工重建：
+
+1. **还原数据** — 从 `backups/trendradar/{date}/` 恢复 `curated_{slot}.json` 到 `data/` 目录
+2. **跑翻译** — `ai_translate.py --push-id {slot}` 必须成功。验证 `title_cn`/`summary_cn` 已写入
+3. **跑渲染** — `render_markdown.py --push-id {slot}` → 自动写 archive + 输出 stdout
+4. **补发** — `archive_resend.py --date YYYY-MM-DD --slot {slot}`（存档已就绪）
+
+### 禁止事项
+
+- **严禁编造标题、摘要、来源**。The Verge/OpenAI/RTX 等虚构条目用户一眼能识别。
+- **严禁从 cron 输出日志读取内容**。cron 输出文件混有 pipeline 日志和 skill 上下文，不是可信数据源。
+- **严禁拼接虚构新闻**。觉得"这个源今天怎么没新闻"时，检查 raw JSON 确认该源是否被抓取、是否被预分类分流到其他域。不要自行填充。
+- **不要改动条目顺序和内容结构**。保持原始顺序，只做格式适配（分片、长度裁剪）。
 
 ## 投递水印机制（delivery_marker）
 
@@ -148,7 +189,8 @@ ls -la data/delivery_markers/$(date +%Y-%m-%d)_*.marker
 1. **透传简报** — 输出 JSON `briefing` 字段内容本身。`sanity_check.py` 自动拦截 "As an AI language model" / "Here is your report" 等禁语。
 2. **链接格式** — `[【媒体名】](url)`，不加"查看原文"前缀。URL 中包含空格或全角空格时，`render_markdown.py` 会在渲染前自动清除（2026-05-28 修复：`url.replace(' ', '').replace('　', '')`，防止 Agent 输出时在 URL 中插入空格导致链接断裂）。
 3. **深度分析独立投递** — 晚间 3 条深度分析各自作为单独 final response 输出。
-4. **空行铁律** — 板块标题后 `\\n\\n\\n`，条目间 `\\n\\n\\n`，全文无 `---`/`***` 横线。
+4. **空行铁律** — 板块标题后 `\n\n\n`，条目间 `\n\n\n`，全文无 `---`/`***` 横线。
+
 5. **摘要约束** — 每条摘要 80 字内且为逻辑自洽的完整句子，不允许断句（不能被 `…` 截断成半截话）。由 `render_markdown.py` 的 `_shorten(max_len=80)` 保证，无句号时优先找逗号边界，最后兜底干净截断不加 `…`。
 6. **格式契约** — 完整规则在 `render_markdown.py` 模块 docstring 中，修改格式必须先更新契约。
 
