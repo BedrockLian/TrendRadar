@@ -586,13 +586,13 @@ def main():
         help='Which push slot to process (morning|noon|evening)'
     )
     parser.add_argument('--batch-size', type=int, default=None,
-                        help=f'Items per batch (default: {TRANSLATE_BATCH_SIZE}, max 20)')
+                        help=f'Items per batch (default: {TRANSLATE_BATCH_SIZE}, max 50)')
     args = parser.parse_args()
     
     # Apply batch_size override
     global BATCH_SIZE
     if args.batch_size:
-        BATCH_SIZE = min(args.batch_size, 20)
+        BATCH_SIZE = min(args.batch_size, 50)
     
     asyncio.run(process_curated(args.push_id))
 

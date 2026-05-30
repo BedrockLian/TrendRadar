@@ -31,7 +31,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 from trendradar.scripts.exitcodes import EXIT_CONFIG_ERROR
-from trendradar.scripts.settings import get_logger
+from trendradar.scripts.settings import get_logger, get_storage
 
 log = get_logger('orchestrator')
 
@@ -178,8 +178,6 @@ def version_check_and_exit():
             "reason": "version_check_failed",
             "errors": result["errors"],
         }, ensure_ascii=False), file=sys.stderr)
-# Pipeline version — must stay in sync with corresponding SKILL.md version
-__version__ = "2.9.0"  # v2.9: subprocess → direct function calls
 
 
 def run_stage(name: str, func, *args, timeout: int = 300, **kwargs) -> dict:
@@ -454,6 +452,7 @@ def main():
     else:
         print(json.dumps(result, ensure_ascii=False))
 
+    get_storage().close_db()
     return 0 if not errors else 1
 
 

@@ -35,7 +35,8 @@ PREV_MARKER = "(接上)...\n"
 
 def _byte_len(text: str) -> int:
     """Accurate UTF-8 byte count."""
-    return len(text.encode('utf-8'))
+    n = len(text.encode('utf-8'))
+    return n
 
 
 def _split_overlong(fragment: str) -> list[str]:
@@ -48,6 +49,7 @@ def _split_overlong(fragment: str) -> list[str]:
     """
     result = []
     remaining = fragment
+    log.debug(f"_split_overlong: {_byte_len(fragment)}B 超限，开始拆分")
 
     while remaining:
         if _byte_len(remaining) <= MAX_BYTES:
@@ -141,9 +143,11 @@ def split_fragments(markdown: str) -> list[str]:
     - Empty fragments are dropped
     """
     if not markdown or not markdown.strip():
+        log.warning("split_fragments: 空输入")
         return []
 
     lines = markdown.split('\n')
+    log.info(f"分片输入: {_byte_len(markdown)}B, {len(lines)}行")
 
     # Extract the title line (first line starting with ### Hermes日报)
     title_line = ''
@@ -200,6 +204,7 @@ def split_fragments(markdown: str) -> list[str]:
             sub_frags = _split_overlong(frag)
             final_fragments.extend(sub_frags)
 
+    log.info(f"分片完成: {len(final_fragments)}片")
     return final_fragments
 
 
