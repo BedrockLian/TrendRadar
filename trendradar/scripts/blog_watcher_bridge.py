@@ -201,7 +201,8 @@ def write_cache(articles: list):
     if not articles:
         # 写空缓存
         empty = {'items': [], 'fetched_at': datetime.now(CST).isoformat(), 'source': 'blogwatcher'}
-        (TR_CACHE_DIR / 'raw_blogs.json').write_text(json.dumps(empty, ensure_ascii=False))
+        from trendradar.scripts.file_utils import atomic_write_json
+        atomic_write_json(TR_CACHE_DIR / 'raw_blogs.json', empty)
         log.info("无文章, 写入空缓存")
         return
 
@@ -211,8 +212,8 @@ def write_cache(articles: list):
         'source': 'blogwatcher',
         'count': len(articles),
     }
-    (TR_CACHE_DIR / 'raw_blogs.json').write_text(
-        json.dumps(cache, ensure_ascii=False, indent=2)
+    from trendradar.scripts.file_utils import atomic_write_json
+    atomic_write_json(TR_CACHE_DIR / 'raw_blogs.json', cache)
     )
     per_domain = {}
     for a in articles:

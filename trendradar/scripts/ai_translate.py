@@ -27,7 +27,7 @@ from trendradar.scripts.settings import get_data_dir, get_logger
 
 log = get_logger('ai-translate')
 
-from trendradar.scripts.common import CST
+from trendradar.scripts.common import CST, find_curated_file, _parse_line_pairs
 DATA_DIR = get_data_dir()
 
 
@@ -263,39 +263,7 @@ async def batch_translate(
             f"{response.get('error', {}).get('message', 'unknown')}"
         )
     content = response["choices"][0]["message"]["content"].strip()
-
-    # Parse the response: expect 2N lines (title_cn, summary_cn per item)
-    # Model may add extra blank lines, numbering, or commentary — strip noise
-    raw_lines = [l.strip() for l in content.split('\n')]
-    # Filter out empty lines and common model commentary prefixes
-    lines = []
-    for l in raw_lines:
-        if not l:
-            continue
-        # Skip lines that look like model commentary, not translations
-        if l.startswith(('Here', 'The following', 'Below', 'Note:', '以上是')):
-            continue
-        lines.append(l)
-
-    # Pair into (title, summary) tuples
-    results = []
-    for i in range(0, len(lines), 2):
-        title_cn = lines[i] if i < len(lines) else "[翻译失败]"
-        summary_cn = lines[i + 1] if i + 1 < len(lines) else "[翻译失败]"
-        # Strip any [N] prefix or bullet the model may have added
-        title_cn = re.sub(r'^[\[（\(]?\d+[\]）\)]?[.、．\s]*', '', title_cn).strip()
-        summary_cn = re.sub(r'^[\[（\(]?\d+[\]）\)]?[.、．\s]*', '', summary_cn).strip()
-        # Skip if this looks like a separator/commentary line
-        if title_cn.startswith(('---', '===')):
-            continue
-        results.append((title_cn, summary_cn))
-
-    # Pad or truncate to match input count
-    while len(results) < len(items):
-        results.append(("[翻译失败]", "[翻译失败]"))
-    results = results[:len(items)]
-
-    return results
+    return _parse_line_pairs(content, len(items), fallback_label="[翻译失败]")
 
 
 # ── Batch processing utils (was batch_utils.py, merged into ai_translate) ──
@@ -459,28 +427,10 @@ async def batch_expand(
             f"{response.get('error', {}).get('message', 'unknown')}"
         )
     content = response["choices"][0]["message"]["content"].strip()
-
-    raw_lines = [l.strip() for l in content.split('\n')]
-    lines = [l for l in raw_lines if l]
-    # Strip model commentary lines
-    lines = [l for l in lines if not l.startswith(('Here', 'The following', 'Below', 'Note:', '以上是'))]
-
-    results = []
-    for i in range(0, len(lines), 2):
-        title_cn = lines[i] if i < len(lines) else "[扩写失败]"
-        summary_cn = lines[i + 1] if i + 1 < len(lines) else "[扩写失败]"
-        title_cn = re.sub(r'^[\[\（\(]?\d+[\]）\)]?[.、．\s]*', '', title_cn).strip()
-        summary_cn = re.sub(r'^[\[\（\(]?\d+[\]）\)]?[.、．\s]*', '', summary_cn).strip()
-        results.append((title_cn, summary_cn))
-
-    while len(results) < len(items):
-        results.append(("[扩写失败]", "[扩写失败]"))
-    results = results[:len(items)]
-
-    return results
+    return _parse_line_pairs(content, len(items), fallback_label="[扩写失败]")
 
 
-# ── Main processing ──────────────────────────────────────────────────────────
+# ── Main processing ─
 
 
 def _load_and_scan(push_id: str) -> tuple[dict, list, list, Path]:
@@ -493,19 +443,8 @@ def _load_and_scan(push_id: str) -> tuple[dict, list, list, Path]:
     """
     from datetime import datetime
     today_file = datetime.now(CST).strftime('%Y%m%d')
-    curated_path = DATA_DIR / f'curated_{push_id}_{today_file}.json'
-    if not curated_path.exists():
-        # Fallback 2: find latest dated version
-        dated_files = sorted(
-            DATA_DIR.glob(f'curated_{push_id}_[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].json'),
-            reverse=True,
-        )
-        if dated_files:
-            curated_path = dated_files[0]
-        else:
-            # Fallback 3: generic version
-            curated_path = DATA_DIR / f'curated_{push_id}.json'
-    if not curated_path.exists():
+    curated_path = find_curated_file(today_file, push_id)
+    if curated_path is None:
         log.info(
             f"No curated file found for push-id '{push_id}'")
         sys.exit(1)

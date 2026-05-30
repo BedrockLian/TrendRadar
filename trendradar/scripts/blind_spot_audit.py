@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from trendradar.scripts.common import CST
+from trendradar.scripts.common import CST, list_curated_files
 """
 blind_spot_audit.py — 信息茧房盲点检测
 
@@ -19,20 +19,6 @@ from trendradar.scripts.file_utils import get_data_dir
 DATA_DIR = get_data_dir()
 
 from trendradar.scripts.settings import DOMAINS, DOMAIN_LABELS
-
-
-def list_curated_files(days: int):
-    """List curated JSON files within the last N days."""
-    cutoff = datetime.now(CST) - timedelta(days=days)
-    files = []
-    for f in os.listdir(DATA_DIR):
-        if not f.startswith('curated_') or not f.endswith('.json'):
-            continue
-        fpath = os.path.join(DATA_DIR, f)
-        mtime = datetime.fromtimestamp(os.path.getmtime(fpath), tz=CST)
-        if mtime >= cutoff:
-            files.append(fpath)
-    return sorted(files)
 
 
 def scan_serendipity(files):
@@ -232,8 +218,8 @@ def _write_penalty_file(args, files, counts, total, sources):
         ],
     }
     
-    with open(args.output_penalty, 'w') as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
+    from trendradar.scripts.file_utils import atomic_write_json
+    atomic_write_json(Path(args.output_penalty), output)
     
     print(f"[PENALTY] Written {len(penalties)} source penalties to {args.output_penalty}",
           file=sys.stderr if not args.json else None)
@@ -334,8 +320,8 @@ def _update_source_health(files, sources, total):
     }
 
     os.makedirs(DATA_DIR, exist_ok=True)
-    with open(health_path, 'w') as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
+    from trendradar.scripts.file_utils import atomic_write_json
+    atomic_write_json(Path(health_path), output)
 
     failing = [s for s, d in updated.items() if d['status'] == 'failing']
     if failing:
