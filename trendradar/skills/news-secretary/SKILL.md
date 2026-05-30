@@ -24,7 +24,7 @@ pipeline_orchestrator.py（v2.9.0 — 一键7阶段）
   → 输出 JSON: {status, fragments, briefing, stats, needs_deep_analysis}
 ```
 
-LLM 运行编排器，解析 `fragments` 数组投递。编排器不可用时走 cron prompt 中的 fallback 手动管线。自动特性详见 `references/PIPELINE.md`。
+LLM 运行编排器，解析 `fragments` 数组投递。编排器不可用时走 cron prompt 中的 fallback 手动管线。自动特性详见 `../../references/PIPELINE.md`。
 
 简报由 `render_markdown.py` 纯脚本生成，Agent 不修改内容。cron prompt 修改后需同步更新。
 
@@ -83,7 +83,7 @@ SOURCE_DOMAIN_OVERRIDE = {
 
 仅 evening。`delegate_task` 并行 3 个 Pro 子 Agent（趋势/跨域/风险），各基于当日 curated JSON（不联网）。
 输出经 `render_deep_analysis.py --topic "主题"` 管道格式化后作为 final response 逐篇投递（系统自动推送 WeCom）。
-完整协议见 `references/PIPELINE.md`（深度分析格式化章节）。
+完整协议见 `../../references/PIPELINE.md`（深度分析格式化章节）。
 
 **重要：每条分析作为独立 final response 分别输出，不得与简报正文拼接在一起。** 简报走 step 3, 分析走 step 4, 互不干扰。
 
@@ -91,7 +91,7 @@ SOURCE_DOMAIN_OVERRIDE = {
 
 **3 条分开投递**：趋势、跨域、风险各作为一条独立 final response 分别输出，不要合并成一条。
 
-**子 Agent 沙箱陷阱**：`delegate_task` 子 Agent 在 cron 上下文中有独立的进程上下文，其 `terminal`/`read_file` 等工具**无法读取父 session 的文件系统**。文件路径传递（如 `cat /path/to/report.md`）会返回空。子 Agent 必须通过 inline 文本传递内容——将分析文本放在 prompt 的 `context` 字段中，而不是让子 Agent 自己去读文件。详见 `references/PIPELINE.md`。
+**子 Agent 沙箱陷阱**：`delegate_task` 子 Agent 在 cron 上下文中有独立的进程上下文，其 `terminal`/`read_file` 等工具**无法读取父 session 的文件系统**。文件路径传递（如 `cat /path/to/report.md`）会返回空。子 Agent 必须通过 inline 文本传递内容——将分析文本放在 prompt 的 `context` 字段中，而不是让子 Agent 自己去读文件。详见 `../../references/PIPELINE.md`。
 
 ## 交付验证（新增！）
 
@@ -121,7 +121,7 @@ SOURCE_DOMAIN_OVERRIDE = {
 
 ## 投递水印机制
 
-详见 `references/DELIVERY-WATERMARK.md`。
+详见 `../../references/DELIVERY-WATERMARK.md`。
 
 ## 输出规范
 
@@ -159,18 +159,18 @@ export PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GI
 
 ## 关键参考
 
-> 文档已于 2026-05-27 从 41 份合并为 9 份。完整映射见 `references/INDEX.md`。
+> 文档已于 2026-05-27 从 41 份合并为 9 份。完整映射见 `../../references/INDEX.md`。
 
 | 文件 | 何时读 |
 |------|--------|
-| `references/ARCHITECTURE.md` | 系统架构全貌（分类/关键词/渲染/迁移/体检/API模式） |
-| `references/PIPELINE.md` | 管线流程 + 性能瓶颈 + 简报/深度分析格式规范 |
-| `references/SETUP.md` | 代理配置/RSSHub/Cron运维/迁移回滚/源管理/投递协议 |
-| `references/TRAPS.md` | 已知陷阱全集（48 个） |
-| `references/REPO-SYNC.md` | Git 仓库同步（三处路径流程） |
-| `references/MAINTENANCE.md` | References 一致性维护 + Skill 审计清单 |
+| `../../references/ARCHITECTURE.md` | 系统架构全貌（分类/关键词/渲染/迁移/体检/API模式） |
+| `../../references/PIPELINE.md` | 管线流程 + 性能瓶颈 + 简报/深度分析格式规范 |
+| `../../references/SETUP.md` | 代理配置/RSSHub/Cron运维/迁移回滚/源管理/投递协议 |
+| `../../references/TRAPS.md` | 已知陷阱全集（48 个） |
+| `../../references/REPO-SYNC.md` | Git 仓库同步（三处路径流程） |
+| `../../references/MAINTENANCE.md` | References 一致性维护 + Skill 审计清单 |
 | `references/fix-recipes.md` | 已验证质量修复脚本（短摘要扩写、tech上限、foreign_china扩充、tirith关闭） |
-| `references/DELIVERY-WATERMARK.md` | 投递水印机制：MarkerDir + delivery_watchdog + 手动标记 |
+| `../../references/DELIVERY-WATERMARK.md` | 投递水印机制：MarkerDir + delivery_watchdog + 手动标记 |
 | `references/sanity-check-maintenance.md` |
 | `scripts/sanity_check.py` | 发布前拦截器 — 禁语/死链/敏感词扫描 + 输出格式验证 |
 | `scripts/curate_and_push.py` |
@@ -181,4 +181,4 @@ export PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GI
 ## 兴趣偏好
 `config/ai_interests.yaml` — 正面+2分，排除=0分过滤。CLI: `python3 scripts/interest_cli.py {list,add,remove,exclude}`。
 
-**滑窗误触陷阱**：`_load_interests()` 用 2-3 字滑窗从排除短语提取关键词，通用词（新闻/游戏/体育 等）可能误入排除集。修改 `ai_interests.yaml` 后需检查排除集是否含通用词。详见 `../../references/TRAPS.md #49`。
+**滑窗误触陷阱**：`_load_interests()` 用 2-3 字滑窗从排除短语提取关键词，通用词（新闻/游戏/体育 等）可能误入排除集。修改 `ai_interests.yaml` 后需检查排除集是否含通用词。详见 `../../../../references/TRAPS.md #49`。
