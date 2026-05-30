@@ -144,7 +144,7 @@ if not runtests():
 
 ## 15. `check_pipeline()` RSS 连通性随机采样假阳性
 
-**现象**：健康检查随机抽到 `localhost:1200`（RSSHub 通常未运行）的源时报错，每次结果不一致。
+**现象**：健康检查随机抽到 `localhost:1200`（本地通常未运行）的源时报错，每次结果不一致。
 
 **修复**（2026-05-28）：
 - 过滤 `feed_url` 含 `localhost` 的源

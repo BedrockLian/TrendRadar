@@ -207,7 +207,7 @@ export PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GI
 |------|--------|
 | `references/ARCHITECTURE.md` | 系统架构全貌（分类/关键词/渲染/迁移/体检/API模式） |
 | `references/PIPELINE.md` | 管线流程 + 性能瓶颈 + 简报/深度分析格式规范 |
-| `references/SETUP.md` | 代理配置/RSSHub/Cron运维/迁移回滚/源管理/投递协议 |
+| `references/SETUP.md` | 代理配置/Cron运维/迁移回滚/源管理/投递协议 |
 | `references/TRAPS.md` | 已知陷阱全集（48 个） |
 | `references/REPO-SYNC.md` | Git 仓库同步（三处路径流程） |
 | `references/REFERENCES-CONSISTENCY-GUIDE.md` | References 一致性维护 |

@@ -15,8 +15,6 @@ DOMESTIC_PROXY_PATTERNS = (
 def needs_proxy(feed_url: str) -> bool:
     """判断 RSS 源是否需要走代理。"""
     url_lower = feed_url.lower()
-    if 'localhost:1200' in url_lower:
-        return True
     for pattern in DOMESTIC_PROXY_PATTERNS:
         if pattern in url_lower:
             return False

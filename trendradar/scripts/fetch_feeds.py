@@ -27,7 +27,7 @@ def _get_parse_pool():
 from trendradar.scripts.common import CST
 
 from trendradar.scripts.settings import get_data_dir, get_cache_dir, write_compressed
-from trendradar.scripts.settings import RSSHUB_CONCURRENT, EXTERNAL_CONCURRENT, TIMEOUT_SEC
+from trendradar.scripts.settings import EXTERNAL_CONCURRENT, TIMEOUT_SEC
 from trendradar.scripts.settings import PROXY_URL, needs_proxy
 DATA_DIR = get_data_dir()
 CACHE_DIR = get_cache_dir()
@@ -42,10 +42,10 @@ def _load_config() -> dict:
     return json.loads((DATA_DIR / 'sources.json').read_text())
 
 
-def _get_sources() -> list[tuple[str, str, bool, int]]:
-    """返回 [(name, feed_url, is_rsshub, freshness_days), ...]"""
+def _get_sources() -> list[tuple[str, str, int]]:
+    """返回 [(name, feed_url, freshness_days), ...]"""
     config = _load_config()
-    return [(s['name'], s['feed_url'], 'localhost:1200' in s['feed_url'],
+    return [(s['name'], s['feed_url'],
              s.get('freshness_days', RSS_FRESHNESS_MAX_AGE_DAYS))
             for s in config.get('data_sources', [])
             if s.get('type') == 'rss' and s.get('feed_url') and s.get('enabled', True)]
@@ -92,7 +92,7 @@ def _parse_rss(data: str, platform: str, max_items: int, freshness_days: int = R
 
 
 async def _fetch_one(session: aiohttp.ClientSession, name: str, url: str,
-                     is_rsshub: bool, sem: asyncio.Semaphore, freshness_days: int = 1) -> tuple[str, list]:
+                     sem: asyncio.Semaphore, freshness_days: int = 1) -> tuple[str, list]:
     """抓取+解析单个 RSS 源，错误内部消化（带重试）"""
     max_retries = 2
     data = ""
@@ -119,7 +119,7 @@ async def _fetch_one(session: aiohttp.ClientSession, name: str, url: str,
                 return name, []
     if not data:
         return name, []
-    max_items = 40 if is_rsshub else 25
+    max_items = 25
     loop = asyncio.get_running_loop()
     items = await loop.run_in_executor(_get_parse_pool(), _parse_rss, data, name, max_items, freshness_days)
     return name, items
@@ -128,22 +128,19 @@ async def _fetch_one(session: aiohttp.ClientSession, name: str, url: str,
 async def fetch_all(push_id: str = '') -> dict:
     """统一 TaskGroup 并行抓取 + 热度追踪"""
     sources = _get_sources()
-    print(f'[FETCH] {len(sources)}源（RSSHub {sum(1 for _,_,r,_ in sources if r)} + 外网 {sum(1 for _,_,r,_ in sources if not r)}）')
-
-    # 按类型分配 Semaphore，外网源走代理
-    sems = {True: asyncio.Semaphore(RSSHUB_CONCURRENT),
-            False: asyncio.Semaphore(EXTERNAL_CONCURRENT)}
 
     # 分流：国内源直连，外媒源走米霍姆代理
-    direct_sources = [(n, u, r, fd) for n, u, r, fd in sources if not needs_proxy(u)]
-    proxy_sources = [(n, u, r, fd) for n, u, r, fd in sources if needs_proxy(u)]
+    direct_sources = [(n, u, fd) for n, u, fd in sources if not needs_proxy(u)]
+    proxy_sources = [(n, u, fd) for n, u, fd in sources if needs_proxy(u)]
     print(f'[FETCH] {len(sources)}源（直连 {len(direct_sources)} + 代理 {len(proxy_sources)}）')
+
+    sem = asyncio.Semaphore(EXTERNAL_CONCURRENT)
 
     async def _fetch_batch(source_group: list, session):
         tasks = []
         names = []
-        for n, u, r, fd in source_group:
-            tasks.append(_fetch_one(session, n, u, r, sems[r], fd))
+        for n, u, fd in source_group:
+            tasks.append(_fetch_one(session, n, u, sem, fd))
             names.append(n)
         raw_results = await asyncio.gather(*tasks, return_exceptions=True)
         result: dict[str, list] = {}
@@ -157,7 +154,7 @@ async def fetch_all(push_id: str = '') -> dict:
                 result[name] = outcome if isinstance(outcome, list) else []
         return result
 
-    # 直连 + 代理并行两批 (WAS: serial)
+    # 直连 + 代理并行两批
     tout = aiohttp.ClientTimeout(total=30)
     direct_conn = aiohttp.TCPConnector(limit=20, limit_per_host=12)
     proxy_conn = aiohttp.TCPConnector(limit=20, limit_per_host=12)
@@ -248,9 +245,7 @@ def _preclassify(items: list) -> list:
     domains = [(G, 'gaming'), (T, 'tech'), (E, 'economy')]
     
     # 源级域覆盖 — 特定源固定分配到某个域（不参与关键词匹配）
-    SOURCE_DOMAIN_OVERRIDE = {
-        '日经亚洲': 'foreign_china',
-    }
+    SOURCE_DOMAIN_OVERRIDE = {}
     
     for item in items:
         platform = item.get('source_platform', '')

@@ -46,7 +46,7 @@ from trendradar.config.translation import (
 
 # ── 抓取配置 ─────────────────────────────────────────────
 from trendradar.config.fetching import (
-    RSSHUB_CONCURRENT, EXTERNAL_CONCURRENT, TIMEOUT_SEC, FETCH_RETRIES,
+    EXTERNAL_CONCURRENT, TIMEOUT_SEC, FETCH_RETRIES,
     API_CALL_TIMEOUT, API_RETRIES, API_RETRY_BACKOFF,
 )
 

@@ -80,8 +80,8 @@ cd ~/.hermes/trendradar
 
 ### TCP 连接池耗尽
 **症状**：RSS源 aiohttp 超时但 curl 正常。
-**案例**(2026-05-21): `RSSHUB=12 + EXTERNAL=20 = 32 > TCPConnector(30)` → 6/38超时。修复: 0超时，29.9s→5.0s。
-**修复**: `TCPConnector(limit) >= sum(所有Semaphore)`，留20%余量。
+**案例**(2026-05-21): 曾因多 Semaphore 总和超过 TCPConnector 导致超时，已修复。
+**修复**: `TCPConnector(limit) >= 所有Semaphore`总和，留20%余量。当前已统一为单 `EXTERNAL_CONCURRENT=20`。
 
 ### Script 并行
 互不依赖脚本用 `& wait`:

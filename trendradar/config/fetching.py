@@ -1,6 +1,5 @@
 """TrendRadar 抓取配置 — 连接池、超时、重试。"""
 
-RSSHUB_CONCURRENT = 12
 EXTERNAL_CONCURRENT = 20
 TIMEOUT_SEC = 8
 FETCH_RETRIES = 3

@@ -350,7 +350,7 @@ def check_pipeline():
     except Exception as e:
         fail('pipeline', 'WARN', f'push_slot_detect 异常: {e}')
 
-    # 2) RSS 源连通性（跳过 localhost 源 — 本地 RSSHub 通常不运行）
+    # 2) RSS 源连通性（跳过 localhost 源 — 本地通常不运行）
     if (DATA / 'sources.json').exists():
         try:
             import socket

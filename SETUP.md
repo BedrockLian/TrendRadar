@@ -119,7 +119,7 @@ rules:
   # ... 路由规则
 ```
 
-> **注意**：`allow-lan: true` 和 `bind-address: "0.0.0.0"` 是必需的——TrendRadar 的 RSSHub Docker 容器需要从容器网络访问 Mihomo。
+> **注意**：`allow-lan: true` 和 `bind-address: "0.0.0.0"` 是必需的——TrendRadar 的 Docker 容器需要从容器网络访问 Mihomo。
 
 #### 1.5.3 注册 Systemd 服务
 
@@ -157,43 +157,12 @@ curl -x http://127.0.0.1:7890 https://www.google.com
 TrendRadar 的 `scripts/settings.py` 内置 `needs_proxy()` 函数：
 
 - **直连**：`plink.anyfeeder.com`（国内中转）、`.cn` 域名
-- **代理**：外媒直连 RSS（BBC/NYT/Guardian/SCMP 等）、RSSHub 路由（`localhost:1200`）
+- **代理**：外媒直连 RSS（BBC/NYT/Guardian/SCMP 等）
 - **特殊**：BBC 被代理节点屏蔽，自动降级为直连
 
 无需额外配置，代理地址默认为 `http://127.0.0.1:7890`，可通过环境变量 `TRENDRADAR_PROXY` 覆盖。
 
-#### 1.5.5 RSSHub 容器代理（可选）
-
-如果使用了 RSSHub 本地实例来获取外媒 RSS，需要给 RSSHub 容器配置代理。推荐使用 `undici.EnvHttpProxyAgent` 方案（Node.js 原生支持）：
-
-```dockerfile
-FROM diygod/rsshub:latest
-RUN apt-get update && apt-get install -y ca-certificates
-COPY proxy-fix.mjs /app/proxy-fix.mjs
-```
-
-配合启动命令：
-```bash
-docker run -d --name rsshub \
-  -p 1200:1200 \
-  -e HTTP_PROXY=http://host.docker.internal:7890 \
-  -e HTTPS_PROXY=http://host.docker.internal:7890 \
-  -e NODE_OPTIONS="--max-http-header-size=32768 --import /app/proxy-fix.mjs" \
-  rsshub-image \
-  dumb-init -- node --max-http-header-size=32768 --import /app/proxy-fix.mjs dist/index.mjs
-```
-
-`proxy-fix.mjs` 内容：
-```javascript
-import undici from 'undici';
-const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
-if (proxyUrl) {
-  const agent = new undici.EnvHttpProxyAgent();
-  globalThis[Symbol.for('undici.globalDispatcher.1')] = agent;
-}
-```
-
-#### 1.5.6 代理排障
+#### 1.5.5 代理排障
 
 ```bash
 # 1. Mihomo 是否运行
@@ -719,8 +688,7 @@ git push
 | 日报无推送 | 运行体检 → 检查 `PYTHONPATH` → 确认 API key 有效 |
 | 推送内容为空 | 检查 RSS 源连通性 → 检查 `sources.json` 是否存在 |
 | 外媒源内容缺失 | `systemctl --user status mihomo` 检查代理 → `curl -x http://127.0.0.1:7890 https://www.google.com` 测试 |
-| RSSHub 路由超时 | `docker logs rsshub --tail 20` 检查错误 → 确认容器已配置 proxy-fix.mjs |
-| 数据库异常 | 删除 `data/fingerprints.db` → 重新初始化 |
+| Mihomo 端口被占用 | `ss -tlnp | grep 7890` 找占用进程 → `kill` 后重启 |
 | import 错误 | `export PYTHONPATH=/home/asus/.hermes` |
 | cron 不触发 | `hermes cron list` 检查状态 → 确认 Hermes 网关运行中 |
 
