@@ -314,7 +314,6 @@ def check_sanity_interceptor():
     try:
         env = os.environ.copy()
         env['PYTHONPATH'] = str(TR.parent)
-        env.setdefault('PYTHON_GIL', '0')
         pipeline_python = os.environ.get('PYTHON', '/usr/local/bin/python3.14t')
         r = subprocess.run(
             [pipeline_python, str(script), '--json', '--no-check-links'],
@@ -336,12 +335,11 @@ def check_pipeline():
     try:
         penv = os.environ.copy()
         penv['PYTHONPATH'] = str(TR.parent)
-        penv.setdefault('PYTHON_GIL', '0')
         r = subprocess.run(
             [pipeline_python, str(SCRIPTS / 'push_slot_detect.py')],
             capture_output=True, text=True, timeout=30, env=penv
         )
-        if r.returncode != 0:
+        if r.returncode != 0 and r.stdout.strip() != 'NO_SLOT':
             fail('pipeline', 'WARN', f'push_slot_detect 执行失败 (exit={r.returncode})')
         elif r.stdout.strip() not in ('NO_SLOT',) and 'PUSH_ID=' not in r.stdout:
             fail('pipeline', 'WARN', f'push_slot_detect 输出异常: {r.stdout.strip()[:60]}')
@@ -399,7 +397,6 @@ def check_pipeline():
         try:
             env = os.environ.copy()
             env['PYTHONPATH'] = str(TR.parent)
-            env.setdefault('PYTHON_GIL', '0')
             r = subprocess.run(
                 [pipeline_python, '-c', f'import trendradar.scripts.{mod_name}'],
                 capture_output=True, text=True, timeout=15, env=env
@@ -443,7 +440,6 @@ def check_blind_spot():
     try:
         env = os.environ.copy()
         env['PYTHONPATH'] = str(TR.parent)
-        env.setdefault('PYTHON_GIL', '0')
         r = subprocess.run(
             [pipeline_python, str(audit_script), '--days', '3', '--json',
              '--coverage-threshold', '10'],
