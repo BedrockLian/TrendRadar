@@ -26,7 +26,7 @@ def _get_parse_pool():
 
 from trendradar.scripts.common import CST
 
-from trendradar.scripts.settings import get_data_dir, get_cache_dir, write_compressed
+from trendradar.scripts.settings import get_data_dir, get_cache_dir, get_config_dir, write_compressed
 from trendradar.scripts.settings import EXTERNAL_CONCURRENT, TIMEOUT_SEC
 from trendradar.scripts.settings import PROXY_URL, needs_proxy
 DATA_DIR = get_data_dir()
@@ -39,7 +39,7 @@ RSS_FRESHNESS_MAX_AGE_DAYS = 1  # 全局默认，单源可在 sources.json 中�
 @cache
 def _load_config() -> dict:
     """缓存 sources.json 读取（__main__ 多次调用时复用）"""
-    return json.loads((DATA_DIR / 'sources.json').read_text())
+    return json.loads((get_config_dir() / 'sources.json').read_text())
 
 
 def _get_sources() -> list[tuple[str, str, int]]:

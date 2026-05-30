@@ -26,6 +26,11 @@ def get_cache_dir() -> Path:
     d.mkdir(parents=True, exist_ok=True)
     return d
 
+@lru_cache()
+def get_config_dir() -> Path:
+    """返回 config/ 目录（sources.json, ai_interests.yaml 等）。"""
+    return TRENDRADAR_HOME / 'config'
+
 
 def raw_path(date_str: str) -> Path:
     return get_cache_dir() / f'raw_{date_str}.json'

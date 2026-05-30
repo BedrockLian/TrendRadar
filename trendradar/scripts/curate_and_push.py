@@ -8,7 +8,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from functools import lru_cache, cache
 
-from trendradar.scripts.settings import get_data_dir, get_cache_dir, MIN_SCORE, MAX_PER_DOMAIN, DOMAINS, TRENDRADAR_HOME, BRIEFING_RATIO, SCORE_HEAT_WORDS, MAX_SAME_SOURCE, DIVERSITY_PENALTY_FACTOR, MAX_SOURCE_PCT
+from trendradar.scripts.settings import get_data_dir, get_cache_dir, get_config_dir, MIN_SCORE, MAX_PER_DOMAIN, DOMAINS, TRENDRADAR_HOME, BRIEFING_RATIO, SCORE_HEAT_WORDS, MAX_SAME_SOURCE, DIVERSITY_PENALTY_FACTOR, MAX_SOURCE_PCT
 from trendradar.config.keywords import has_keyword_match, ALL_KEYWORDS
 DATA_DIR = get_data_dir()
 CACHE_DIR = get_cache_dir()
@@ -27,7 +27,7 @@ from trendradar.scripts.interest_loader import load_interests
 @lru_cache(maxsize=1)
 def _config() -> dict:
     try:
-        return json.loads((DATA_DIR / 'sources.json').read_text())
+        return json.loads((get_config_dir() / 'sources.json').read_text())
     except (FileNotFoundError, json.JSONDecodeError, PermissionError) as e:
         raise SystemExit(f"FATAL: Cannot load sources.json: {e}") from e
 

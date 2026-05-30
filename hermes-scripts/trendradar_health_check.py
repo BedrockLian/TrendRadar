@@ -97,7 +97,7 @@ def check_config():
             fail(f'config/{name}', 'WARN', '文件过小（疑为空）')
 
     # JSON 源
-    sources = DATA / 'sources.json'
+    sources = TR / 'config' / 'sources.json'
     if not sources.exists():
         fail('config/sources.json', 'WARN', '文件缺失')
     elif sources.stat().st_size < 50:
@@ -349,10 +349,10 @@ def check_pipeline():
         fail('pipeline', 'WARN', f'push_slot_detect 异常: {e}')
 
     # 2) RSS 源连通性（跳过 localhost 源 — 本地通常不运行）
-    if (DATA / 'sources.json').exists():
+    if (TR / 'config' / 'sources.json').exists():
         try:
             import socket
-            sources = json.loads((DATA / 'sources.json').read_text())
+            sources = json.loads((TR / 'config' / 'sources.json').read_text())
             feeds = sources.get('data_sources', [])
             if isinstance(feeds, dict):
                 feeds = list(feeds.values())

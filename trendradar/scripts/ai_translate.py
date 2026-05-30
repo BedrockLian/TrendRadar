@@ -23,7 +23,7 @@ from pathlib import Path
 
 import aiohttp
 
-from trendradar.scripts.settings import get_data_dir, get_logger
+from trendradar.scripts.settings import get_data_dir, get_config_dir, get_logger
 
 log = get_logger('ai-translate')
 
@@ -36,7 +36,7 @@ DATA_DIR = get_data_dir()
 # The `platform` field values are extracted per language for substring matching.
 # Do NOT maintain a separate mapping file — sources.json is the single truth.
 
-_SOURCES_PATH = get_data_dir() / 'sources.json'
+_SOURCES_PATH = get_config_dir() / 'sources.json'
 
 def _load_source_languages() -> tuple[frozenset, frozenset]:
     """Read sources.json and build (en_keywords, ja_keywords) frozensets.

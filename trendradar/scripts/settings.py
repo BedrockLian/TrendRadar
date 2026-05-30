@@ -64,7 +64,7 @@ from trendradar.config.heat_tracking import (
 
 # ── 文件工具 ─────────────────────────────────────────────
 from trendradar.scripts.file_utils import (
-    get_data_dir, get_cache_dir,
+    get_data_dir, get_cache_dir, get_config_dir,
     raw_path, curated_path, batch_path,
     atomic_write_json, write_compressed, read_compressed,
 )
