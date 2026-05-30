@@ -1,5 +1,5 @@
-from trendradar.scripts.common import CST
 #!/usr/bin/env python3
+from trendradar.scripts.common import CST
 """TrendRadar 事件跟踪 — 跨日比对热度变化。
 比较今天与昨天早报的精选数据，标记：新事件/热度上升/事件进展/热度下降。
 

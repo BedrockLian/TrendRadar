@@ -285,8 +285,8 @@ if __name__ == '__main__':
     print(f'[{start:%H:%M:%S}] 开始异步抓取...')
     result = asyncio.run(fetch_all(args.push_id))
     # write raw cache with date key (matches push_prepare.py ensure_raw_exists expectation)
-    from datetime import datetime, timezone, timedelta
-    CST = timezone(timedelta(hours=8))
+    from datetime import datetime
+    from trendradar.scripts.common import CST
     today = datetime.now(CST).strftime('%Y%m%d')
     write_compressed(CACHE_DIR / f'raw_{today}', result)
 

@@ -25,6 +25,7 @@ class TestKw:
         from trendradar.config.keywords import ALL_KEYWORDS
         return ALL_KEYWORDS
 
+    @pytest.mark.smoke
     def test_all_domains_present(self):
         kw = self._kw()
         assert 'tech' in kw

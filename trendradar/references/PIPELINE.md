@@ -2,7 +2,7 @@
 
 # Pipeline — TrendRadar 日报推送管线
 
-v2.8.0 起使用 `pipeline_orchestrator.py` 一键编排。`0 9,12,21 * * *`。
+v2.9.0 起使用 `pipeline_orchestrator.py` 一键编排。`0 9,12,21 * * *`。
 脚本阶段用 python3.14t（free-threaded），渲染用 render_markdown.py（纯脚本，~0s）。
 
 Agent 可通过 `--list-steps` 动态获取管道步骤定义（SSOT），不再依赖手动维护的步骤表。
@@ -70,7 +70,7 @@ cd ~/.hermes/trendradar
 `track_events.py` | 跨日事件追踪
 `record_fingerprints.py` | 指纹记录（Storage 统一接入）
 `blog_watcher_bridge.py` | blogwatcher 集成
-`pipeline_orchestrator.py` | 一键编排器 v2.8.0
+`pipeline_orchestrator.py` | 一键编排器 v2.9.0
 `blind_spot_audit.py` | 盲点审计 + --json 机器可读模式
 `aggregate_monthly.py` | 月度统计 + --suggest-interests 兴趣漂移
 

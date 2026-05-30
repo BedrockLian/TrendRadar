@@ -1,5 +1,5 @@
-from trendradar.scripts.common import CST
 #!/usr/bin/env python3
+from trendradar.scripts.common import CST
 """
 blind_spot_audit.py — 信息茧房盲点检测
 
@@ -15,8 +15,8 @@ import argparse, json, os, sys, re
 from datetime import datetime, timezone, timedelta, date
 from collections import Counter, defaultdict
 
-SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(os.path.dirname(SCRIPTS_DIR), 'data')
+from trendradar.scripts.file_utils import get_data_dir
+DATA_DIR = get_data_dir()
 
 from trendradar.scripts.settings import DOMAINS, DOMAIN_LABELS
 

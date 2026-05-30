@@ -1,5 +1,5 @@
-from trendradar.scripts.common import CST
 #!/usr/bin/env python3
+from trendradar.scripts.common import CST
 """批量直连抓取 — 10 并发抓取头条+外媒 URL 全文（aiohttp + curl 兜底 + 100%命中）"""
 from trendradar.scripts.settings import get_logger
 log = get_logger('batch-fetch')

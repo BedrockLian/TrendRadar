@@ -23,6 +23,7 @@ if SCRIPTS_DIR not in sys.path:
 class TestGetSourceLang:
     """get_source_lang() — 来源平台语言检测"""
 
+    @pytest.mark.smoke
     def test_english_bbc(self):
         from ai_translate import get_source_lang
         assert get_source_lang('BBC 商务') == 'English'

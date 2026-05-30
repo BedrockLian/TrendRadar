@@ -1,5 +1,5 @@
-from trendradar.scripts.common import CST
 #!/usr/bin/env python3
+from trendradar.scripts.common import CST
 """TrendRadar Curator — 全局重分类 + 并行精选（frozenset加速 + cache）"""
 from trendradar.scripts.settings import get_logger
 log = get_logger('curate-and-push')

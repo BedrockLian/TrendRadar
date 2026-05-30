@@ -48,6 +48,17 @@ def get_run_id() -> str:
     """Get current RUN_ID (public interface)."""
     return current_run_id.get()
 
+# ── Exit codes (was exitcodes.py, merged into common) ──────────────────
+EXIT_SUCCESS = 0        # 成功，有产出
+EXIT_NO_CONTENT = 2     # 成功，无新内容（正常，不告警）
+EXIT_PARTIAL = 3        # 部分成功（部分 domain 或源失败，推送降级内容）
+EXIT_CONFIG_ERROR = 10  # 配置错误（需人工介入）
+EXIT_API_ERROR = 11     # API 不可达（自动重试）
+EXIT_DB_ERROR = 12      # 数据库损坏（触发自愈）
+EXIT_FATAL = 99         # 致命错误（停止管线）
+
 __all__ = ['CST', 'current_run_id', 'gen_run_id', 'parse_run_id',
            'run_id_marker', 'set_run_id', 'get_run_id',
-           'set_run_id_ctx', 'get_run_id_ctx']
+           'set_run_id_ctx', 'get_run_id_ctx',
+           'EXIT_SUCCESS', 'EXIT_NO_CONTENT', 'EXIT_PARTIAL',
+           'EXIT_CONFIG_ERROR', 'EXIT_API_ERROR', 'EXIT_DB_ERROR', 'EXIT_FATAL']

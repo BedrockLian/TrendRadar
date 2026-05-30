@@ -1,5 +1,5 @@
-from trendradar.scripts.common import CST
 #!/usr/bin/env python3
+from trendradar.scripts.common import CST
 """
 aggregate_monthly.py — 月度统计聚合 + 兴趣漂移检测
 
@@ -19,9 +19,8 @@ import argparse, json, os, sys, re
 from datetime import datetime, timezone, timedelta
 from collections import Counter, defaultdict
 
-SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(os.path.dirname(SCRIPTS_DIR), 'data')
-TRENDRADAR_HOME = os.path.dirname(SCRIPTS_DIR)
+from trendradar.scripts.file_utils import get_data_dir, TRENDRADAR_HOME
+DATA_DIR = get_data_dir()
 
 from trendradar.scripts.settings import DOMAINS, DOMAIN_LABELS
 

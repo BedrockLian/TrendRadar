@@ -1,6 +1,6 @@
 # TrendRadar 📡
 
-> **v5.8.0** — 多源 RSS 聚合 + AI 策展 + Pro 深度分析 → 企业微信日/周/月报。含自动体检、偏好收敛、编排器一键管线、全链路安全加固、CI 持续集成。
+> **v2.9.0** — 多源 RSS 聚合 + AI 策展 + Pro 深度分析 → 企业微信日/周/月报。含自动体检、偏好收敛、编排器一键管线、全链路安全加固、CI 持续集成。
 
 > 📖 **[从零搭建指南 → SETUP.md](SETUP.md)** — 从 Hermes Agent 全新安装到测试部署一站完成。
 
@@ -65,21 +65,19 @@ pipeline_orchestrator.py（v2.9.0 — 一键7阶段）
 
 ## Skills
 
-本系统深度集成 [Hermes Agent](https://hermes-agent.nousresearch.com)，6 个 skill 定义完整的 Agent 行为：
+本系统深度集成 [Hermes Agent](https://hermes-agent.nousresearch.com)，4 个 skill 定义完整的 Agent 行为：
 
 | Skill | 版本 | 职责 |
 |-------|------|------|
 | `news-secretary` | v6.15.0 | 日报推送（核心），早/午/晚三段管线 + 晚间 Pro 深度分析 |
 | `self-healing` | v3.4.0 | 每日 15:00 自动体检 DB/配置/API/Gateway，修复常见故障 |
-| `performance-optimizer` | v2.4.0 | 每日 21:15 推送质量评分 + 偏好收敛调优 |
 | `system-config` | v2.11.0 | 项目路径/Python 环境/Cron 任务/代理配置速查 |
-| `weekly-report` | v2.4.0 | 每周一 Pro 深度趋势研判，五大板块 × 信息茧房突围 |
-| `monthly-report` | v2.3.0 | 每月初全景复盘，4 期周报聚合 + heat_tracker Top10 |
+| `report-generator` | v2.9.0 | 周报/月报深度研判 + 推送质量优化（合并 weekly/monthly/performance-optimizer） |
 
 | 功能 | 依赖 Hermes 的组件 |
 |------|-------------------|
 | **推送调度** | 日报 cron（`0 9,12,21 * * *`）+ 周报 cron（`30 9 * * 1`）+ 月报 cron（`0 9 1 * *`） |
-| **6 个 skill** | 上述定义，脱离 Hermes 无意义 |
+| **4 个 skill** | 上述定义，脱离 Hermes 无意义 |
 | **WeCom 投递** | cron final response → Gateway auto-delivery |
 | **晚间深度分析** | `delegate_task` 3×Pro 子 Agent 并行 |
 | **周报/月报 Pro 分析** | `delegate_task` + `deep-research-cli` 六步协议 |
@@ -114,15 +112,10 @@ TrendRadar/
 │   │   ├── heat_tracker.py              # 热度追踪引擎
 │   │   ├── push_slot_detect.py          # 推送时段检测（早/午/晚）
 │   │   ├── blog_watcher_bridge.py       # BlogWatcher 订阅源桥接
-│   │   ├── cleanup_fake_translations.py # 假翻译自动清理
 │   │   ├── interest_cli.py              # 兴趣偏好 CLI 管理
-│   │   ├── batch_utils.py               # 批次处理泛化（翻译/扩写复用）
-│   │   ├── pipeline_stage.py            # PipelineStage 结果协议
-│   │   ├── gen_cron_prompt.py            # cron prompt 自动生成（SSOT）
-│   │   ├── common.py                    # 公共工具函数
+│   │   ├── common.py                    # 公共工具函数（含 exitcodes）
 │   │   ├── settings.py                  # 统一配置（路径/API/BATCH_SIZE）
 │   │   ├── storage.py                   # SQLite 存储抽象层
-│   │   └── exitcodes.py                 # 退出码协议定义
 │   ├── config/                #   关键词/时段/翻译/兴趣配置
 │   │   ├── sources.json              # 39+ RSS 源列表
 │   │   ├── keywords.py               # AC 自动机关键词分类（505 词 × 6 域）
@@ -131,14 +124,12 @@ TrendRadar/
 │   ├── migrations/           #   SQLite 数据库迁移引擎
 │   │   ├── 001_initial.sql           # 初始表结构
 │   │   └── runner.py                 # 迁移执行器（up + down 回滚）
-│   ├── skills/               #   Hermes Agent 技能定义（6个）
+│   ├── skills/               #   Hermes Agent 技能定义（4个）
 │   │   ├── news-secretary/           # 日报推送 v6.15.0
 │   │   ├── self-healing/             # 自动体检 v3.4.0
-│   │   ├── performance-optimizer/    # 推送质量优化 v2.4.0
 │   │   ├── system-config/            # 系统配置速查 v2.11.0
-│   │   ├── weekly-report/            # 周报深度研判 v2.4.0
-│   │   └── monthly-report/           # 月报全景分析 v2.3.0
-│   ├── references/           #   核心参考文档（8 根 + 2 存档 + INDEX.md 索引）
+│   │   └── report-generator/         # 周报/月报/质量优化 v2.9.0
+│   ├── references/           #   核心参考文档（7 根 + INDEX.md 索引）
 │   ├── tests/                #   测试用例（146 用例，含 E2E 管线 + 边界测试）
 │   │   ├── conftest.py
 │   │   ├── test_pipeline_e2e.py      # 编排器基础测试
@@ -156,15 +147,15 @@ TrendRadar/
 │   │   ├── test_heat_tracker.py
 │   │   └── test_track_events.py
 │   ├── .github/workflows/ci.yml     # GitHub Actions CI（lint + smoke + test + refs 一致性校验）
-│   ├── KNOWLEDGE_GRAPH.md           # 完整代码分析：架构全景图/模块依赖/数据流（630 行）
 │   ├── README.md                    # 子包说明
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
-│   └── pyproject.toml               # 包定义 v5.6.0
-├── hermes-scripts/           # 自动体检/维护/看门狗脚本
+│   └── pyproject.toml               # 包定义 v2.9.0
+├── hermes-scripts/           # 自动体检/维护/看门狗/Cron脚本
 │   ├── trendradar_health_check.py   # 每日自动体检（17项检查）
 │   ├── trendradar_maintenance.py    # 每日备份清理
-│   └── delivery_watchdog.py         # 推送降级看门狗
+│   ├── delivery_watchdog.py         # 推送降级看门狗
+│   └── gen_cron_prompt.py           # cron prompt 自动生成（SSOT，从 scripts/ 迁入）
 ├── one-key-setup.sh          # 一条龙部署脚本
 ├── .gitignore
 ├── LICENSE
@@ -190,7 +181,7 @@ export DEEPSEEK_API_KEY="sk-xxx"
 python3 -c "from scripts.settings import ensure_db_migrated; ensure_db_migrated()"
 
 # 手动跑一次日报
-export PYTHONPATH=/home/asus/.hermes PYTHON_GIL=0
+export PYTHONPATH=$HOME/.hermes PYTHON_GIL=0
 python3.14t scripts/pipeline_orchestrator.py --push-id morning --output text
 
 # 查看管道步骤（SSOT 自描述）
@@ -198,9 +189,6 @@ python3.14t scripts/pipeline_orchestrator.py --list-steps
 
 # 启动前自检
 python3.14t scripts/pipeline_orchestrator.py --check-version
-
-# 管线诊断（快速定位故障）
-bash scripts/diag_pipeline.sh
 ```
 
 ---
@@ -227,7 +215,7 @@ GitHub Actions CI 在每次 push 到 `main` 时自动运行 ruff lint → 烟雾
 | 层 | 技术 |
 |----|------|
 | 运行时 | Python 3.14 / 3.14t (free-threaded) |
-| 编排 | pipeline_orchestrator.py（6阶段自动管线） |
+│ 编排 | pipeline_orchestrator.py（7阶段自动管线） |
 | 异步 | asyncio / aiohttp / TaskGroup |
 | 分类 | pyahocorasick (AC 自动机，505 关键词 × 6 域) |
 | 存储 | SQLite (WAL + mmap) |
@@ -237,7 +225,7 @@ GitHub Actions CI 在每次 push 到 `main` 时自动运行 ruff lint → 烟雾
 | 调度 | Hermes Agent cron（早/午/晚 + 周报 + 月报） |
 | 压缩 | zstandard (zstd) |
 | CI | GitHub Actions（ruff lint + pytest smoke/test + refs 校验） |
-| 文档 | 8 份核心参考文档 + 2 存档 + INDEX.md 索引 + KNOWLEDGE_GRAPH.md 代码分析 |
+│ 文档 | 7 份核心参考文档 + INDEX.md 索引 |
 
 ---
 

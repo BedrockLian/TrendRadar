@@ -431,7 +431,10 @@ def main():
     if sanity_issue:
         alerts.append(sanity_issue)
 
-    # 5. 新增：auto-delivery 空投检测 + 自动补发（所有时段）\n    auto_redeliver_morning(alerts)\n    auto_redeliver_noon(alerts)\n    auto_redeliver_evening(alerts)
+    # 5. 新增：auto-delivery 空投检测 + 自动补发（所有时段）
+    auto_redeliver_morning(alerts)
+    auto_redeliver_noon(alerts)
+    auto_redeliver_evening(alerts)
 
     # 6. 输出
     if alerts:

@@ -13,12 +13,9 @@ sys.path.insert(0, TRENDRADAR_DIR)
 sys.path.insert(0, SCRIPTS_DIR)
 from unittest.mock import patch, MagicMock, AsyncMock
 
-# Mock feedparser to avoid import error
-sys.modules['feedparser'] = MagicMock()
-sys.modules['aiohttp'] = MagicMock()
-
 
 class TestDedup:
+    @pytest.mark.smoke
     def test_dedup_empty(self):
         from fetch_feeds import _dedup
         assert _dedup([]) == []

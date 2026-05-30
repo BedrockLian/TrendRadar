@@ -70,14 +70,14 @@ def check_db():
 
 
 def check_scripts():
-    """所有脚本可执行 — 含 v2.8.0 新增脚本"""
+    """所有脚本可执行 — 含 v2.9.0 新增脚本"""
     required = [
         'push_prepare.py', 'batch_fetch.py', 'fetch_feeds.py', 'push_slot_detect.py',
         'record_fingerprints.py', 'track_events.py', 'heat_tracker.py', 'ai_translate.py',
         'render_markdown.py', 'fragment_push.py', 'render_deep_analysis.py',
-        'curate_and_push.py', 'pipeline_orchestrator.py', 'common.py', 'exitcodes.py',
-        'settings.py', 'storage.py', 'trace.py',
-        # v2.8.0 新增
+        'curate_and_push.py', 'pipeline_orchestrator.py', 'common.py',
+        'settings.py', 'storage.py',
+        # v2.9.0 新增
         'sanity_check.py', 'blind_spot_audit.py', 'aggregate_monthly.py',
     ]
     for name in required:
@@ -205,7 +205,7 @@ def check_gateway():
             if 'is running' not in r2.stdout and 'active' not in r2.stdout:
                 fail('gateway', 'WARN', 'hermes gateway 进程可能未运行')
     except FileNotFoundError:
-        # No systemd (Docker etc.) — fallback to socket check
+        # No systemd — fallback to socket check
         sock_paths = [
             '/tmp/hermes-wecom-card.sock',
             '/tmp/hermes_wecom.sock',
@@ -391,7 +391,7 @@ def check_pipeline():
     # 3) 核心脚本导入检查
     import_check = [
         'push_prepare', 'batch_fetch', 'fetch_feeds', 'heat_tracker',
-        'record_fingerprints', 'ai_translate', 'common', 'exitcodes',
+        'record_fingerprints', 'ai_translate', 'common',
         'fragment_push', 'curate_and_push',
         'blind_spot_audit', 'aggregate_monthly', 'storage',
     ]
@@ -417,8 +417,8 @@ def check_pipeline():
         'track_events.py', 'record_fingerprints.py', 'fetch_feeds.py',
         'ai_translate.py', 'render_markdown.py', 'fragment_push.py',
         'render_deep_analysis.py', 'pipeline_orchestrator.py',
-        'curate_and_push.py', 'common.py', 'exitcodes.py',
-        'storage.py', 'trace.py',
+        'curate_and_push.py', 'common.py',
+        'storage.py',
         'sanity_check.py', 'blind_spot_audit.py', 'aggregate_monthly.py',
     ]
     for ps in pipeline_steps:

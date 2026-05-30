@@ -48,6 +48,7 @@ class TestFormatItem:
         assert 'English Title' in result
         assert 'English summary' in result
 
+    @pytest.mark.smoke
     def test_link_format(self):
         from render_markdown import _format_item
         item = {

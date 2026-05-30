@@ -20,6 +20,7 @@ if SCRIPTS_DIR not in sys.path:
 class TestCheckBannedPhrases:
     """check_banned_phrases() — 禁语扫描"""
 
+    @pytest.mark.smoke
     def test_detects_ai_language_model(self):
         from sanity_check import check_banned_phrases
         text = "As an AI language model, I cannot..."

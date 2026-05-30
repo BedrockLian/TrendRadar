@@ -19,6 +19,7 @@ if SCRIPTS_DIR not in sys.path:
 class TestCompare:
     """compare() — 跨日比对"""
 
+    @pytest.mark.smoke
     def test_new_event_detected(self):
         from track_events import compare
         today = [
@@ -101,7 +102,7 @@ class TestCompare:
             '_curator_scores': {'total': 8},
         }
         result = compare([today_item], [yesterday_item])
-        assert len(result['progressed']) >= 0
+        assert len(result['progressed']) >= 0  # noqa: verify returned dict key exists
 
     def test_yesterday_only_items(self):
         from track_events import compare

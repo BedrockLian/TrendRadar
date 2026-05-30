@@ -1,5 +1,5 @@
-from trendradar.scripts.common import CST
 #!/usr/bin/env python3
+from trendradar.scripts.common import CST
 from trendradar.scripts.settings import get_logger
 log = get_logger('push-prepare')
 """TrendRadar 推送准备脚本 — Fetch + Curation + 精简输出 + 指纹查询 一键完成。
@@ -225,7 +225,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     import sys
-    from trendradar.scripts.exitcodes import EXIT_CONFIG_ERROR, EXIT_FATAL
+    from trendradar.scripts.common import EXIT_CONFIG_ERROR, EXIT_FATAL
 
     try:
         curated = run_curation(args.push_id)

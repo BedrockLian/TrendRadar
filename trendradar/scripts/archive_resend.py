@@ -115,8 +115,8 @@ def main():
         print("\n请指定 --slot 或使用 --list 查看可用存档")
         sys.exit(1)
 
-    from datetime import datetime, timezone, timedelta
-    CST = timezone(timedelta(hours=8))
+    from datetime import datetime
+    from trendradar.scripts.common import CST
     date = args.date or datetime.now(CST).strftime('%Y-%m-%d')
 
     resend(date, args.slot, auto_confirm=args.yes)

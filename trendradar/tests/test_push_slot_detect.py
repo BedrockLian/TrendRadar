@@ -12,6 +12,7 @@ from push_slot_detect import slot_match
 class TestSlotMatch:
     """slot_match(target_h, target_m, h, m) — 容忍 ±1 分钟"""
 
+    @pytest.mark.smoke
     def test_exact_match(self):
         assert slot_match(9, 0, 9, 0) is True
 

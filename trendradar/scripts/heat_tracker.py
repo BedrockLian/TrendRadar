@@ -1,5 +1,5 @@
-from trendradar.scripts.common import CST
 #!/usr/bin/env python3
+from trendradar.scripts.common import CST
 """
 TrendRadar 热度追踪器 - 跨周期持久化追踪新闻热度变化
 功能：时间轴追踪 / 热度变化 / 新热点检测 / 持续性分析 / 跨平台对比

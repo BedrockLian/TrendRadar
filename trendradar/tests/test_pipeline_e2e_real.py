@@ -386,6 +386,8 @@ class TestPipelineEdgeCases:
         # render_markdown may exit with 0 or non-zero on empty - either is acceptable
         # The important thing is it doesn't crash
         assert 'Traceback' not in result.stderr, f"render_markdown crashed: {result.stderr}"
+        # Positive: should produce stdout (even if empty) and not signal failure via stderr
+        assert result.stdout is not None
 
     def test_missing_curated_file_errors_gracefully(self):
         """render_markdown with missing curated file errors gracefully."""
@@ -400,4 +402,6 @@ class TestPipelineEdgeCases:
             timeout=60,
         )
         # Should fail but not crash
-        assert 'Traceback' not in result.stderr, f"render_markdown crashed: {result.stderr}"
+        assert 'Traceback' not in result.stderr
+        # Positive: should exit with non-zero for missing file
+        assert result.returncode != 0

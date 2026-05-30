@@ -56,6 +56,7 @@ class TestCalcSpanHours:
 
 
 class TestGenFingerprints:
+    @pytest.mark.smoke
     def test_empty_items(self):
         from heat_tracker import _gen_fingerprints
         result = _gen_fingerprints([], 'test_push', '2026-05-22T10:00:00')

@@ -1,5 +1,5 @@
-from trendradar.scripts.common import CST
 #!/usr/bin/env python3
+from trendradar.scripts.common import CST
 """
 render_markdown.py — 纯脚本渲染 TrendRadar 简报，无需 LLM API。
 

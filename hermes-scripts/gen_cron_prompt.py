@@ -1,5 +1,5 @@
-from trendradar.scripts.common import CST
 #!/usr/bin/env python3
+from trendradar.scripts.common import CST
 """
 gen_cron_prompt.py — Generate canonical cron prompt from pipeline_orchestrator.py SSOT.
 
@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
-SCRIPTS_DIR = Path(__file__).resolve().parent
+SCRIPTS_DIR = Path(__file__).resolve().parent.parent / 'trendradar' / 'scripts'
 
 # Dynamic PYTHON path — matches pipeline_orchestrator.py behavior
 PYTHON = os.environ.get("PYTHON", sys.executable)

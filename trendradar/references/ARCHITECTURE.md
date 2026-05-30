@@ -8,12 +8,12 @@
 
 ## 1. 系统概述
 
-TrendRadar 是一个多 RSS 源聚合管道，负责抓取、分类、精选、翻译、渲染并推送每日新闻简报到企业微信。管道由 `pipeline_orchestrator.py` v2.8.0 编排，按 cron 调度运行（`0 9,12,21 * * *`）。
+TrendRadar 是一个多 RSS 源聚合管道，负责抓取、分类、精选、翻译、渲染并推送每日新闻简报到企业微信。管道由 `pipeline_orchestrator.py` v2.9.0 编排，按 cron 调度运行（`0 9,12,21 * * *`）。
 
 ### 管道流程
 
 ```
-pipeline_orchestrator.py (v2.8.0 — 一键式 7 阶段)
+pipeline_orchestrator.py (v2.9.0 — 一键式 7 阶段)
   ① push_slot_detect → ② push_prepare(抓取+精选) → ③ 并行(ai_translate ∥ batch_fetch)
   → ④ render_markdown → ⑤ fragment_push (UTF-8 字节计数分片) → ⑥ record_fingerprints (Storage 统一接入)
   → 输出 JSON: {status, fragments, briefing, stats, needs_deep_analysis}

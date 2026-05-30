@@ -1,5 +1,5 @@
-from trendradar.scripts.common import CST
 #!/usr/bin/env python3
+from trendradar.scripts.common import CST
 from trendradar.scripts.settings import get_logger
 log = get_logger('blog-watcher-bridge')
 """blogwatcher ↔ TrendRadar bridge.

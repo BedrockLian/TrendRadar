@@ -46,7 +46,7 @@ RSS 抓取 (fetch_feeds.py)
 - `batch_fetch.py`：自动降级为直连（curl 回退），国外全文可能无法获取
 - `self-healing` 的 `check_api` 项检测互联网出口是否可达
 
-### Mihomo 监听配置（Docker 可访问）
+### Mihomo 监听配置（局域网可访问）
 
 ```yaml
 # ~/.config/mihomo/config.yaml
@@ -72,9 +72,6 @@ ss -tlnp | grep 7890
 # 3. 测试特定来源的代理路由
 python3 -c "from scripts.settings import needs_proxy; print('needs proxy:', needs_proxy('https://feeds.bbci.co.uk/news/rss.xml'))"
 
-# 4. Docker → mihomo 连通性
-curl -s -o /dev/null -w "HTTP %{http_code} (%{time_total}s)" --max-time 5 \
-  -x http://172.30.21.131:7890 http://www.gstatic.com/generate_204
 ```
 
 ---
