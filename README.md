@@ -1,6 +1,6 @@
 # TrendRadar 📡
 
-> **v5.7.1** — 多源 RSS 聚合 + AI 策展 + Pro 深度分析 → 企业微信日/周/月报。含自动体检、偏好收敛、编排器一键管线、全链路安全加固、CI 持续集成。
+> **v5.8.0** — 多源 RSS 聚合 + AI 策展 + Pro 深度分析 → 企业微信日/周/月报。含自动体检、偏好收敛、编排器一键管线、全链路安全加固、CI 持续集成。
 
 > 📖 **[从零搭建指南 → SETUP.md](SETUP.md)** — 从 Hermes Agent 全新安装到测试部署一站完成。
 
@@ -13,8 +13,8 @@ TrendRadar 是一个三层结构的新闻聚合与智能推送系统：**日报*
 ### 🌅 日报 — 编排器一键管线，日推 3 次
 
 ```
-pipeline_orchestrator.py（一键6阶段）
-  ① slot检测 → ② fetch+curate → ③ 并行(翻译+全文抓取) → ④ 脚本渲染 → ⑤ 分片 → ⑥ 指纹记录
+pipeline_orchestrator.py（v2.9.0 — 一键7阶段）
+  ① slot检测 → ② fetch+curate → ③ 并行(翻译+全文抓取) → ④ 脚本渲染 → ⑤ sanity检查 → ⑥ 分片 → ⑦ 指纹记录
   → 输出 JSON → auto-delivery → WeCom
   [晚间] 追加 3×Pro delegate_task 深度分析
 ```
@@ -69,7 +69,7 @@ pipeline_orchestrator.py（一键6阶段）
 
 | Skill | 版本 | 职责 |
 |-------|------|------|
-| `news-secretary` | v6.9.0 | 日报推送（核心），早/午/晚三段管线 + 晚间 Pro 深度分析 |
+| `news-secretary` | v6.15.0 | 日报推送（核心），早/午/晚三段管线 + 晚间 Pro 深度分析 |
 | `self-healing` | v3.4.0 | 每日 15:00 自动体检 DB/配置/API/Gateway，修复常见故障 |
 | `performance-optimizer` | v2.4.0 | 每日 21:15 推送质量评分 + 偏好收敛调优 |
 | `system-config` | v2.11.0 | 项目路径/Python 环境/Cron 任务/代理配置速查 |
@@ -97,7 +97,7 @@ pipeline_orchestrator.py（一键6阶段）
 TrendRadar/
 ├── trendradar/                  # 核心 Python 包
 │   ├── scripts/                 #   管线/工具脚本
-│   │   ├── pipeline_orchestrator.py     # 一键编排器 v2.8.0（6阶段自动管线）
+│   │   ├── pipeline_orchestrator.py     # 一键编排器 v2.9.0（7阶段自动管线）
 │   │   ├── push_prepare.py              # fetch + curation 编排
 │   │   ├── fetch_feeds.py               # 多 RSS 异步抓取
 │   │   ├── curate_and_push.py           # 5 域并行精选 + 多样性惩罚
@@ -116,7 +116,8 @@ TrendRadar/
 │   │   ├── blog_watcher_bridge.py       # BlogWatcher 订阅源桥接
 │   │   ├── cleanup_fake_translations.py # 假翻译自动清理
 │   │   ├── interest_cli.py              # 兴趣偏好 CLI 管理
-│   │   ├── trace.py                     # 追踪/调试工具
+│   │   ├── batch_utils.py               # 批次处理泛化（翻译/扩写复用）
+│   │   ├── pipeline_stage.py            # PipelineStage 结果协议
 │   │   ├── gen_cron_prompt.py            # cron prompt 自动生成（SSOT）
 │   │   ├── common.py                    # 公共工具函数
 │   │   ├── settings.py                  # 统一配置（路径/API/BATCH_SIZE）
@@ -131,13 +132,13 @@ TrendRadar/
 │   │   ├── 001_initial.sql           # 初始表结构
 │   │   └── runner.py                 # 迁移执行器（up + down 回滚）
 │   ├── skills/               #   Hermes Agent 技能定义（6个）
-│   │   ├── news-secretary/           # 日报推送 v6.9.0
+│   │   ├── news-secretary/           # 日报推送 v6.15.0
 │   │   ├── self-healing/             # 自动体检 v3.4.0
 │   │   ├── performance-optimizer/    # 推送质量优化 v2.4.0
 │   │   ├── system-config/            # 系统配置速查 v2.11.0
 │   │   ├── weekly-report/            # 周报深度研判 v2.4.0
 │   │   └── monthly-report/           # 月报全景分析 v2.3.0
-│   ├── references/           #   核心参考文档（10 根 + 36 存档 + INDEX.md 索引）
+│   ├── references/           #   核心参考文档（8 根 + 2 存档 + INDEX.md 索引）
 │   ├── tests/                #   测试用例（146 用例，含 E2E 管线 + 边界测试）
 │   │   ├── conftest.py
 │   │   ├── test_pipeline_e2e.py      # 编排器基础测试
@@ -236,7 +237,7 @@ GitHub Actions CI 在每次 push 到 `main` 时自动运行 ruff lint → 烟雾
 | 调度 | Hermes Agent cron（早/午/晚 + 周报 + 月报） |
 | 压缩 | zstandard (zstd) |
 | CI | GitHub Actions（ruff lint + pytest smoke/test + refs 校验） |
-| 文档 | 10 份核心参考文档 + 36 存档 + INDEX.md 索引 + KNOWLEDGE_GRAPH.md 代码分析 |
+| 文档 | 8 份核心参考文档 + 2 存档 + INDEX.md 索引 + KNOWLEDGE_GRAPH.md 代码分析 |
 
 ---
 
