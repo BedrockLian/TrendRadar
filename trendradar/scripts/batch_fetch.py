@@ -98,7 +98,8 @@ def _proxy_alive() -> bool:
 
 
 async def fetch_aiohttp(sem: asyncio.Semaphore, session, item: dict) -> dict | None:
-    """aiohttp 10 并发抓取"""
+    """aiohttp 15 并发抓取"""
+    import aiohttp
     url = item.get('url', '')
     if not url: return None
     async with sem:
