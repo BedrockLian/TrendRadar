@@ -439,9 +439,9 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://the-decoder.com/feed/",
-      "authority": 3,
+      "authority": 1,
       "language": "en",
-      "priority": 0
+      "priority": 2
     },
     {
       "id": "venturebeat",
