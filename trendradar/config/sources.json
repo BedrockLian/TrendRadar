@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "last_updated": "2026-05-31T11:10:00+08:00",
+  "last_updated": "2026-05-31T11:20:00+08:00",
   "data_sources": [
     {
       "id": "ifanr",
@@ -599,7 +599,7 @@
       "category": "game",
       "enabled": true,
       "feed_url": "https://www.pocketgamer.com/index.rss",
-      "authority": 2,
+      "authority": 3,
       "language": "en"
     },
     {
@@ -643,7 +643,7 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://www.wired.com/feed/rss",
-      "authority": 2,
+      "authority": 3,
       "language": "en"
     },
     {
@@ -665,7 +665,7 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "http://feeds.nature.com/nature/rss/current",
-      "authority": 3,
+      "authority": 2,
       "language": "en"
     },
     {
@@ -709,7 +709,7 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://the-decoder.com/feed/",
-      "authority": 1,
+      "authority": 3,
       "language": "en"
     },
     {
@@ -720,7 +720,7 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://venturebeat.com/feed/",
-      "authority": 2,
+      "authority": 3,
       "language": "en"
     },
     {
@@ -731,7 +731,7 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://www.jiqizhixin.com/rss",
-      "authority": 2,
+      "authority": 3,
       "language": "zh"
     },
     {
@@ -742,7 +742,7 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://www.qbitai.com/feed",
-      "authority": 1,
+      "authority": 3,
       "language": "zh"
     }
   ],
