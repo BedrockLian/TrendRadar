@@ -111,13 +111,21 @@ def score_item(item: dict, domain: str = 'tech') -> dict:
     外部来源惩罚通过 --penalty-file 传入，由盲点审计产出。
     """
     # Lazy imports to avoid circular dependency with curate_and_push
-    from trendradar.scripts.curate_and_push import _authority, _econ_boost, _econ_extra
+    from trendradar.scripts.curate_and_push import _authority, _econ_boost, _econ_extra, _all_source_category
 
     title, platform, url = item.get('title', ''), item.get('source_platform', ''), item.get('url', '')
     clarity = 1 if (any(c in title for c in '?？') or len(title) < 10) else 2 if len(title) > 40 else 3
     base = next((v for k, v in _authority().items() if k in platform), 1)
-    econ_match = platform in _econ_boost() or platform in _econ_extra()
-    authority = base + (1 if domain == 'economy' and econ_match else 0)
+    
+    # 域-源匹配加分：源分类匹配当前域则 +1（如 tech 源在科技域）
+    # 确保专业源在自家域内有竞争优势，防止头条源跨界刷屏
+    src_cat = _all_source_category().get(platform, '')
+    domain_to_cat = {'top_headlines': 'news', 'tech': 'tech', 'economy': 'economy',
+                     'gaming': 'game', 'foreign_china': 'foreign_china'}
+    if src_cat == domain_to_cat.get(domain):
+        authority = base + 1
+    else:
+        authority = base
     
     # 外部来源惩罚（盲点审计 → 权重反馈）
     penalty_factor = _get_source_penalty(platform)
