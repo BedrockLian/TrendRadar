@@ -259,6 +259,18 @@ def score_headlines(headline: list) -> list:
             hl_scored.append(item)
     hl_scored.sort(key=lambda x: (x['_curator_scores']['total'], x.get('_heat', {}).get('heat_score', 0)), reverse=True)
     max_n = MAX_PER_DOMAIN['top_headlines']
-    for i, item in enumerate(hl_scored[:max_n]):
+
+    # 同源硬上限：最多 MAX_SAME_SOURCE 条，超限丢弃
+    seen: dict[str, int] = {}
+    hard_capped = []
+    for item in hl_scored:
+        src = (item.get('source_platform', '') or '').split('+')[0].strip().lower()
+        n = seen.get(src, 0)
+        if n >= MAX_SAME_SOURCE:
+            continue
+        seen[src] = n + 1
+        hard_capped.append(item)
+
+    for i, item in enumerate(hard_capped[:max_n]):
         item['_needs_search'] = i < max_n * 0.6
-    return hl_scored[:max_n]
+    return hard_capped[:max_n]
