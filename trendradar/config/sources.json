@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "last_updated": "2026-05-31T15:50:00+08:00",
+  "last_updated": "2026-05-31T16:00:00+08:00",
   "data_sources": [
     {
       "id": "jiemian",
@@ -12,7 +12,8 @@
       "feed_url": "https://a.jiemian.com/index.php?m=article&a=rss",
       "desc": "上海报业集团旗下，深度财经与商业新闻",
       "authority": 2,
-      "language": "zh"
+      "language": "zh",
+      "priority": 2
     },
     {
       "id": "gcores",
@@ -23,7 +24,8 @@
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/gcores",
       "authority": 2,
-      "language": "zh"
+      "language": "zh",
+      "priority": 0
     },
     {
       "id": "thepaper",
@@ -34,7 +36,8 @@
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/thepaper",
       "authority": 2,
-      "language": "zh"
+      "language": "zh",
+      "priority": 2
     },
     {
       "id": "zaobao_china",
@@ -45,7 +48,8 @@
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/zaobao/realtime/china",
       "authority": 2,
-      "language": "zh"
+      "language": "zh",
+      "priority": 2
     },
     {
       "id": "zaobao_world",
@@ -56,7 +60,8 @@
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/zaobao/realtime/world",
       "authority": 2,
-      "language": "zh"
+      "language": "zh",
+      "priority": 2
     },
     {
       "id": "theverge_games",
@@ -67,7 +72,8 @@
       "enabled": true,
       "feed_url": "https://www.theverge.com/rss/games/index.xml",
       "authority": 2,
-      "language": "en"
+      "language": "en",
+      "priority": 2
     },
     {
       "id": "gamesindustry",
@@ -78,7 +84,8 @@
       "enabled": true,
       "feed_url": "https://www.gamesindustry.biz/feed",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 1
     },
     {
       "id": "arstechnica",
@@ -89,7 +96,8 @@
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/arstechnica",
       "authority": 2,
-      "language": "en"
+      "language": "en",
+      "priority": 1
     },
     {
       "id": "techcrunch",
@@ -100,7 +108,8 @@
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/techcrunch",
       "authority": 2,
-      "language": "en"
+      "language": "en",
+      "priority": 2
     },
     {
       "id": "videogameschronicle",
@@ -112,7 +121,8 @@
       "feed_url": "https://www.videogameschronicle.com/feed/",
       "desc": "专注业界新闻与报道",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 0
     },
     {
       "id": "pcgamer",
@@ -125,7 +135,8 @@
       "desc": "PC游戏权威媒体",
       "disabled_reason": "GFW blocked, consistently times out",
       "authority": 2,
-      "language": "en"
+      "language": "en",
+      "priority": 2
     },
     {
       "id": "rockpapershotgun",
@@ -138,7 +149,8 @@
       "desc": "专注PC游戏，长文评论",
       "disabled_reason": "GFW blocked, consistently times out",
       "authority": 2,
-      "language": "en"
+      "language": "en",
+      "priority": 1
     },
     {
       "id": "eurogamer",
@@ -151,7 +163,8 @@
       "desc": "欧洲领先游戏媒体，深度评测",
       "disabled_reason": "GFW blocked, consistently times out",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 0
     },
     {
       "id": "aftermath",
@@ -163,7 +176,8 @@
       "feed_url": "https://aftermath.site/rss",
       "desc": "游戏文化深度媒体",
       "authority": 2,
-      "language": "en"
+      "language": "en",
+      "priority": 0
     },
     {
       "id": "nytimes_world",
@@ -174,7 +188,8 @@
       "enabled": true,
       "feed_url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 1
     },
     {
       "id": "nytimes_technology",
@@ -185,7 +200,8 @@
       "enabled": true,
       "feed_url": "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml",
       "authority": 2,
-      "language": "en"
+      "language": "en",
+      "priority": 2
     },
     {
       "id": "scmp_china",
@@ -196,7 +212,8 @@
       "enabled": true,
       "feed_url": "https://www.scmp.com/rss/2/feed",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 0
     },
     {
       "id": "bbc_china",
@@ -207,7 +224,8 @@
       "enabled": true,
       "feed_url": "https://news.google.com/rss/search?q=site:bbc.com+china",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 0
     },
     {
       "id": "bbc_world",
@@ -218,7 +236,8 @@
       "enabled": true,
       "feed_url": "https://news.google.com/rss/search?q=site:bbc.com",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 1
     },
     {
       "id": "nytimes_business",
@@ -229,7 +248,8 @@
       "enabled": true,
       "feed_url": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",
       "authority": 2,
-      "language": "en"
+      "language": "en",
+      "priority": 1
     },
     {
       "id": "nytimes_science",
@@ -240,7 +260,8 @@
       "enabled": true,
       "feed_url": "https://rss.nytimes.com/services/xml/rss/nyt/Science.xml",
       "authority": 2,
-      "language": "en"
+      "language": "en",
+      "priority": 2
     },
     {
       "id": "npr_world",
@@ -251,7 +272,8 @@
       "enabled": true,
       "feed_url": "https://feeds.npr.org/1004/rss.xml",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 1
     },
     {
       "id": "bloomberg",
@@ -262,7 +284,8 @@
       "enabled": true,
       "feed_url": "https://feeds.bloomberg.com/markets/news.rss",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 0
     },
     {
       "id": "reuters",
@@ -273,7 +296,8 @@
       "enabled": true,
       "feed_url": "https://news.google.com/rss/search?q=source:Reuters",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 1
     },
     {
       "id": "financial_times",
@@ -284,7 +308,8 @@
       "enabled": true,
       "feed_url": "https://www.ft.com/?format=rss",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 0
     },
     {
       "id": "wsj_world",
@@ -295,7 +320,8 @@
       "enabled": true,
       "feed_url": "https://feeds.a.dj.com/rss/RSSWorldNews.xml",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 0
     },
     {
       "id": "wsj_business",
@@ -306,7 +332,8 @@
       "enabled": true,
       "feed_url": "https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 0
     },
     {
       "id": "game_developer",
@@ -317,7 +344,8 @@
       "enabled": true,
       "feed_url": "https://www.gamedeveloper.com/rss.xml",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 1
     },
     {
       "id": "mit_tech_review",
@@ -328,7 +356,8 @@
       "enabled": true,
       "feed_url": "https://www.technologyreview.com/feed/",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 0
     },
     {
       "id": "wired",
@@ -339,7 +368,8 @@
       "enabled": true,
       "feed_url": "https://www.wired.com/feed/rss",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 0
     },
     {
       "id": "theverge_main",
@@ -350,7 +380,8 @@
       "enabled": true,
       "feed_url": "https://www.theverge.com/rss/index.xml",
       "authority": 2,
-      "language": "en"
+      "language": "en",
+      "priority": 1
     },
     {
       "id": "nature_news",
@@ -361,7 +392,8 @@
       "enabled": true,
       "feed_url": "http://feeds.nature.com/nature/rss/current",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 0
     },
     {
       "id": "science_news",
@@ -372,7 +404,8 @@
       "enabled": true,
       "feed_url": "https://www.sciencenews.org/feed",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 1
     },
     {
       "id": "ap_news",
@@ -383,7 +416,8 @@
       "enabled": true,
       "feed_url": "https://news.google.com/rss/search?q=source:Associated+Press",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 0
     },
     {
       "id": "al_jazeera",
@@ -394,7 +428,8 @@
       "enabled": true,
       "feed_url": "https://www.aljazeera.com/xml/rss/all.xml",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 1
     },
     {
       "id": "the_decoder",
@@ -405,7 +440,8 @@
       "enabled": true,
       "feed_url": "https://the-decoder.com/feed/",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 0
     },
     {
       "id": "venturebeat",
@@ -416,7 +452,8 @@
       "enabled": true,
       "feed_url": "https://venturebeat.com/feed/",
       "authority": 2,
-      "language": "en"
+      "language": "en",
+      "priority": 2
     },
     {
       "id": "synced",
@@ -427,7 +464,8 @@
       "enabled": true,
       "feed_url": "https://www.jiqizhixin.com/rss",
       "authority": 2,
-      "language": "zh"
+      "language": "zh",
+      "priority": 1
     },
     {
       "id": "qbitai",
@@ -438,7 +476,8 @@
       "enabled": true,
       "feed_url": "https://www.qbitai.com/feed",
       "authority": 2,
-      "language": "zh"
+      "language": "zh",
+      "priority": 1
     },
     {
       "id": "scmp_china",
@@ -449,7 +488,8 @@
       "enabled": true,
       "feed_url": "https://www.scmp.com/rss/2/feed",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 0
     },
     {
       "id": "nikkei_asia",
@@ -460,7 +500,8 @@
       "enabled": true,
       "feed_url": "https://asia.nikkei.com/rss/feed/nar",
       "authority": 3,
-      "language": "en"
+      "language": "en",
+      "priority": 0
     },
     {
       "id": "sixth_tone",
@@ -471,7 +512,8 @@
       "enabled": true,
       "feed_url": "https://www.sixthtone.com/rss",
       "authority": 2,
-      "language": "en"
+      "language": "en",
+      "priority": 1
     },
     {
       "id": "foreign_policy",
@@ -482,7 +524,8 @@
       "enabled": true,
       "feed_url": "https://foreignpolicy.com/feed/",
       "authority": 2,
-      "language": "en"
+      "language": "en",
+      "priority": 0
     }
   ],
   "exploration_sources": [],

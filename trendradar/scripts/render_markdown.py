@@ -78,8 +78,27 @@ def _shorten(text, max_len):
     return cut.rstrip()
 
 
+def _get_item_priority(source_platform: str) -> int:
+    """Read source priority from sources.json (0=P0, 1=P1, 2=P2)."""
+    from trendradar.scripts.settings import get_config_dir
+    import json
+    try:
+        cfg = json.loads((get_config_dir() / 'sources.json').read_text())
+        for s in cfg.get('data_sources', []):
+            if s.get('name') == source_platform:
+                return s.get('priority', 1)
+    except Exception:
+        pass
+    return 1
+
+
 def _format_item(idx, item, push_id):
     """Format a single item.
+
+    Priority-based display:
+      P0 (0): emoji + title + summary + link
+      P1 (1): emoji + title + short_summary + link
+      P2 (2): emoji + title + link (no summary)
 
     WeCom format:
       🆕 N. **标题**
@@ -89,7 +108,6 @@ def _format_item(idx, item, push_id):
     Each line pair separated by single blank line (\n\n).
     """
     title = _shorten(item.get('title_cn') or item.get('title') or '', 80)
-    summary = _shorten(item.get('summary_cn') or item.get('summary') or '', 80)
     url = (item.get('url') or '').strip()
     # URL 空格清洗（兜底：某些 RSS 返回的 URL 路径含未编码空格）
     if url and ' ' in url:
@@ -103,10 +121,14 @@ def _format_item(idx, item, push_id):
     track = item.get('_track') if push_id == 'evening' else None
     emoji = _detect_emoji(heat, push_id, track)
 
+    priority = _get_item_priority(source)
+
     lines = [f"{emoji} {idx}. **{title}**"]
 
-    if summary:
-        lines.append(summary)
+    if priority < 2:  # P0/P1: include summary
+        summary = _shorten(item.get('summary_cn') or item.get('summary') or '', 80 if priority == 0 else 40)
+        if summary:
+            lines.append(summary)
 
     link = f"[【{source}】]({url})" if url and source else ""
     if link:

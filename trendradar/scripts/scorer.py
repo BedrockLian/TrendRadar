@@ -95,6 +95,19 @@ def _get_health_penalty(platform: str) -> float:
     return 1.0
 
 
+def _get_source_priority(platform: str) -> int:
+    from trendradar.scripts.settings import get_config_dir
+    import json
+    try:
+        cfg = json.loads((get_config_dir() / 'sources.json').read_text())
+        for s in cfg.get('data_sources', []):
+            if s.get('name') == platform:
+                return s.get('priority', 1)
+    except Exception:
+        pass
+    return 1
+
+
 def _get_item_authority(item: dict) -> int:
     """Get authority level for an item's source (lazy import to avoid circular dep)."""
     from trendradar.scripts.curate_and_push import _authority
@@ -180,7 +193,9 @@ def curate_domain(items: list, domain: str) -> list:
         item['_curator_scores'] = s
         if s['pass']:
             curated.append(item)
-    curated.sort(key=lambda x: (x['_curator_scores']['total'], x.get('_heat', {}).get('heat_score', 0)), reverse=True)
+    curated.sort(key=lambda x: (_get_source_priority(x.get('source_platform', '')),
+                                 -x['_curator_scores']['total'],
+                                 -x.get('_heat', {}).get('heat_score', 0)))
     
     # 来源多样性惩罚：同源超过 MAX_SAME_SOURCE 条后权重减半
     result = []
@@ -257,7 +272,9 @@ def score_headlines(headline: list) -> list:
         item['_curator_scores'] = s
         if s['pass']:
             hl_scored.append(item)
-    hl_scored.sort(key=lambda x: (x['_curator_scores']['total'], x.get('_heat', {}).get('heat_score', 0)), reverse=True)
+    hl_scored.sort(key=lambda x: (_get_source_priority(x.get('source_platform', '')),
+                                   -x['_curator_scores']['total'],
+                                   -x.get('_heat', {}).get('heat_score', 0)))
     max_n = MAX_PER_DOMAIN['top_headlines']
 
     # 同源硬上限：最多 MAX_SAME_SOURCE 条，超限丢弃

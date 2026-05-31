@@ -11,10 +11,10 @@ DOMAIN_LABELS = {
 }
 
 MAX_PER_DOMAIN: dict[str, int] = {
-    'top_headlines': 6,
+    'top_headlines': 8,
     'tech': 7,
-    'economy': 6,
-    'gaming': 6,
+    'economy': 5,
+    'gaming': 5,
     'foreign_china': 5,
 }
 
