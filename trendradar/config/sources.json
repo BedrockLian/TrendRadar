@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "last_updated": "2026-05-31T15:00:00+08:00",
+  "last_updated": "2026-05-31T15:30:00+08:00",
   "data_sources": [
     {
       "id": "36kr",
@@ -166,18 +166,6 @@
       "language": "en"
     },
     {
-      "id": "nintendoeverything",
-      "name": "Nintendo Everything",
-      "platform": "nintendoeverything",
-      "type": "rss",
-      "category": "game",
-      "enabled": true,
-      "feed_url": "https://nintendoeverything.com/rss",
-      "desc": "任天堂游戏新闻专精",
-      "authority": 2,
-      "language": "en"
-    },
-    {
       "id": "aftermath",
       "name": "Aftermath",
       "platform": "aftermath",
@@ -187,17 +175,6 @@
       "feed_url": "https://aftermath.site/rss",
       "desc": "游戏文化深度媒体",
       "authority": 2,
-      "language": "en"
-    },
-    {
-      "id": "automaton",
-      "name": "Automaton West",
-      "platform": "automaton",
-      "type": "rss",
-      "category": "game",
-      "enabled": true,
-      "feed_url": "https://automaton-media.com/en/feed/",
-      "authority": 1,
       "language": "en"
     },
     {
@@ -231,42 +208,6 @@
       "enabled": true,
       "feed_url": "https://www.scmp.com/rss/2/feed",
       "authority": 3,
-      "language": "en"
-    },
-    {
-      "id": "4gamer",
-      "name": "4Gamer",
-      "platform": "4gamer",
-      "type": "rss",
-      "category": "game",
-      "enabled": true,
-      "feed_url": "https://www.4gamer.net/rss/index.xml",
-      "desc": "日本最大游戏新闻站（RDF格式）",
-      "authority": 2,
-      "language": "ja"
-    },
-    {
-      "id": "inside_games",
-      "name": "Inside Games",
-      "platform": "inside-games",
-      "type": "rss",
-      "category": "game",
-      "enabled": true,
-      "feed_url": "https://www.inside-games.jp/rss20/index.rdf",
-      "desc": "日本综合游戏信息站",
-      "authority": 2,
-      "language": "ja"
-    },
-    {
-      "id": "japantimes",
-      "name": "Japan Times",
-      "platform": "japantimes",
-      "type": "rss",
-      "category": "news",
-      "enabled": true,
-      "feed_url": "https://www.japantimes.co.jp/feed/",
-      "desc": "日本英文新闻，偏外交/政治/中日关系",
-      "authority": 2,
       "language": "en"
     },
     {
