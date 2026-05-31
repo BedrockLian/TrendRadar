@@ -16,7 +16,7 @@ except ImportError:
 from trendradar.scripts.settings import get_data_dir, get_cache_dir, write_compressed, PROXY_URL
 DATA_DIR = get_data_dir()
 CACHE_DIR = get_cache_dir()
-CONCURRENCY = 10
+CONCURRENCY = 15
 TIMEOUT = 15
 PROXY = PROXY_URL
 _MIHOMO_CHECKED = False
@@ -144,7 +144,7 @@ async def batch_fetch(push_id: str) -> dict:
 
     sem = asyncio.Semaphore(CONCURRENCY)
     proxy = PROXY if _proxy_alive() else None
-    connector = aiohttp.TCPConnector(limit=10, limit_per_host=3)
+    connector = aiohttp.TCPConnector(limit=15, limit_per_host=3)
     async with aiohttp.ClientSession(connector=connector, headers={'User-Agent': UA},
                                      proxy=proxy) as session:
         results = await asyncio.gather(*[fetch_aiohttp(sem, session, item) for item in items])
