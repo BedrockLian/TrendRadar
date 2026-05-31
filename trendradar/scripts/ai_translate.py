@@ -144,13 +144,14 @@ Rules:
 1. Preserve all factual details (names, numbers, dates, percentages, locations).
 2. Use journalistic Chinese style — clear, objective, and fluent.
 3. Keep proper nouns untranslated unless a widely-accepted Chinese name exists.
-4. Output each item as EXACTLY TWO lines: first line = translated title, second line = translated summary.
-5. Each line must be a single line (no line breaks inside).
-6. Do NOT add numbering, prefixes, or any extra commentary.
-7. Output exactly 2N lines for N input items.""")
+4. **CRITICAL for Japanese titles**: Even if a Japanese title seems short or self-explanatory,
+   you MUST translate it into Chinese. Do NOT output the original Japanese. Every title must be in Chinese.
+5. Output each item as EXACTLY TWO lines: first line = translated title, second line = translated summary.
+6. Each line must be a single line (no line breaks inside).
+7. Do NOT add numbering, prefixes, or any extra commentary.
+8. Output exactly 2N lines for N input items.""")
 
-
-def get_system_prompt(source_lang: str = "English") -> str:
+def get_system_prompt(source_lang: str = 'English') -> str:
     """Render translation prompt template."""
     return _TRANSLATE_TEMPLATE.substitute(source_lang=source_lang)
 
