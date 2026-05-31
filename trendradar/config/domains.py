@@ -26,7 +26,7 @@ DOMAIN_EMOJI = {
 SLOT_NAMES = {'morning': '早报', 'noon': '午间速递', 'evening': '今日回顾'}
 
 DAILY_LIMIT = 80
-BRIEFING_RATIO = {'morning': 30, 'noon': 30, 'evening': 30}
+BRIEFING_RATIO = {'morning': 30, 'noon': 30, 'evening': 20}
 
 # 层级多样性保护
 HIGH_AUTHORITY_THRESHOLD = 3          # authority >= 3 视为高权威
