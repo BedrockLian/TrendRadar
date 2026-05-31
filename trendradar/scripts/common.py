@@ -212,11 +212,12 @@ def _parse_line_pairs(
 ) -> list[tuple[str, str]]:
     """Parse AI API response into (title, summary) pairs.
 
-    Handles:
-    - blank line removal
-    - model commentary stripping (lines starting with 'Here', 'The following', etc.)
-    - [N] prefix / bullet stripping
-    - padding + truncation to match expected item count
+    Two strategies:
+    1. Index-anchored — looks for 'Item N:' markers in the response and
+       maps each marker to the correct position by index. Prevents item
+       misalignment when AI reorders or skips items.
+    2. Sequential (fallback) — pairs lines sequentially as (title, summary),
+       strips numbering prefixes, pads/truncates. Legacy compat.
 
     Args:
         raw_content: Raw response text from AI API.
@@ -227,11 +228,56 @@ def _parse_line_pairs(
         List of (title, summary) tuples with exactly num_items entries.
     """
     raw_lines = [l.strip() for l in raw_content.split('\n')]
+
+    # ── Strategy 1: Index-anchored parsing ──────────────────────────────
+    # Look for 'Item N:' or '[N]' markers at line start
+    anchored_results: list[tuple[str, str] | None] = [None] * num_items
+    found_anchor = False
+    current_idx: int | None = None
+    collected: list[str] = []
+
+    for l in raw_lines:
+        # Check for anchor markers: 'Item N:', '[N]', or '【N】'
+        m = re.match(r'^Item\s+(\d+)[:：]?\s*$', l)
+        if not m:
+            m = re.match(r'^\[(\d+)\]\s*$', l)
+        if not m:
+            m = re.match(r'^【(\d+)】\s*$', l)
+
+        if m:
+            found_anchor = True
+            # Flush previous item if we were collecting
+            if current_idx is not None and collected:
+                _write_anchored(anchored_results, current_idx, collected, fallback_label)
+            current_idx = int(m.group(1)) - 1  # convert to 0-based
+            collected = []
+            continue
+
+        if current_idx is not None:
+            # Skip blank lines and commentary between items
+            if not l:
+                continue
+            if l.startswith(('Here', 'The following', 'Below', 'Note:', '以上是',
+                             '---', '===', 'TITLE:', 'SUMMARY:')):
+                continue
+            collected.append(l)
+
+    # Flush last item
+    if current_idx is not None and collected:
+        _write_anchored(anchored_results, current_idx, collected, fallback_label)
+
+    if found_anchor:
+        # Fill any gaps with fallback
+        for i in range(num_items):
+            if anchored_results[i] is None:
+                anchored_results[i] = (fallback_label, fallback_label)
+        return anchored_results  # type: ignore[return-value]
+
+    # ── Strategy 2: Sequential pairing (backward compat) ────────────────
     lines = []
     for l in raw_lines:
         if not l:
             continue
-        # Skip model commentary / meta lines
         if l.startswith(('Here', 'The following', 'Below', 'Note:', '以上是')):
             continue
         lines.append(l)
@@ -240,17 +286,28 @@ def _parse_line_pairs(
     for i in range(0, len(lines), 2):
         title_cn = lines[i] if i < len(lines) else fallback_label
         summary_cn = lines[i + 1] if i + 1 < len(lines) else fallback_label
-        # Strip [N] prefix or bullet the model may have added
         title_cn = re.sub(r'^[\［\（\(]?\d+[\］\）\)]?[.、．\s]*', '', title_cn).strip()
         summary_cn = re.sub(r'^[\［\（\(]?\d+[\］\）\)]?[.、．\s]*', '', summary_cn).strip()
-        # Skip separator/commentary lines
         if title_cn.startswith(('---', '===')):
             continue
         results.append((title_cn, summary_cn))
 
-    # Pad or truncate to match expected item count
     while len(results) < num_items:
         results.append((fallback_label, fallback_label))
     results = results[:num_items]
 
     return results
+
+
+def _write_anchored(
+    results: list[tuple[str, str] | None],
+    idx: int,
+    collected: list[str],
+    fallback_label: str,
+):
+    """Write collected lines into results[idx] as (title, summary)."""
+    if idx < 0 or idx >= len(results):
+        return  # out of bounds, skip
+    title = collected[0] if len(collected) > 0 else fallback_label
+    summary = collected[1] if len(collected) > 1 else fallback_label
+    results[idx] = (title, summary)

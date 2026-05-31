@@ -132,10 +132,10 @@ Rules:
 2. If the summary is too vague or metaphorical (e.g. "风口上的猪"), draw on the title context to write a concrete, factual summary.
 3. Do NOT add information that is not implied by the title or summary.
 4. Use journalistic Chinese style — clear, objective, and fluent.
-5. Output each item as EXACTLY TWO lines: first line = rewritten title, second line = rewritten summary.
+5. Start each item with "Item N:" on its own line, then the rewritten title on the next line, then the rewritten summary on the line after that.
 6. Each line must be a single line (no line breaks inside).
-7. Do NOT add numbering, prefixes, or any extra commentary.
-8. Output exactly 2N lines for N input items.""")
+7. Do NOT add any extra commentary outside the numbered items.
+8. Output exactly 4N lines for N input items (N × "Item N:" + title + summary lines).""")
 
 _TRANSLATE_TEMPLATE = Template("""You are a professional translator. Translate the following $source_lang news items
 into concise, natural Chinese.
@@ -146,10 +146,11 @@ Rules:
 3. Keep proper nouns untranslated unless a widely-accepted Chinese name exists.
 4. **CRITICAL for Japanese titles**: Even if a Japanese title seems short or self-explanatory,
    you MUST translate it into Chinese. Do NOT output the original Japanese. Every title must be in Chinese.
-5. Output each item as EXACTLY TWO lines: first line = translated title, second line = translated summary.
+5. Start each item with "Item N:" on its own line, then the translated title on the next line,
+   then the translated summary on the line after that.
 6. Each line must be a single line (no line breaks inside).
-7. Do NOT add numbering, prefixes, or any extra commentary.
-8. Output exactly 2N lines for N input items.""")
+7. Do NOT add any extra commentary outside the numbered items.
+8. Output exactly 4N lines for N input items (N × "Item N:" + title + summary lines).""")
 
 def get_system_prompt(source_lang: str = 'English') -> str:
     """Render translation prompt template."""
@@ -248,7 +249,7 @@ async def batch_translate(
         clean_summary = re.sub(r'\s+', ' ', clean_summary)
         clean_summary = re.sub(r'&#\d+;', '', clean_summary)
         user_lines.append(
-            f"[{i+1}] TITLE: {clean_title}\n    SUMMARY: {clean_summary}"
+            f"Item {i+1}:\nTITLE: {clean_title}\nSUMMARY: {clean_summary}"
         )
 
     user_message = "\n\n".join(user_lines)
