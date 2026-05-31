@@ -1,6 +1,6 @@
 # TrendRadar 📡
 
-> **v2.9.0** — 多源 RSS 聚合 + AI 策展 + Pro 深度分析 → 企业微信日/周/月报。含自动体检、偏好收敛、编排器一键管线、全链路安全加固、CI 持续集成。
+> **v2.10.0** — 多源 RSS 聚合 + AI 策展 + Pro 深度分析 → 企业微信日/周/月报。含层级多样性保护、自动体检、偏好收敛、编排器一键管线、全链路安全加固、CI 持续集成。
 
 > 📖 **[从零搭建指南 → SETUP.md](SETUP.md)** — 从 Hermes Agent 全新安装到测试部署一站完成。
 
@@ -13,7 +13,7 @@ TrendRadar 是一个三层结构的新闻聚合与智能推送系统：**日报*
 ### 🌅 日报 — 编排器一键管线，日推 3 次
 
 ```
-pipeline_orchestrator.py（v2.9.0 — 一键7阶段）
+pipeline_orchestrator.py（v2.10.0 — 一键7阶段 + 层级多样性）
   ① slot检测 → ② fetch+curate → ③ 并行(翻译+全文抓取) → ④ 脚本渲染 → ⑤ sanity检查 → ⑥ 分片 → ⑦ 指纹记录
   → 输出 JSON → auto-delivery → WeCom
   [晚间] 追加 3×Pro delegate_task 深度分析
@@ -23,7 +23,7 @@ pipeline_orchestrator.py（v2.9.0 — 一键7阶段）
 |------|------|------|------|
 | 🌅 早报 | 09:00 | 30 | 全天精选 |
 | 🌤️ 午间速递 | 12:00 | 30 | 增量去重 |
-| 🌙 今日回顾 | 21:00 | 20 | 总结 + 3×Pro 深度分析 |
+| 🌙 今日回顾 | 21:00 | 30 | 总结 + 层级多样性保护 + 3×Pro 深度分析 |
 
 ### 📆 周报 — Pro 深度研判，每周一推送
 
@@ -54,7 +54,7 @@ pipeline_orchestrator.py（v2.9.0 — 一键7阶段）
 - **日报/周报/月报** — 日报早/午/晚三段 + 晚间 3×Pro 深度分析；每周一 Pro 趋势研判；每月初全景复盘
 - **AI 翻译 + 中文扩写** — 外文摘要自动翻译 + 中文短摘要（<50字）AI 扩写为完整信息句
 - **兴趣偏好评分** — YAML 配置正面加分/排除过滤，CLI 管理
-- **来源多样性保护** — 同源 >3 条权重减半，source_health 负反馈学习环自动淘汰低质源
+- **来源多样性保护** — 同源 >3 条权重减半 + 每域至少保留 1 条非高权威源（层级多样性），source_health 负反馈学习环自动淘汰低质源
 - **指纹去重 + 热度追踪** — MD5 指纹（48h 窗口）+ SQLite 热度持久化
 - **API 熔断退避** — 翻译层指数退避 2→30s + jitter + 连续 3 失败熔断
 - **发布前拦截器** — sanity_check 编排器前言剥离/中英文禁语扫描/HTML残留检测/死链检测(代理感知)/敏感词脱敏
@@ -95,7 +95,7 @@ pipeline_orchestrator.py（v2.9.0 — 一键7阶段）
 TrendRadar/
 ├── trendradar/                  # 核心 Python 包
 │   ├── scripts/                 #   管线/工具脚本
-│   │   ├── pipeline_orchestrator.py     # 一键编排器 v2.9.0（7阶段自动管线）
+│   │   ├── pipeline_orchestrator.py     # 一键编排器 v2.10.0（7阶段+层级多样性）
 │   │   ├── push_prepare.py              # fetch + curation 编排
 │   │   ├── fetch_feeds.py               # 多 RSS 异步抓取
 │   │   ├── curate_and_push.py           # 5 域并行精选 + 多样性惩罚
@@ -150,7 +150,7 @@ TrendRadar/
 │   ├── README.md                    # 子包说明
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
-│   └── pyproject.toml               # 包定义 v2.9.0
+│   └── pyproject.toml               # 包定义 v2.10.0
 ├── hermes-scripts/           # 自动体检/维护/看门狗/Cron脚本
 │   ├── trendradar_health_check.py   # 每日自动体检（17项检查）
 │   ├── trendradar_maintenance.py    # 每日备份清理
