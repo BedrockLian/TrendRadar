@@ -59,6 +59,10 @@ def classify_items(raw: list) -> tuple[list, list, list]:
                 remaining.append(item)
             else:
                 src_cat = ALL_SRC_CAT.get(item.get('source_platform', ''), '')
+                # 处理合并源名 "南华早报+SCMP 中国" → 取第一个
+                if not src_cat and '+' in (item.get('source_platform', '') or ''):
+                    src_cat = ALL_SRC_CAT.get(
+                        item['source_platform'].split('+')[0].strip(), '')
                 if src_cat == 'news':
                     item['_likely_domain'] = 'headline'
                     headline.append(item)
