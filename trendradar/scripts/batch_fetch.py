@@ -16,7 +16,7 @@ except ImportError:
 from trendradar.scripts.settings import get_data_dir, get_cache_dir, write_compressed, PROXY_URL
 DATA_DIR = get_data_dir()
 CACHE_DIR = get_cache_dir()
-CONCURRENCY = 15
+CONCURRENCY = 20
 TIMEOUT = 15
 PROXY = PROXY_URL
 _MIHOMO_CHECKED = False

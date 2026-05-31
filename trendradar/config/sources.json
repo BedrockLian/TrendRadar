@@ -3,18 +3,6 @@
   "last_updated": "2026-05-31T15:30:00+08:00",
   "data_sources": [
     {
-      "id": "36kr",
-      "name": "36氪",
-      "platform": "36kr",
-      "type": "rss",
-      "category": "tech",
-      "enabled": true,
-      "feed_url": "https://plink.anyfeeder.com/36kr",
-      "desc": "中国领先的科技与财经媒体，覆盖创业、AI、商业深度",
-      "authority": 1,
-      "language": "zh"
-    },
-    {
       "id": "jiemian",
       "name": "界面新闻",
       "platform": "jiemian",
@@ -319,17 +307,6 @@
       "feed_url": "https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml",
       "authority": 3,
       "language": "en"
-    },
-    {
-      "id": "chuapp",
-      "name": "触乐",
-      "platform": "chuapp",
-      "type": "rss",
-      "category": "game",
-      "enabled": true,
-      "feed_url": "http://www.chuapp.com/feed",
-      "authority": 1,
-      "language": "zh"
     },
     {
       "id": "game_developer",

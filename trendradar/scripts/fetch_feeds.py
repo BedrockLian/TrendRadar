@@ -18,9 +18,9 @@ def _get_parse_pool():
     global _PARSE_POOL
     if _PARSE_POOL is None:
         try:
-            _PARSE_POOL = concurrent.futures.InterpreterPoolExecutor(max_workers=16)
+            _PARSE_POOL = concurrent.futures.InterpreterPoolExecutor(max_workers=24)
         except (ImportError, AttributeError):
-            _PARSE_POOL = concurrent.futures.ThreadPoolExecutor(max_workers=16)
+            _PARSE_POOL = concurrent.futures.ThreadPoolExecutor(max_workers=24)
             log.warning('InterpreterPoolExecutor 不可用，降级为 ThreadPoolExecutor')
     return _PARSE_POOL
 
@@ -163,8 +163,8 @@ async def fetch_all(push_id: str = '') -> dict:
 
     # 直连 + 代理并行两批
     tout = aiohttp.ClientTimeout(total=30)
-    direct_conn = aiohttp.TCPConnector(limit=30, limit_per_host=12)
-    proxy_conn = aiohttp.TCPConnector(limit=30, limit_per_host=12)
+    direct_conn = aiohttp.TCPConnector(limit=43, limit_per_host=0, force_close=True)
+    proxy_conn = aiohttp.TCPConnector(limit=43, limit_per_host=0, force_close=True)
     async with (
         aiohttp.ClientSession(connector=direct_conn,
                               headers={'User-Agent': USER_AGENT},
