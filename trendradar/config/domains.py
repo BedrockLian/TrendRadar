@@ -4,8 +4,8 @@ DOMAINS = ['top_headlines', 'foreign_china', 'tech', 'economy', 'gaming']
 
 DOMAIN_LABELS = {
     'top_headlines': '📰 头条',
-    'foreign_china': '🌏 外媒看华',
-    'tech': '💻 科技',
+    'foreign_china': '🌏 国际/外媒看华',
+    'tech': '💻 科学/技术',
     'economy': '📊 经济民生',
     'gaming': '🎮 游戏',
 }
