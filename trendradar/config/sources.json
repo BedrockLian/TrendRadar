@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "last_updated": "2026-05-31T12:30:00+08:00",
+  "last_updated": "2026-05-31T13:00:00+08:00",
   "data_sources": [
     {
       "id": "ifanr",
@@ -56,7 +56,7 @@
       "category": "game",
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/gcores",
-      "authority": 3,
+      "authority": 2,
       "language": "zh"
     },
     {
@@ -111,7 +111,7 @@
       "category": "game",
       "enabled": true,
       "feed_url": "http://www.gamelook.com.cn/rss",
-      "authority": 3,
+      "authority": 1,
       "language": "zh"
     },
     {
@@ -180,7 +180,7 @@
       "feed_url": "https://www.pcgamer.com/rss/",
       "desc": "PC游戏权威媒体",
       "disabled_reason": "GFW blocked, consistently times out",
-      "authority": 3,
+      "authority": 2,
       "language": "en"
     },
     {
@@ -230,7 +230,7 @@
       "enabled": true,
       "feed_url": "https://aftermath.site/rss",
       "desc": "游戏文化深度媒体",
-      "authority": 1,
+      "authority": 2,
       "language": "en"
     },
     {
@@ -252,7 +252,7 @@
       "category": "economy",
       "enabled": true,
       "feed_url": "https://feeds.bbci.co.uk/news/business/rss.xml",
-      "authority": 3,
+      "authority": 2,
       "language": "en"
     },
     {
@@ -320,7 +320,7 @@
       "enabled": true,
       "feed_url": "https://www.theguardian.com/uk/business/rss",
       "desc": "英国卫报商务板块，民生经济视角",
-      "authority": 3,
+      "authority": 2,
       "language": "en"
     },
     {
@@ -356,7 +356,7 @@
       "enabled": true,
       "feed_url": "https://www3.nhk.or.jp/rss/news/cat6.xml",
       "desc": "日本NHK商业经济新闻（日文）",
-      "authority": 2,
+      "authority": 1,
       "language": "ja"
     },
     {
@@ -434,7 +434,7 @@
       "category": "economy",
       "enabled": true,
       "feed_url": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",
-      "authority": 3,
+      "authority": 2,
       "language": "en"
     },
     {
@@ -467,7 +467,7 @@
       "category": "economy",
       "enabled": true,
       "feed_url": "https://feeds.npr.org/1006/rss.xml",
-      "authority": 1,
+      "authority": 2,
       "language": "en"
     },
     {
@@ -500,7 +500,7 @@
       "category": "economy",
       "enabled": true,
       "feed_url": "https://www3.nhk.or.jp/rss/news/cat5.xml",
-      "authority": 2,
+      "authority": 1,
       "language": "ja"
     },
     {
@@ -588,7 +588,7 @@
       "category": "game",
       "enabled": true,
       "feed_url": "https://feeds.feedburner.com/ign/all",
-      "authority": 3,
+      "authority": 2,
       "language": "en"
     },
     {
@@ -599,7 +599,7 @@
       "category": "game",
       "enabled": true,
       "feed_url": "https://www.pocketgamer.com/index.rss",
-      "authority": 3,
+      "authority": 1,
       "language": "en"
     },
     {
@@ -610,7 +610,7 @@
       "category": "game",
       "enabled": true,
       "feed_url": "http://www.chuapp.com/feed",
-      "authority": 2,
+      "authority": 1,
       "language": "zh"
     },
     {
@@ -621,7 +621,7 @@
       "category": "game",
       "enabled": true,
       "feed_url": "https://www.gamedeveloper.com/rss.xml",
-      "authority": 2,
+      "authority": 3,
       "language": "en"
     },
     {
