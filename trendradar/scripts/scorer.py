@@ -95,14 +95,22 @@ def _get_health_penalty(platform: str) -> float:
     return 1.0
 
 
-def _get_source_priority(platform: str) -> int:
+def _get_source_priority(platform: str, domain: str = '') -> int:
     from trendradar.scripts.settings import get_config_dir
     import json
     try:
         cfg = json.loads((get_config_dir() / 'sources.json').read_text())
         for s in cfg.get('data_sources', []):
             if s.get('name') == platform:
-                return s.get('priority', 1)
+                pri = s.get('priority', 1)
+                # 跨域降级：非本域来源强制 P2(末尾)，仅显示标题
+                if domain and s.get('category', '') != domain:
+                    domain_map = {'top_headlines': 'news', 'tech': 'tech',
+                                  'economy': 'economy', 'gaming': 'game',
+                                  'foreign_china': 'foreign_china'}
+                    if domain_map.get(domain, '') != s.get('category', ''):
+                        return 2
+                return pri
     except Exception:
         pass
     return 1
@@ -193,7 +201,7 @@ def curate_domain(items: list, domain: str) -> list:
         item['_curator_scores'] = s
         if s['pass']:
             curated.append(item)
-    curated.sort(key=lambda x: (_get_source_priority(x.get('source_platform', '')),
+    curated.sort(key=lambda x: (_get_source_priority(x.get('source_platform', ''), domain),
                                  -x['_curator_scores']['total'],
                                  -x.get('_heat', {}).get('heat_score', 0)))
     
@@ -272,7 +280,7 @@ def score_headlines(headline: list) -> list:
         item['_curator_scores'] = s
         if s['pass']:
             hl_scored.append(item)
-    hl_scored.sort(key=lambda x: (_get_source_priority(x.get('source_platform', '')),
+    hl_scored.sort(key=lambda x: (_get_source_priority(x.get('source_platform', ''), 'top_headlines'),
                                    -x['_curator_scores']['total'],
                                    -x.get('_heat', {}).get('heat_score', 0)))
     max_n = MAX_PER_DOMAIN['top_headlines']
