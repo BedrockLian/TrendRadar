@@ -22,6 +22,7 @@ TRENDRADAR_HOME = Path(os.environ.get('TRENDRADAR_HOME', Path.home() / '.hermes'
 from trendradar.config.domains import (
     DOMAINS, DOMAIN_LABELS, MAX_PER_DOMAIN, DOMAIN_EMOJI,
     SLOT_NAMES, DAILY_LIMIT, BRIEFING_RATIO,
+    HIGH_AUTHORITY_THRESHOLD, TIER_DIVERSITY_MIN,
 )
 
 # ── 评分参数 ─────────────────────────────────────────────

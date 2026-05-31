@@ -8,7 +8,8 @@ from pathlib import Path
 from trendradar.scripts.common import CST
 from trendradar.scripts.settings import (
     get_logger, MIN_SCORE, MAX_PER_DOMAIN, SCORE_HEAT_WORDS,
-    MAX_SAME_SOURCE, DIVERSITY_PENALTY_FACTOR
+    MAX_SAME_SOURCE, DIVERSITY_PENALTY_FACTOR,
+    HIGH_AUTHORITY_THRESHOLD, TIER_DIVERSITY_MIN,
 )
 from trendradar.scripts.interest_loader import load_interests
 
@@ -92,6 +93,14 @@ def _get_health_penalty(platform: str) -> float:
                 return 0.5
             return 1.0
     return 1.0
+
+
+def _get_item_authority(item: dict) -> int:
+    """Get authority level for an item's source (lazy import to avoid circular dep)."""
+    from trendradar.scripts.curate_and_push import _authority
+    platform = item.get('source_platform', '')
+    auth_map = _authority()
+    return next((v for k, v in auth_map.items() if k in platform), 1)
 
 
 def score_item(item: dict, domain: str = 'tech') -> dict:
@@ -189,6 +198,29 @@ def curate_domain(items: list, domain: str) -> list:
     
     max_n = MAX_PER_DOMAIN.get(domain, 15)
     result = result[:max_n]
+
+    # 层级多样性保护：确保至少 TIER_DIVERSITY_MIN 条非高权威条目
+    # 防止高权威源垄断所有槽位，给中低权威源留出空间
+    if TIER_DIVERSITY_MIN > 0:
+        low_in_result = [i for i in result if _get_item_authority(i) < HIGH_AUTHORITY_THRESHOLD]
+        need = TIER_DIVERSITY_MIN - len(low_in_result)
+        if need > 0:
+            # 候选池：未入选但已过 MIN_SCORE 的低权威条目
+            low_in_pool = [i for i in curated if i not in result
+                           and _get_item_authority(i) < HIGH_AUTHORITY_THRESHOLD]
+            low_in_pool.sort(key=lambda x: x['_curator_scores']['total'], reverse=True)
+            # 可替换的：已入选的高权威条目中得分最低的
+            high_in_result = [i for i in result if _get_item_authority(i) >= HIGH_AUTHORITY_THRESHOLD]
+            high_in_result.sort(key=lambda x: x['_curator_scores']['total'])
+
+            replacements = min(need, len(low_in_pool), len(high_in_result))
+            for i in range(replacements):
+                if low_in_pool[i]['_curator_scores']['total'] >= MIN_SCORE:
+                    result.remove(high_in_result[i])
+                    result.append(low_in_pool[i])
+
+            result.sort(key=lambda x: x['_curator_scores']['total'], reverse=True)
+
     for i, item in enumerate(result):
         item['_needs_search'] = i < len(result) * 0.6
     return result
