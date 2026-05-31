@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "last_updated": "2026-05-31T13:00:00+08:00",
+  "last_updated": "2026-05-31T13:10:00+08:00",
   "data_sources": [
     {
       "id": "ifanr",
@@ -45,7 +45,7 @@
       "enabled": true,
       "feed_url": "https://a.jiemian.com/index.php?m=article&a=rss",
       "desc": "上海报业集团旗下，深度财经与商业新闻",
-      "authority": 3,
+      "authority": 2,
       "language": "zh"
     },
     {
@@ -67,7 +67,7 @@
       "category": "news",
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/thepaper",
-      "authority": 3,
+      "authority": 2,
       "language": "zh"
     },
     {
@@ -511,7 +511,7 @@
       "category": "news",
       "enabled": true,
       "feed_url": "https://www3.nhk.or.jp/rss/news/cat4.xml",
-      "authority": 2,
+      "authority": 1,
       "language": "ja"
     },
     {
@@ -522,7 +522,7 @@
       "category": "news",
       "enabled": true,
       "feed_url": "https://www.koreaherald.com/rss/newsAll",
-      "authority": 2,
+      "authority": 1,
       "language": "en"
     },
     {
@@ -698,7 +698,7 @@
       "category": "news",
       "enabled": true,
       "feed_url": "https://www.aljazeera.com/xml/rss/all.xml",
-      "authority": 2,
+      "authority": 3,
       "language": "en"
     },
     {
