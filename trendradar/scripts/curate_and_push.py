@@ -65,6 +65,8 @@ def _foreign_sources() -> frozenset:
         'VideoGamesChronicle', 'PCGamer', 'Eurogamer', 'RockPaperShotgun',
         'GamersNexus', 'nintendoeverything', 'aftermath', 'automaton',
         'guardian', 'scmp', 'nikkei', 'japantimes', 'koreaherald', 'npr',
+        'bloomberg', 'ft', 'wsj', 'apnews', 'aljazeera', 'economist',
+        'technologyreview', 'nature',
     ))
 
 

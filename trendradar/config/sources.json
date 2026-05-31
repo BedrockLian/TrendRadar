@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "last_updated": "2026-05-30T00:00:00+08:00",
+  "last_updated": "2026-05-31T10:20:00+08:00",
   "data_sources": [
     {
       "id": "ifanr",
@@ -524,6 +524,270 @@
       "feed_url": "https://www.koreaherald.com/rss/newsAll",
       "authority": 3,
       "language": "en"
+    },
+    {
+      "id": "bloomberg",
+      "name": "Bloomberg",
+      "platform": "bloomberg",
+      "type": "rss",
+      "category": "economy",
+      "enabled": true,
+      "feed_url": "https://www.bloomberg.com/feeds/bpol/news.xml",
+      "authority": 3,
+      "language": "en"
+    },
+    {
+      "id": "reuters",
+      "name": "Reuters",
+      "platform": "reuters",
+      "type": "rss",
+      "category": "economy",
+      "enabled": true,
+      "feed_url": "https://news.google.com/rss/search?q=source:Reuters",
+      "authority": 3,
+      "language": "en"
+    },
+    {
+      "id": "financial_times",
+      "name": "Financial Times",
+      "platform": "ft",
+      "type": "rss",
+      "category": "economy",
+      "enabled": true,
+      "feed_url": "https://www.ft.com/?format=rss",
+      "authority": 3,
+      "language": "en"
+    },
+    {
+      "id": "wsj_world",
+      "name": "WSJ 世界新闻",
+      "platform": "wsj",
+      "type": "rss",
+      "category": "economy",
+      "enabled": true,
+      "feed_url": "https://feeds.a.dj.com/rss/RSSWorldNews.xml",
+      "authority": 3,
+      "language": "en"
+    },
+    {
+      "id": "wsj_business",
+      "name": "WSJ 商业",
+      "platform": "wsj",
+      "type": "rss",
+      "category": "economy",
+      "enabled": true,
+      "feed_url": "https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml",
+      "authority": 3,
+      "language": "en"
+    },
+    {
+      "id": "yicai",
+      "name": "第一财经",
+      "platform": "yicai",
+      "type": "rss",
+      "category": "economy",
+      "enabled": true,
+      "feed_url": "https://www.yicai.com/rss",
+      "authority": 3,
+      "language": "zh"
+    },
+    {
+      "id": "nikkei_cn",
+      "name": "日经中文网",
+      "platform": "nikkeicn",
+      "type": "rss",
+      "category": "economy",
+      "enabled": true,
+      "feed_url": "https://cn.nikkei.com/rss/news.xml",
+      "authority": 2,
+      "language": "zh"
+    },
+    {
+      "id": "ign",
+      "name": "IGN",
+      "platform": "ign",
+      "type": "rss",
+      "category": "game",
+      "enabled": true,
+      "feed_url": "https://feeds.feedburner.com/ign/all",
+      "authority": 3,
+      "language": "en"
+    },
+    {
+      "id": "pocket_gamer",
+      "name": "Pocket Gamer",
+      "platform": "pocketgamer",
+      "type": "rss",
+      "category": "game",
+      "enabled": true,
+      "feed_url": "https://www.pocketgamer.com/index.rss",
+      "authority": 2,
+      "language": "en"
+    },
+    {
+      "id": "chuapp",
+      "name": "触乐",
+      "platform": "chuapp",
+      "type": "rss",
+      "category": "game",
+      "enabled": true,
+      "feed_url": "http://www.chuapp.com/feed",
+      "authority": 2,
+      "language": "zh"
+    },
+    {
+      "id": "game_developer",
+      "name": "Game Developer",
+      "platform": "gamedeveloper",
+      "type": "rss",
+      "category": "game",
+      "enabled": true,
+      "feed_url": "https://www.gamedeveloper.com/rss.xml",
+      "authority": 2,
+      "language": "en"
+    },
+    {
+      "id": "famitsu",
+      "name": "Famitsu",
+      "platform": "famitsu",
+      "type": "rss",
+      "category": "game",
+      "enabled": true,
+      "feed_url": "https://www.famitsu.com/rss/index.xml",
+      "authority": 3,
+      "language": "ja"
+    },
+    {
+      "id": "mit_tech_review",
+      "name": "MIT Technology Review",
+      "platform": "technologyreview",
+      "type": "rss",
+      "category": "tech",
+      "enabled": true,
+      "feed_url": "https://www.technologyreview.com/feed/",
+      "authority": 3,
+      "language": "en"
+    },
+    {
+      "id": "wired",
+      "name": "Wired",
+      "platform": "wired",
+      "type": "rss",
+      "category": "tech",
+      "enabled": true,
+      "feed_url": "https://www.wired.com/feed/rss",
+      "authority": 3,
+      "language": "en"
+    },
+    {
+      "id": "theverge_main",
+      "name": "The Verge",
+      "platform": "theverge",
+      "type": "rss",
+      "category": "tech",
+      "enabled": true,
+      "feed_url": "https://www.theverge.com/rss/index.xml",
+      "authority": 3,
+      "language": "en"
+    },
+    {
+      "id": "nature_news",
+      "name": "Nature News",
+      "platform": "nature",
+      "type": "rss",
+      "category": "tech",
+      "enabled": true,
+      "feed_url": "http://feeds.nature.com/nature/rss/current",
+      "authority": 3,
+      "language": "en"
+    },
+    {
+      "id": "science_news",
+      "name": "Science News",
+      "platform": "sciencenews",
+      "type": "rss",
+      "category": "tech",
+      "enabled": true,
+      "feed_url": "https://www.sciencenews.org/feed",
+      "authority": 2,
+      "language": "en"
+    },
+    {
+      "id": "ap_news",
+      "name": "AP News",
+      "platform": "apnews",
+      "type": "rss",
+      "category": "news",
+      "enabled": true,
+      "feed_url": "https://news.google.com/rss/search?q=source:Associated+Press",
+      "authority": 3,
+      "language": "en"
+    },
+    {
+      "id": "al_jazeera",
+      "name": "Al Jazeera",
+      "platform": "aljazeera",
+      "type": "rss",
+      "category": "news",
+      "enabled": true,
+      "feed_url": "https://www.aljazeera.com/xml/rss/all.xml",
+      "authority": 3,
+      "language": "en"
+    },
+    {
+      "id": "the_economist",
+      "name": "The Economist",
+      "platform": "economist",
+      "type": "rss",
+      "category": "news",
+      "enabled": true,
+      "feed_url": "https://www.economist.com/sections/international/rss.xml",
+      "authority": 3,
+      "language": "en"
+    },
+    {
+      "id": "the_decoder",
+      "name": "The Decoder",
+      "platform": "thedecoder",
+      "type": "rss",
+      "category": "tech",
+      "enabled": true,
+      "feed_url": "https://the-decoder.com/feed/",
+      "authority": 2,
+      "language": "en"
+    },
+    {
+      "id": "venturebeat",
+      "name": "VentureBeat",
+      "platform": "venturebeat",
+      "type": "rss",
+      "category": "tech",
+      "enabled": true,
+      "feed_url": "https://venturebeat.com/feed/",
+      "authority": 2,
+      "language": "en"
+    },
+    {
+      "id": "synced",
+      "name": "机器之心",
+      "platform": "synced",
+      "type": "rss",
+      "category": "tech",
+      "enabled": true,
+      "feed_url": "https://rsshub.app/syncedreview/posts",
+      "authority": 2,
+      "language": "zh"
+    },
+    {
+      "id": "qbitai",
+      "name": "量子位",
+      "platform": "qbitai",
+      "type": "rss",
+      "category": "tech",
+      "enabled": true,
+      "feed_url": "https://rsshub.app/qbitai/posts",
+      "authority": 2,
+      "language": "zh"
     }
   ],
   "exploration_sources": [],

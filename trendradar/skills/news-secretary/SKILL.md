@@ -66,12 +66,14 @@ SOURCE_DOMAIN_OVERRIDE = {
 
 外语文章翻译由 `ai_translate.py` 处理，规则：
 
-1. **按来源定语言（来自 sources.json）** — `get_source_lang()` 读取 `DATA_DIR / 'sources.json'`（运行时数据目录 `~/.hermes/trendradar/data/`）每个源的 `language` + `platform` + `name` 字段。单真相源：加新源设好 `language` 即可，不再维护独立的映射文件。**陷阱**：`data/sources.json` 已在 git 中跟踪（`git clean` 不再误删），但 `git reset --hard` 后仍需 `git checkout HEAD -- data/sources.json` 恢复。
+1. **按来源定语言（来自 config/sources.json）** — `get_source_lang()` 读取 `get_config_dir() / 'sources.json'`（`TRENDRADAR_HOME/config/`）每个源的 `language` + `platform` + `name` 字段。单真相源：加新源设好 `language` 即可，不再维护独立的映射文件。
 2. **文件同步** — ai_translate 和 render_markdown 必须读同一文件（今日日期版 → 最新日期版 → 通用版，三层回退）。陷阱 2026-05-26: 只有两层回退时翻译写入通用版但渲染读日期版。
 3. **render 优先 title_cn** — `render_markdown.py` `_format_item` 取 `title_cn`/`summary_cn`，不回落到原始 title/summary。
-4. **BATCH_SIZE 上限 5** — DeepSeek 在 batch >5 时只翻译摘要不翻译标题（标题保持原文不变但摘要正确翻译）。`ai_translate.py` `BATCH_SIZE = 5`。若未来换模型需重新验证。
+4. **BATCH_SIZE = 10** — `config/translation.py` 中 `TRANSLATE_BATCH_SIZE` 默认 10。若未来换模型需重新验证。
 
-5. **日→中翻译返回原文陷阱** — DeepSeek 处理日文→中文批量翻译时可能直接返回原文不变（`title_cn == title`），不报错不告警。`translate_one_batch()` 已添加逐条检测并输出警告日志。
+5. **日→中翻译模型要求** ⚠️ — `deepseek-chat` 处理日文→中文批量翻译时**必然返回原文不变**（`title_cn == title`），不报错不告警。`deepseek-v4-flash` 可正常翻译日文（仍有抖动，偶尔返回原文）。**必须设置 `DEEPSEEK_MODEL=deepseek-v4-flash`**，在 gateway override.conf 中注入环境变量。不可用 deepseek-chat 做日文翻译。
+
+6. **假翻译自动拦截** — `process_curated()` 写入 title_cn/summary_cn 前检测 `title_cn.strip() == title.strip()`，若相等则丢弃不保存。防止模型返回原文被当成"已翻译"，导致后续运行时 `_load_and_scan` 跳过该条目。拦截后条目保持在待翻译队列，下次运行自动重试。
 6. **中文短摘要 AI 扩写**（v6.10.0） — `ai_translate.py` 新增中文条目短摘要扩写通道。对中文源（source_lang 为 None）中原始摘要 `<50 字` 的条目，自动用 AI 扩写成 50-80 字的完整信息句。扩写 prompt 在 `_EXPAND_TEMPLATE` 中，约束：不虚构事实、基于标题上下文展开、保持新闻风格。2026-05-27 用户反馈摘要过短后添加，虎嗅/钛媒体短条目从 23/26 字扩至 37/51 字。
 7. **摘要长度与 render 联动** — `render_markdown.py` 的 `_shorten(max_len=80)` 控制最终展示长度（参见输出规范第5条）。英文/日文翻译产出通常 40-70 字，render 基本保留；中文条目从 `summary` 字段取前 80 字（旧 50 字截断的改进，但 300 字长摘要仍会被截）。扩写通道只覆盖 `<50 字` 的极短条目。用户反馈摘要过短时，需同步检查两个配置点：`ai_translate.py` 的扩写逻辑和 `render_markdown.py` 的 `max_len`。
 8. **cron context 投递机制：auto-delivery 协议** — `send_message` 在 cron context 不可用。所有投递通过 final response auto-delivery 完成：pipeline 产出简报 → Agent 将简报原文作为 final response 返回 → 系统自动投递到 WeCom。prompt 第7步直接输出脚本渲染结果，不经过 LLM 重写。错误做法：❌ 在 cron 中调用 send_message、❌ 返回 [SILENT]、❌ Agent 重写简报、❌ 只返回 fragments JSON 不输出实际内容。
@@ -90,6 +92,11 @@ SOURCE_DOMAIN_OVERRIDE = {
 **格式化铁律**：每个 delegate_task 返回的分析文本必须通过 `render_deep_analysis.py` 管道格式化——`echo "$ANALYSIS_TEXT" | $PYTHON scripts/render_deep_analysis.py --topic "主题" --push-id evening --context`。禁止直接输出原始分析文本。格式化后的输出包含 `🔬 **主题**` 标题和 `📌 相关回顾` 部分，这是正确的格式。
 
 **3 条分开投递**：趋势、跨域、风险各作为一条独立 final response 分别输出，不要合并成一条。
+
+**WeCom 格式规范（v3.0）**：深度分析使用标准 pipe 表格 `|` 排版，格式模板见 `references/deep-analysis-wecom-format.md`。三条规则：
+1. 趋势方向：顶部数据卡片表格 + 2~3段分析 + 总结句
+2. 跨域交叉：关联表格 + 2个深层交叉点剖析
+3. 风险预警：风险矩阵表格（🔴🟡🟢三色等级 + 触发条件 + 影响面）+ 综合判断引用
 
 **子 Agent 沙箱陷阱**：`delegate_task` 子 Agent 在 cron 上下文中有独立的进程上下文，其 `terminal`/`read_file` 等工具**无法读取父 session 的文件系统**。文件路径传递（如 `cat /path/to/report.md`）会返回空。子 Agent 必须通过 inline 文本传递内容——将分析文本放在 prompt 的 `context` 字段中，而不是让子 Agent 自己去读文件。详见 `../../references/PIPELINE.md`。
 
@@ -113,7 +120,9 @@ SOURCE_DOMAIN_OVERRIDE = {
 
 **诊断线索**：last_status=ok 但用户说没收到 → 查 cron/output/90a2866775df/ 中 agent 的 final response 是否包含违规前缀。
 
-**快速补发**：cat archive/YYYY-MM-DD/evening.md | PYTHON_GIL= hermes send --to wecom:bl（必须 unset PYTHON_GIL，否则 config_read_gil 崩溃）
+**快速补发**：`archive_resend.py --date YYYY-MM-DD --slot evening`（自 v2 起接管所有补发，自动分片投递。见 `references/archive-resend-mechanism.md`）
+
+**❌ 不要用 `cat archive | hermes send`** —— 整文件推送超过 WeCom 4KB 限制时尾部板块会被静默截断（不报错不告警），见参考文档中的关键警告。
 
 ## 手动补发
 
@@ -157,6 +166,8 @@ export PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GI
 
 **双副本同步要点**：scripts/ 目录修改后需同步到两个位置：(1) /home/asus/TrendRadar/ — 工作副本，推 GitHub；(2) ~/.hermes/trendradar/ — cron 运行时副本（TRENDRADAR_HOME）。遗忘同步会导致 cron 跑旧代码。
 
+**config/ scripts/ symlink 陷阱**：`~/.hermes/trendradar/`（外层）的 `config/` 和 `scripts/` 是 symlink 指向 `trendradar/config/` 和 `trendradar/scripts/`（内层）。2026-05-29 清理 root 级重复目录后，这两条 symlink 若丢失，cron 所有阶段会静默失败（sources.json/timeline.yaml 找不到）。症状是 `pipeline_orchestrator.py` 在 push_prepare 阶段报 `FATAL: Cannot load sources.json`。修复：`cd ~/.hermes/trendradar && ln -sf trendradar/config config && ln -sf trendradar/scripts scripts`。
+
 ## 关键参考
 
 > 文档已于 2026-05-27 从 41 份合并为 9 份。完整映射见 `../../references/INDEX.md`。
@@ -174,6 +185,7 @@ export PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GI
 | `references/sanity-check-maintenance.md` |
 | `scripts/sanity_check.py` | 发布前拦截器 — 禁语/死链/敏感词扫描 + 输出格式验证 |
 | `scripts/curate_and_push.py` |
+| `references/deep-analysis-wecom-format.md` | 深度分析 WeCom 投递格式模板（表格排版v3.0） |
 | `references/deep-analysis-delivery-failure.md` | 深度分析未格式化 + 简报未送达排查手册 |
 | `scripts/archive_resend.py` | 安全补发：从 `archive/` 读纯 markdown 投递 |
 | `hermes-scripts/gen_cron_prompt.py` | 从 --list-steps 自动生成 cron prompt |
@@ -181,4 +193,4 @@ export PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GI
 ## 兴趣偏好
 `config/ai_interests.yaml` — 正面+2分，排除=0分过滤。CLI: `python3 scripts/interest_cli.py {list,add,remove,exclude}`。
 
-**滑窗误触陷阱**：`_load_interests()` 用 2-3 字滑窗从排除短语提取关键词，通用词（新闻/游戏/体育 等）可能误入排除集。修改 `ai_interests.yaml` 后需检查排除集是否含通用词。详见 `../../../../references/TRAPS.md #49`。
+**滑窗误触陷阱**：`_load_interests()` 用 2-3 字滑窗从排除短语提取关键词，通用词（新闻/游戏/体育 等）可能误入排除集。修改 `ai_interests.yaml` 后需检查排除集是否含通用词。详见 `../../references/TRAPS.md #49`。
