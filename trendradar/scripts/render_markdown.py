@@ -1,5 +1,5 @@
+from trendradar.scripts.common import CST
 #!/usr/bin/env python3
-from trendradar.scripts.common import CST, find_curated_file
 """
 render_markdown.py — 纯脚本渲染 TrendRadar 简报，无需 LLM API。
 
@@ -91,6 +91,13 @@ def _format_item(idx, item, push_id):
     title = _shorten(item.get('title_cn') or item.get('title') or '', 80)
     summary = _shorten(item.get('summary_cn') or item.get('summary') or '', 80)
     url = (item.get('url') or '').strip()
+    # URL 空格清洗（兜底：某些 RSS 返回的 URL 路径含未编码空格）
+    if url and ' ' in url:
+        from urllib.parse import urlparse, urlunparse, quote
+        parsed = urlparse(url)
+        safe_path = quote(parsed.path, safe='/:@!$&\'()*+,;=-._~')
+        if safe_path != parsed.path:
+            url = urlunparse(parsed._replace(path=safe_path))
     source = (item.get('source_platform') or '').split('+')[0].strip()
     heat = item.get('_heat')
     track = item.get('_track') if push_id == 'evening' else None
@@ -149,9 +156,21 @@ def render_briefing(push_id: str) -> str:
     today_file = datetime.now(CST).strftime('%Y%m%d')
 
     # Load curated JSON
-    curated_path = find_curated_file(today_file, push_id)
-    if curated_path is None:
-        log.error(f"Curated file not found for push-id '{push_id}' (date={today_file})")
+    # Try dated file first, then fall back to non-dated
+    curated_path = DATA_DIR / f'curated_{push_id}_{today_file}.json'
+    if not curated_path.exists():
+        # Fallback 2: find latest dated version
+        dated_files = sorted(
+            DATA_DIR.glob(f'curated_{push_id}_[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].json'),
+            reverse=True,
+        )
+        if dated_files:
+            curated_path = dated_files[0]
+        else:
+            # Fallback 3: generic version
+            curated_path = DATA_DIR / f'curated_{push_id}.json'
+    if not curated_path.exists():
+        log.error(f"Curated file not found: {curated_path}")
         return ""
 
     data = json.loads(curated_path.read_text(encoding='utf-8'))

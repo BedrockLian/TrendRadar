@@ -61,6 +61,13 @@ def _parse_rss(data: str, platform: str, max_items: int, freshness_days: int = R
         for entry in parsed.entries[:max_items]:
             title = (getattr(entry, 'title', '') or '').strip()
             link = (getattr(entry, 'link', '') or '').strip()
+            # URL 编码：某些 RSS 的路径含空格（如 Sixth Tone）
+            if link and ' ' in link:
+                from urllib.parse import urlparse, urlunparse, quote
+                parsed = urlparse(link)
+                safe_path = quote(parsed.path, safe='/:@!$&\'()*+,;=-._~')
+                if safe_path != parsed.path:
+                    link = urlunparse(parsed._replace(path=safe_path))
             if not title and not link:
                 continue
 
