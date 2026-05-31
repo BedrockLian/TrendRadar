@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "last_updated": "2026-05-31T16:00:00+08:00",
+  "last_updated": "2026-05-31T16:10:00+08:00",
   "data_sources": [
     {
       "id": "jiemian",
@@ -297,7 +297,8 @@
       "feed_url": "https://news.google.com/rss/search?q=source:Reuters",
       "authority": 3,
       "language": "en",
-      "priority": 1
+      "priority": 1,
+      "freshness_days": 3
     },
     {
       "id": "financial_times",
@@ -318,10 +319,11 @@
       "type": "rss",
       "category": "news",
       "enabled": true,
-      "feed_url": "https://feeds.a.dj.com/rss/RSSWorldNews.xml",
+      "feed_url": "https://news.google.com/rss/search?q=source:wsj.com+world",
       "authority": 3,
       "language": "en",
-      "priority": 0
+      "priority": 0,
+      "freshness_days": 3
     },
     {
       "id": "wsj_business",
@@ -417,7 +419,8 @@
       "feed_url": "https://news.google.com/rss/search?q=source:Associated+Press",
       "authority": 3,
       "language": "en",
-      "priority": 0
+      "priority": 0,
+      "freshness_days": 3
     },
     {
       "id": "al_jazeera",
