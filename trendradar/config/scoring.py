@@ -14,7 +14,7 @@ TITLE_CLARITY_HIGH = 40
 # 时效分档（小时）
 RECENCY_HOURS_HIGH = 1
 RECENCY_HOURS_MID = 6
-RECENCY_HOURS_LOW = 24
+RECENCY_HOURS_LOW = 72
 
 # 热度信号词（评分用）
 SCORE_HEAT_WORDS = frozenset({'突发', '重磅', '紧急', '首次', '正式', '官宣', '定档', '上线', '新政', '突破'})

@@ -10,6 +10,7 @@ from trendradar.scripts.settings import (
     get_logger, MIN_SCORE, MAX_PER_DOMAIN, SCORE_HEAT_WORDS,
     MAX_SAME_SOURCE, DIVERSITY_PENALTY_FACTOR,
     HIGH_AUTHORITY_THRESHOLD, TIER_DIVERSITY_MIN,
+    RECENCY_HOURS_LOW,
 )
 from trendradar.scripts.interest_loader import load_interests
 
@@ -165,7 +166,7 @@ def score_item(item: dict, domain: str = 'tech') -> dict:
             age = 24
     except (ValueError, TypeError):
         age = 24
-    recency = 3 if age < 1 else 2 if age < 6 else 1 if age < 24 else 0
+    recency = 3 if age < 1 else 2 if age < 6 else 1 if age < RECENCY_HOURS_LOW else 0
     # 博客内容即使内容较旧也给最低 recency（刚被 blogwatcher 发现）
     if recency == 0 and item.get('_is_blog'):
         recency = 1
