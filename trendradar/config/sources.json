@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "last_updated": "2026-05-31T13:25:00+08:00",
+  "last_updated": "2026-05-31T14:10:00+08:00",
   "data_sources": [
     {
       "id": "ifanr",
@@ -295,7 +295,7 @@
       "type": "rss",
       "category": "news",
       "enabled": true,
-      "feed_url": "https://www.scmp.com/rss/4/feed",
+      "feed_url": "https://www.scmp.com/rss/2/feed",
       "authority": 3,
       "language": "en"
     },
@@ -744,6 +744,61 @@
       "feed_url": "https://www.qbitai.com/feed",
       "authority": 2,
       "language": "zh"
+    },
+    {
+      "id": "scmp_china",
+      "name": "SCMP 中国",
+      "platform": "scmp_china",
+      "type": "rss",
+      "category": "foreign_china",
+      "enabled": true,
+      "feed_url": "https://www.scmp.com/rss/2/feed",
+      "authority": 3,
+      "language": "en"
+    },
+    {
+      "id": "nikkei_asia",
+      "name": "Nikkei Asia",
+      "platform": "nikkei",
+      "type": "rss",
+      "category": "foreign_china",
+      "enabled": true,
+      "feed_url": "https://asia.nikkei.com/rss/feed/nar",
+      "authority": 3,
+      "language": "en"
+    },
+    {
+      "id": "sixth_tone",
+      "name": "Sixth Tone",
+      "platform": "sixthtone",
+      "type": "rss",
+      "category": "foreign_china",
+      "enabled": true,
+      "feed_url": "https://www.sixthtone.com/rss",
+      "authority": 2,
+      "language": "en"
+    },
+    {
+      "id": "foreign_policy",
+      "name": "Foreign Policy",
+      "platform": "foreignpolicy",
+      "type": "rss",
+      "category": "foreign_china",
+      "enabled": true,
+      "feed_url": "https://foreignpolicy.com/feed/",
+      "authority": 2,
+      "language": "en"
+    },
+    {
+      "id": "straits_times",
+      "name": "The Straits Times",
+      "platform": "straitstimes",
+      "type": "rss",
+      "category": "foreign_china",
+      "enabled": true,
+      "feed_url": "https://www.straitstimes.com/news/asia/rss.xml",
+      "authority": 1,
+      "language": "en"
     }
   ],
   "exploration_sources": [],

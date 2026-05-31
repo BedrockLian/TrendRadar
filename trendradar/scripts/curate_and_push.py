@@ -67,6 +67,8 @@ def _foreign_sources() -> frozenset:
         'guardian', 'scmp', 'nikkei', 'japantimes', 'koreaherald', 'npr',
         'bloomberg', 'ft', 'wsj', 'apnews', 'aljazeera', 'economist',
         'technologyreview', 'nature',
+        'restofworld', 'sixthtone', 'foreignpolicy', 'straitstimes',
+        'scmp_china',
     ))
 
 
