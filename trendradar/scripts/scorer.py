@@ -174,7 +174,7 @@ def curate_domain(items: list, domain: str) -> list:
             curated.append(item)
     curated.sort(key=lambda x: (x['_curator_scores']['total'], x.get('_heat', {}).get('heat_score', 0)), reverse=True)
     
-    # 来源多样性惩罚：同源 > 3 条时权重减半
+    # 来源多样性惩罚：同源超过 MAX_SAME_SOURCE 条后权重减半
     result = []
     source_counts: dict[str, int] = {}
     
@@ -195,6 +195,18 @@ def curate_domain(items: list, domain: str) -> list:
     
     # 按最终分数重新排序
     result.sort(key=lambda x: x['_curator_scores']['total'], reverse=True)
+    
+    # 硬上限：同源最多 MAX_SAME_SOURCE 条，超限的低分条目丢弃
+    seen: dict[str, int] = {}
+    hard_capped = []
+    for item in result:
+        src = (item.get('source_platform', '') or '').split('+')[0].strip().lower()
+        n = seen.get(src, 0)
+        if n >= MAX_SAME_SOURCE:
+            continue  # 丢弃超限条目
+        seen[src] = n + 1
+        hard_capped.append(item)
+    result = hard_capped
     
     max_n = MAX_PER_DOMAIN.get(domain, 15)
     result = result[:max_n]
