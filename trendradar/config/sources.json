@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "last_updated": "2026-05-31T14:10:00+08:00",
+  "last_updated": "2026-05-31T14:30:00+08:00",
   "data_sources": [
     {
       "id": "ifanr",
@@ -400,7 +400,7 @@
       "type": "rss",
       "category": "foreign_china",
       "enabled": true,
-      "feed_url": "https://feeds.bbci.co.uk/news/world/asia/china/rss.xml",
+      "feed_url": "https://news.google.com/rss/search?q=site:bbc.com+china",
       "authority": 3,
       "language": "en"
     },
@@ -411,7 +411,7 @@
       "type": "rss",
       "category": "foreign_china",
       "enabled": true,
-      "feed_url": "https://feeds.bbci.co.uk/news/world/rss.xml",
+      "feed_url": "https://news.google.com/rss/search?q=site:bbc.com",
       "authority": 3,
       "language": "en"
     },
