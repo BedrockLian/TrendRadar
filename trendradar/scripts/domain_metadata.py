@@ -19,7 +19,10 @@ def _get_config_dir():
 
 
 # ── Thread-safe once-init lock & sentinel ──
-_INIT_LOCK = threading.Lock()
+# RLock: same thread may re-enter (functions like _foreign_sources → _sources
+# would deadlock with plain Lock). The "single init" guarantee still holds
+# because we check the sentinel after re-acquiring.
+_INIT_LOCK = threading.RLock()
 
 # ── _config ──────────────────────────────────────────────────────
 _CONFIG_VAL: dict = None
