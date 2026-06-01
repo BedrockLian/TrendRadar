@@ -223,34 +223,40 @@ def get_latest_push_for_slot(slot: str) -> dict | None:
 
 
 def _send_from_archive(archive_path: Path, alerts: list[str], slot_name: str) -> bool:
-    """从 archive 文件读取内容并通过 hermes send 投递。返回成功/失败。"""
+    """从 archive 文件读取内容，分片后逐片通过 hermes send 投递。返回成功/失败。"""
     try:
         content = archive_path.read_text(encoding='utf-8').strip()
         if not content:
             alerts.append(f"  ⚠️ {slot_name} 存档内容为空")
             return False
+        from trendradar.scripts.fragment_push import split_fragments
+        fragments = split_fragments(content)
+        if not fragments:
+            alerts.append(f"  ⚠️ {slot_name} 分片后无内容")
+            return False
         import subprocess, tempfile
-        tmp = Path(tempfile.gettempdir()) / f'{archive_path.stem}_redeliver.md'
-        tmp.write_text(content)
-        result = subprocess.run(
-            ['hermes', 'send', '--to', 'wecom:bl', '--file', str(tmp)],
-            capture_output=True, text=True, timeout=30,
-            env={**os.environ, 'PYTHON_GIL': '1'}
-        )
-        if result.returncode == 0:
-            alerts.append(f"  ✅ {slot_name} 已补发至 WeCom")
-            return True
-        # fallback GIL
-        result = subprocess.run(
-            ['hermes', 'send', '--to', 'wecom:bl', '--file', str(tmp)],
-            capture_output=True, text=True, timeout=30,
-            env={**os.environ, 'PYTHON_GIL': '0'}
-        )
-        if result.returncode == 0:
-            alerts.append(f"  ✅ {slot_name} 已补发至 WeCom")
-            return True
-        alerts.append(f"  ❌ {slot_name} 补发失败 (hermes send exit={result.returncode})")
-        return False
+        success = True
+        for i, frag in enumerate(fragments):
+            tmp = Path(tempfile.gettempdir()) / f'{archive_path.stem}_frag{i}.md'
+            tmp.write_text(frag)
+            for gil in ['1', '0']:
+                result = subprocess.run(
+                    ['hermes', 'send', '--to', 'wecom:bl', '--file', str(tmp)],
+                    capture_output=True, text=True, timeout=30,
+                    env={**os.environ, 'PYTHON_GIL': gil}
+                )
+                if result.returncode == 0:
+                    break
+            if result.returncode == 0:
+                alerts.append(f"  ✅ {slot_name} 分片{i+1}/{len(fragments)} 已投递")
+            else:
+                alerts.append(f"  ❌ {slot_name} 分片{i+1}/{len(fragments)} 投递失败")
+                success = False
+            try:
+                tmp.unlink()
+            except OSError:
+                pass
+        return success
     except Exception as e:
         alerts.append(f"  ⚠️ {slot_name} 补发异常: {e}")
         return False
