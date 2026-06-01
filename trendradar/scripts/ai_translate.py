@@ -125,17 +125,18 @@ _translate_failures = 0        # 模块级熔断计数器
 
 _EXPAND_TEMPLATE = Template("""You are a professional news editor. The following Chinese news items have very short summaries (often just a tagline or metaphor).
 
-Rewrite each item's TITLE and SUMMARY into a complete, informative Chinese sentence of about 50-80 Chinese characters.
+Rewrite each item's TITLE into a complete, informative Chinese sentence of 50-80 characters. Separately, rewrite the SUMMARY into another complete, informative Chinese sentence of 50-80 characters. Do NOT combine them into one sentence.
 
 Rules:
 1. Preserve all factual details (company names, numbers, dates, percentages).
 2. If the summary is too vague or metaphorical (e.g. "风口上的猪"), draw on the title context to write a concrete, factual summary.
 3. Do NOT add information that is not implied by the title or summary.
 4. Use journalistic Chinese style — clear, objective, and fluent.
-5. Start each item with "Item N:" on its own line, then the rewritten title on the next line, then the rewritten summary on the line after that.
-6. Each line must be a single line (no line breaks inside).
-7. Do NOT add any extra commentary outside the numbered items.
-8. Output exactly 4N lines for N input items (N × "Item N:" + title + summary lines).""")
+5. Output each item as three lines: "Item N:" on its own line, then the REWRITTEN TITLE on the next line, then the REWRITTEN SUMMARY on the line after that.
+6. The rewritten title and the rewritten summary must each be a separate complete sentence. Do not merge them.
+7. Each line must be a single line (no line breaks inside).
+8. Do NOT add any extra commentary outside the numbered items.
+9. Output exactly 4N lines for N input items (N × "Item N:" + title + summary lines).""")
 
 _TRANSLATE_TEMPLATE = Template("""You are a professional translator. Translate the following $source_lang news items
 into concise, natural Chinese.

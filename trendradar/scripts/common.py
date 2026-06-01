@@ -258,7 +258,14 @@ def _parse_line_pairs(
             if not l:
                 continue
             if l.startswith(('Here', 'The following', 'Below', 'Note:', '以上是',
-                             '---', '===', 'TITLE:', 'SUMMARY:')):
+                             '---', '===')):
+                continue
+            # Strip TITLE:/SUMMARY: prefixes (AI may mimic input format)
+            if l.upper().startswith('TITLE:'):
+                l = l[6:].strip()
+            elif l.upper().startswith('SUMMARY:'):
+                l = l[8:].strip()
+            if not l:
                 continue
             collected.append(l)
 
