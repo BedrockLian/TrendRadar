@@ -64,6 +64,13 @@ metadata:
 - 周报: `cronjob action=update job_id=c20e2c82deda prompt="..."`
 - 月报: `cronjob action=update job_id=0b14c67429ba prompt="..."`
 
+## 投递协议
+输出报告后，**不得作为 final response 让 auto-delivery 投递**——报告超出 WeCom 4KB 限制（周报约 15KB、月报更大）。必须：
+1. 按 `### ` 板块标题拆分为多个片段
+2. 每个片段用 `send_message(target="wecom", message=fragment)` 分别投递
+3. 零附加文本，直接以 "### " 开头
+4. cron job 的 toolset 必须包含 `messaging`（已配置）
+
 ## 参考
 
 | 文件 | 内容 |
