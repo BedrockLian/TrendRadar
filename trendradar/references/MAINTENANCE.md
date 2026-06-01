@@ -1,3 +1,5 @@
+<!-- version: 1.0.0 | consolidated: 2026-05-30 -->
+
 # References 一致性维护指南
 
 > 指导 Agent 消除 Skill references/ 与根 references/ 之间的内容冲突。
@@ -11,6 +13,8 @@ trendradar/
 ├── references/                     ← 根目录（项目级真相源）
 ├── skills/news-secretary/references/   ← Skill 目录中同名副本
 ├── skills/self-healing/references/     ← 又一份副本
+├── skills/report-generator/references/
+├── skills/system-config/references/
 ```
 
 **Hermes Agent 加载 Skill 时，只读 Skill 目录下的 `references/`**。根目录是维护者编辑的位置。

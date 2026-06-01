@@ -1,4 +1,4 @@
-<!-- version: 2.8.0 | last-reviewed: 2026-05-26 -->
+<!-- version: 2.9.0 | last-reviewed: 2026-05-26 -->
 
 # Git 仓库同步 — 完整流程
 

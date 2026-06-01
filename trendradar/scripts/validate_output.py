@@ -22,7 +22,7 @@ from pathlib import Path
 
 log = logging.getLogger('validate-output')
 
-CST = timezone(timedelta(hours=8))
+from trendradar.scripts.common import CST
 TRENDRADAR_HOME = Path(os.environ.get(
     'TRENDRADAR_HOME',
     Path.home() / '.hermes' / 'trendradar'

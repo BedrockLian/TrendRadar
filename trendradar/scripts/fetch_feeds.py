@@ -6,23 +6,29 @@ import json, re, sys, asyncio
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from urllib.parse import urlparse
-from functools import cache, lru_cache
+import threading
 from trendradar.config.keywords import has_keyword_match_ci
 import feedparser
 import aiohttp
 import concurrent.futures
+import threading
 
 _PARSE_POOL = None
+_PARSE_POOL_LOCK = threading.Lock()
 
 def _get_parse_pool():
     global _PARSE_POOL
-    if _PARSE_POOL is None:
+    if _PARSE_POOL is not None:
+        return _PARSE_POOL
+    with _PARSE_POOL_LOCK:
+        if _PARSE_POOL is not None:
+            return _PARSE_POOL
         try:
             _PARSE_POOL = concurrent.futures.InterpreterPoolExecutor(max_workers=24)
         except (ImportError, AttributeError):
             _PARSE_POOL = concurrent.futures.ThreadPoolExecutor(max_workers=24)
             log.warning('InterpreterPoolExecutor 不可用，降级为 ThreadPoolExecutor')
-    return _PARSE_POOL
+        return _PARSE_POOL
 
 from trendradar.scripts.common import CST
 
@@ -36,10 +42,20 @@ USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
 RSS_FRESHNESS_MAX_AGE_DAYS = 1  # 全局默认，单源可在 sources.json 中覆盖 freshness_days
 
 
-@cache
+_CONFIG_LOCK = threading.Lock()
+_CONFIG_VAL: dict = None
+_CONFIG_SENTINEL = object()
+
 def _load_config() -> dict:
     """缓存 sources.json 读取（__main__ 多次调用时复用）"""
-    return json.loads((get_config_dir() / 'sources.json').read_text())
+    global _CONFIG_VAL
+    if _CONFIG_VAL is not None:
+        return _CONFIG_VAL
+    with _CONFIG_LOCK:
+        if _CONFIG_VAL is not None:
+            return _CONFIG_VAL
+        _CONFIG_VAL = json.loads((get_config_dir() / 'sources.json').read_text())
+        return _CONFIG_VAL
 
 
 def _get_sources() -> list[tuple[str, str, int]]:
@@ -230,19 +246,39 @@ def _dedup(items: list) -> list:
     return list(seen.values())
 
 
-@lru_cache(maxsize=1)
+_KW_SETS_LOCK = threading.Lock()
+_KW_SETS_VAL = None
+_KW_SETS_SENTINEL = object()
+
 def _kw_sets():
     """Returns (GAME_KW, TECH_KW, ECONOMY_KW) from trendradar.config.keywords."""
-    from trendradar.config.keywords import GAME_KW, TECH_KW, ECONOMY_KW
-    return (GAME_KW, TECH_KW, ECONOMY_KW)
+    global _KW_SETS_VAL
+    if _KW_SETS_VAL is not None:
+        return _KW_SETS_VAL
+    with _KW_SETS_LOCK:
+        if _KW_SETS_VAL is not None:
+            return _KW_SETS_VAL
+        from trendradar.config.keywords import GAME_KW, TECH_KW, ECONOMY_KW
+        _KW_SETS_VAL = (GAME_KW, TECH_KW, ECONOMY_KW)
+        return _KW_SETS_VAL
 
 
-@lru_cache(maxsize=1)
+_SRC_CAT_MAP_LOCK = threading.Lock()
+_SRC_CAT_MAP_VAL = None
+_SRC_CAT_MAP_SENTINEL = object()
+
 def _source_category_map() -> dict[str, str]:
     """所有源 → category 映射。用于预分类兜底。"""
-    cfg = _load_config()
-    return {s.get('name', ''): s.get('category', '')
-            for s in cfg.get('data_sources', []) if s.get('name')}
+    global _SRC_CAT_MAP_VAL
+    if _SRC_CAT_MAP_VAL is not None:
+        return _SRC_CAT_MAP_VAL
+    with _SRC_CAT_MAP_LOCK:
+        if _SRC_CAT_MAP_VAL is not None:
+            return _SRC_CAT_MAP_VAL
+        cfg = _load_config()
+        _SRC_CAT_MAP_VAL = {s.get('name', ''): s.get('category', '')
+                            for s in cfg.get('data_sources', []) if s.get('name')}
+        return _SRC_CAT_MAP_VAL
 
 
 def _preclassify(items: list) -> list:

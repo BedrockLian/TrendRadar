@@ -205,10 +205,10 @@ def get_today_fingerprints() -> list:
 def count_new_items(curated: dict, fingerprints: list) -> int:
     """统计精选结果中真正新增（不在今日指纹库中）的条数"""
     if not fingerprints:
-        return sum(len(curated.get(d, [])) for d in ['top_headlines', 'tech', 'economy', 'gaming'])
+        return sum(len(curated.get(d, [])) for d in DOMAINS)
     fps_set = set(fingerprints)
     count = 0
-    for domain in ['top_headlines', 'tech', 'economy', 'gaming']:
+    for domain in DOMAINS:
         for item in curated.get(domain, []):
             title = item.get('title', '')
             # 取标题前 20 字匹配（与 fingerprint 生成逻辑一致）
@@ -225,7 +225,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     import sys
-    from trendradar.scripts.exitcodes import EXIT_CONFIG_ERROR, EXIT_FATAL
+    from trendradar.scripts.common import EXIT_CONFIG_ERROR, EXIT_FATAL
 
     try:
         curated = run_curation(args.push_id)

@@ -20,7 +20,7 @@
 import base64, subprocess, sys, urllib.parse, urllib.request, os, time, re
 from pathlib import Path
 
-SUB_URL = "https://xsus.cjtcle.cn/api/v1/client/subscribe?token=32d2330d210ae0efdd117a20a3518b0f"
+SUB_URL = os.environ.get('MIHOMO_SUB_URL', '')
 CONFIG = Path.home() / '.config' / 'mihomo' / 'config.yaml'
 BACKUP = CONFIG.with_suffix('.yaml.bak')
 
@@ -103,6 +103,9 @@ def parse_old_proxies(lines, proxy_start, proxy_end):
 
 
 def main():
+    if not SUB_URL:
+        print("⚠️  MIHOMO_SUB_URL 环境变量未设置，请设置后重试", flush=True)
+        sys.exit(0)
     print("📥 下载新订阅...", flush=True)
     uris = download_sub(SUB_URL)
     print(f"   {len(uris)} 条代理", flush=True)

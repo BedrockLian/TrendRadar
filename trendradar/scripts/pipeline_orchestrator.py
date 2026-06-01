@@ -30,12 +30,11 @@ import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-from trendradar.scripts.exitcodes import EXIT_CONFIG_ERROR
+from trendradar.scripts.common import EXIT_CONFIG_ERROR
 from trendradar.scripts.settings import get_logger, get_storage
 
 log = get_logger('orchestrator')
 
-CST = timezone(timedelta(hours=8))
 PYTHON = os.environ.get("PYTHON", sys.executable)
 PYTHON_GIL = os.environ.get("PYTHON_GIL", "0")
 SCRIPTS_DIR = Path(__file__).resolve().parent
@@ -83,11 +82,11 @@ def _write_push_log(push_id: str, result: dict, errors: list):
     log_path = DATA_DIR / "push_log.json"
     try:
         if log_path.exists():
-            log = json.loads(log_path.read_text())
-            if not isinstance(log, list):
-                log = []
+            entries = json.loads(log_path.read_text())
+            if not isinstance(entries, list):
+                entries = []
         else:
-            log = []
+            entries = []
 
         entry = {
             "push_id": push_id,
@@ -100,23 +99,24 @@ def _write_push_log(push_id: str, result: dict, errors: list):
             "total_items": result.get("stats", {}).get("total_items", 0),
             "elapsed": result.get("stats", {}).get("total_elapsed", 0),
         }
-        log.append(entry)
+        entries.append(entry)
 
         # Keep last 100 entries
-        if len(log) > 100:
-            log = log[-100:]
+        if len(entries) > 100:
+            entries = entries[-100:]
 
         log_path.parent.mkdir(parents=True, exist_ok=True)
         fd, tmp = _tempfile.mkstemp(dir=log_path.parent, prefix='.tmp_push_log_')
+        fu = _os.fdopen(fd, 'w', encoding='utf-8')
         try:
-            with _os.fdopen(fd, 'w', encoding='utf-8') as f:
-                json.dump(log, f, ensure_ascii=False, indent=2)
+            with fu:
+                json.dump(entries, fu, ensure_ascii=False, indent=2)
             _os.replace(tmp, log_path)
         except Exception:
             _os.unlink(tmp)
             raise
     except Exception as e:
-        log.error(f"push_log write failed: {e}")
+        log.exception(f"push_log write failed: {e}")
 
 
 def list_pipeline_steps() -> dict:
@@ -165,19 +165,26 @@ def verify_version() -> dict:
     return {"ok": len(errors) == 0, "errors": errors}
 
 
-def version_check_and_exit():
+def version_check_and_exit() -> None:
     """Perform self-check on startup. Exit with EXIT_CONFIG_ERROR if scripts missing.
 
     Called when --check-version is passed, or as a pre-flight before main().
     """
     result = verify_version()
     if not result["ok"]:
+        log.error(json.dumps({
+            "status": "error",
+            "exit_code": EXIT_CONFIG_ERROR,
+            "reason": "version_check_failed",
+            "errors": result["errors"],
+        }, ensure_ascii=False))
         print(json.dumps({
             "status": "error",
             "exit_code": EXIT_CONFIG_ERROR,
             "reason": "version_check_failed",
             "errors": result["errors"],
         }, ensure_ascii=False), file=sys.stderr)
+        sys.exit(EXIT_CONFIG_ERROR)
 
 
 def run_stage(name: str, func, *args, timeout: int = 300, **kwargs) -> dict:
@@ -201,7 +208,7 @@ def run_stage(name: str, func, *args, timeout: int = 300, **kwargs) -> dict:
         return {"ok": True, "result": result, "elapsed": elapsed, "error": None}
     except Exception as e:
         elapsed = time.time() - t0
-        log.error(f"❌ {name} ({elapsed:.1f}s): {e}")
+        log.error(f"❌ {name} ({elapsed:.1f}s): {e}", exc_info=True)
         return {"ok": False, "result": None, "elapsed": elapsed, "error": str(e)}
 
 
@@ -240,7 +247,7 @@ def main():
             if ver > 0:
                 log.info(f"DB schema v{ver}")
     except Exception as e:
-        log.warning(f"DB migration skipped: {e}")
+        log.warning(f"DB migration skipped: {e}", exc_info=True)
         # Non-fatal — continue with existing schema
 
     errors = []
@@ -279,7 +286,8 @@ def main():
 
     if not prep["ok"]:
         errors.append(f"push_prepare: {prep['error']}")
-        print(json.dumps({"status": "error", "errors": errors, "push_id": push_id}, ensure_ascii=False))
+        log.error(json.dumps({"status": "error", "errors": errors, "push_id": push_id}, ensure_ascii=False))
+        print(json.dumps({"status": "error", "errors": errors, "push_id": push_id}, ensure_ascii=False), file=sys.stderr)
         return 1
 
     # ── Stage 2: track_events (morning only) ───────────────────
@@ -305,8 +313,6 @@ def main():
     import asyncio as _asyncio
 
     def _run_translate():
-        import sys, os
-        sys.argv = ['ai_translate.py', '--push-id', push_id]
         from trendradar.scripts.ai_translate import process_curated
         return _asyncio.run(process_curated(push_id))
 
@@ -343,13 +349,15 @@ def main():
 
     if not render["ok"]:
         errors.append(f"render_markdown: {render['error'][:200]}")
-        print(json.dumps({"status": "error", "errors": errors, "push_id": push_id}, ensure_ascii=False))
+        log.error(json.dumps({"status": "error", "errors": errors, "push_id": push_id}, ensure_ascii=False))
+        print(json.dumps({"status": "error", "errors": errors, "push_id": push_id}, ensure_ascii=False), file=sys.stderr)
         return 1
 
     briefing = render["result"]
     if not briefing:
         errors.append("render_markdown: empty output")
-        print(json.dumps({"status": "error", "errors": errors, "push_id": push_id}, ensure_ascii=False))
+        log.error(json.dumps({"status": "error", "errors": errors, "push_id": push_id}, ensure_ascii=False))
+        print(json.dumps({"status": "error", "errors": errors, "push_id": push_id}, ensure_ascii=False), file=sys.stderr)
         return 1
 
     # Check for empty briefing (no items)
@@ -383,11 +391,16 @@ def main():
         errors.append(f"sanity_check: 禁语命中 {banned}")
         log.error(f"禁语: {banned}")
         # FATAL — reject push
-        print(json.dumps({
+        log.error(json.dumps({
             "status": "error",
             "reason": "banned_phrase_detected",
             "banned": banned,
         }, ensure_ascii=False))
+        print(json.dumps({
+            "status": "error",
+            "reason": "banned_phrase_detected",
+            "banned": banned,
+        }, ensure_ascii=False), file=sys.stderr)
         return 1
     residue = check_html_residue(clean_briefing)
     if residue:
@@ -402,6 +415,7 @@ def main():
         frag_ok = True
     except Exception as e:
         errors.append(f"fragment_push: {e}")
+        log.exception(f"fragment_push failed: {e}")
         frag_ok = False
         fragments = [briefing]
 
@@ -417,12 +431,12 @@ def main():
 
     # ── Read curated data for stats ────────────────────────────
     try:
+        from trendradar.config.domains import DOMAINS
         curated_path = DATA_DIR / f"curated_{push_id}.json"
         if curated_path.exists():
             curated_data = json.loads(curated_path.read_text())
-            domains = ["top_headlines", "foreign_china", "tech", "economy", "gaming"]
-            stats["total_items"] = curated_data.get("total", sum(len(curated_data.get(d, [])) for d in domains))
-            for d in domains:
+            stats["total_items"] = curated_data.get("total", sum(len(curated_data.get(d, [])) for d in DOMAINS))
+            for d in DOMAINS:
                 stats["per_domain"][d] = len(curated_data.get(d, []))
             stats["run_id"] = curated_data.get("run_id", "")
     except (FileNotFoundError, json.JSONDecodeError) as e:

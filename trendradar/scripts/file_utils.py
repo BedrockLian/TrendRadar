@@ -4,7 +4,7 @@ import sys
 import tempfile
 import json as _json
 from pathlib import Path
-from functools import lru_cache
+import threading
 from typing import Optional
 
 
@@ -13,23 +13,53 @@ TRENDRADAR_HOME: Path = Path(os.environ.get(
 ))
 
 
-@lru_cache()
+_DATA_DIR_LOCK = threading.Lock()
+_DATA_DIR_VAL: Optional[Path] = None
+_DATA_DIR_SENTINEL = object()
+
 def get_data_dir() -> Path:
-    d = TRENDRADAR_HOME / 'data'
-    d.mkdir(parents=True, exist_ok=True)
-    return d
+    global _DATA_DIR_VAL
+    if _DATA_DIR_VAL is not None:
+        return _DATA_DIR_VAL
+    with _DATA_DIR_LOCK:
+        if _DATA_DIR_VAL is not None:
+            return _DATA_DIR_VAL
+        d = TRENDRADAR_HOME / 'data'
+        d.mkdir(parents=True, exist_ok=True)
+        _DATA_DIR_VAL = d
+        return d
 
 
-@lru_cache()
+_CACHE_DIR_LOCK = threading.Lock()
+_CACHE_DIR_VAL: Optional[Path] = None
+_CACHE_DIR_SENTINEL = object()
+
 def get_cache_dir() -> Path:
-    d = TRENDRADAR_HOME / 'cache'
-    d.mkdir(parents=True, exist_ok=True)
-    return d
+    global _CACHE_DIR_VAL
+    if _CACHE_DIR_VAL is not None:
+        return _CACHE_DIR_VAL
+    with _CACHE_DIR_LOCK:
+        if _CACHE_DIR_VAL is not None:
+            return _CACHE_DIR_VAL
+        d = TRENDRADAR_HOME / 'cache'
+        d.mkdir(parents=True, exist_ok=True)
+        _CACHE_DIR_VAL = d
+        return d
 
-@lru_cache()
+_CONFIG_DIR_LOCK = threading.Lock()
+_CONFIG_DIR_VAL: Optional[Path] = None
+_CONFIG_DIR_SENTINEL = object()
+
 def get_config_dir() -> Path:
     """返回 config/ 目录（sources.json, ai_interests.yaml 等）。"""
-    return TRENDRADAR_HOME / 'config'
+    global _CONFIG_DIR_VAL
+    if _CONFIG_DIR_VAL is not None:
+        return _CONFIG_DIR_VAL
+    with _CONFIG_DIR_LOCK:
+        if _CONFIG_DIR_VAL is not None:
+            return _CONFIG_DIR_VAL
+        _CONFIG_DIR_VAL = TRENDRADAR_HOME / 'config'
+        return _CONFIG_DIR_VAL
 
 
 def raw_path(date_str: str) -> Path:

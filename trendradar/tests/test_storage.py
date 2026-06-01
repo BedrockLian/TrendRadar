@@ -1,17 +1,5 @@
 """Tests for storage.py — Storage class (SQLite + file I/O)."""
 
-import sys
-from pathlib import Path
-
-# Ensure scripts/ and project root are importable
-_SCRIPTS_PATH = Path(__file__).resolve().parent.parent / 'scripts'
-SCRIPTS_DIR = str(_SCRIPTS_PATH)
-if SCRIPTS_DIR not in sys.path:
-    sys.path.insert(0, SCRIPTS_DIR)
-_ROODIR = str(_SCRIPTS_PATH.parent)  # trendradar/
-if _ROODIR not in sys.path:
-    sys.path.insert(0, _ROODIR)
-
 import pytest
 import sqlite3
 import json

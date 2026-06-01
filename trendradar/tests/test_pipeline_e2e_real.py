@@ -197,7 +197,8 @@ class TestPipelineE2EReal:
 
         assert result.returncode == 0, f"--list-steps failed: {result.stderr}"
         data = json.loads(result.stdout)
-        assert data['version'] == '2.9.0'
+        from pipeline_orchestrator import __version__
+        assert data['version'] == __version__
         assert 'steps' in data
         assert 'python' in data
         steps = data['steps']
@@ -218,7 +219,8 @@ class TestPipelineE2EReal:
         assert result.returncode == 0, f"--check-version failed: {result.stderr}"
         data = json.loads(result.stdout)
         assert data['status'] == 'ok'
-        assert data['version'] == '2.9.0'
+        from pipeline_orchestrator import __version__
+        assert data['version'] == __version__
 
     def test_verify_version_function(self):
         """verify_version() returns ok=True when scripts exist."""

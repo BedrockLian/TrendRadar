@@ -3,6 +3,7 @@
 
 import uuid, re, os
 import contextvars
+import threading
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional, TypedDict
@@ -40,16 +41,6 @@ def get_run_id_ctx() -> str:
     """获取当前 contextvar 中的 RUN_ID。"""
     return current_run_id.get()
 
-# ── Public API aliases (was trace.py, merged into common) ──────────────
-
-def set_run_id(run_id: str):
-    """Set current RUN_ID (public interface)."""
-    current_run_id.set(run_id)
-
-def get_run_id() -> str:
-    """Get current RUN_ID (public interface)."""
-    return current_run_id.get()
-
 # ── Exit codes (was exitcodes.py, merged into common) ──────────────────
 EXIT_SUCCESS = 0        # 成功，有产出
 EXIT_NO_CONTENT = 2     # 成功，无新内容（正常，不告警）
@@ -60,7 +51,7 @@ EXIT_DB_ERROR = 12      # 数据库损坏（触发自愈）
 EXIT_FATAL = 99         # 致命错误（停止管线）
 
 __all__ = ['CST', 'current_run_id', 'gen_run_id', 'parse_run_id',
-           'run_id_marker', 'set_run_id', 'get_run_id',
+           'run_id_marker',
            'set_run_id_ctx', 'get_run_id_ctx',
            'EXIT_SUCCESS', 'EXIT_NO_CONTENT', 'EXIT_PARTIAL',
            'EXIT_CONFIG_ERROR', 'EXIT_API_ERROR', 'EXIT_DB_ERROR', 'EXIT_FATAL',
@@ -123,6 +114,7 @@ STOP_WORDS: frozenset[str] = frozenset({
 # ═══════════════════════════════════════════════════════════════════════════════
 
 _data_dir_cache: Optional[Path] = None
+_data_dir_lock = threading.Lock()
 
 
 def get_data_dir_for_common() -> Path:
@@ -132,10 +124,14 @@ def get_data_dir_for_common() -> Path:
     settings which does I/O).  Multiple callers get the same cached value.
     """
     global _data_dir_cache
-    if _data_dir_cache is None:
+    if _data_dir_cache is not None:
+        return _data_dir_cache
+    with _data_dir_lock:
+        if _data_dir_cache is not None:
+            return _data_dir_cache
         from trendradar.scripts.file_utils import get_data_dir
         _data_dir_cache = get_data_dir()
-    return _data_dir_cache
+        return _data_dir_cache
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

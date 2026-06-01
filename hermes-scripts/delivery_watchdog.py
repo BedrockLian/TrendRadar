@@ -237,25 +237,29 @@ def _send_from_archive(archive_path: Path, alerts: list[str], slot_name: str) ->
         import subprocess, tempfile
         success = True
         for i, frag in enumerate(fragments):
-            tmp = Path(tempfile.gettempdir()) / f'{archive_path.stem}_frag{i}.md'
-            tmp.write_text(frag)
-            for gil in ['1', '0']:
-                result = subprocess.run(
-                    ['hermes', 'send', '--to', 'wecom:bl', '--file', str(tmp)],
-                    capture_output=True, text=True, timeout=30,
-                    env={**os.environ, 'PYTHON_GIL': gil}
-                )
-                if result.returncode == 0:
-                    break
-            if result.returncode == 0:
-                alerts.append(f"  ✅ {slot_name} 分片{i+1}/{len(fragments)} 已投递")
-            else:
-                alerts.append(f"  ❌ {slot_name} 分片{i+1}/{len(fragments)} 投递失败")
-                success = False
+            fd, tmp_path = tempfile.mkstemp(suffix='.md', prefix=f'{archive_path.stem}_frag{i}_')
+            os.close(fd)
+            tmp = Path(tmp_path)
             try:
-                tmp.unlink()
-            except OSError:
-                pass
+                tmp.write_text(frag)
+                for gil in ['1', '0']:
+                    result = subprocess.run(
+                        ['hermes', 'send', '--to', 'wecom:bl', '--file', str(tmp)],
+                        capture_output=True, text=True, timeout=30,
+                        env={**os.environ, 'PYTHON_GIL': gil}
+                    )
+                    if result.returncode == 0:
+                        break
+                if result.returncode == 0:
+                    alerts.append(f"  ✅ {slot_name} 分片{i+1}/{len(fragments)} 已投递")
+                else:
+                    alerts.append(f"  ❌ {slot_name} 分片{i+1}/{len(fragments)} 投递失败")
+                    success = False
+            finally:
+                try:
+                    tmp.unlink()
+                except OSError:
+                    pass
         return success
     except Exception as e:
         alerts.append(f"  ⚠️ {slot_name} 补发异常: {e}")
@@ -329,7 +333,9 @@ def auto_redeliver_slot(alerts: list[str], push_id: str, slot_name: str, max_age
     alerts.append(f"🔄 检测到{slot_name} ({ts}) 未投递到 WeCom，启动补发...")
 
     import tempfile
-    briefing_path = Path(tempfile.gettempdir()) / f'{push_id}_briefing_{run_id}.md'
+    fd, tmp_path = tempfile.mkstemp(suffix='.md', prefix=f'{push_id}_briefing_')
+    os.close(fd)
+    briefing_path = Path(tmp_path)
     try:
         result = subprocess.run(
             [PYTHON, str(TRENDRADAR_HOME / 'scripts' / 'render_markdown.py'),
@@ -347,14 +353,18 @@ def auto_redeliver_slot(alerts: list[str], push_id: str, slot_name: str, max_age
             )
             if send_to_wecom(briefing_path):
                 alerts.append(f"  ✅ {slot_name}已补发至 WeCom")
+                mark_delivered(run_id)
             else:
                 alerts.append(f"  ❌ {slot_name}补发失败 (hermes send exit != 0)")
         else:
             alerts.append(f"  ⚠️ {slot_name}重新渲染失败 (exit={result.returncode})")
     except Exception as e:
         alerts.append(f"  ⚠️ {slot_name}补发异常: {e}")
-
-    mark_delivered(run_id)
+    finally:
+        try:
+            briefing_path.unlink(missing_ok=True)
+        except OSError:
+            pass
 
 
 def auto_redeliver_evening(alerts: list[str]) -> None:
@@ -373,7 +383,9 @@ def auto_redeliver_evening(alerts: list[str]) -> None:
                 break
             if risk_file and risk_file.stat().st_mtime > (datetime.now() - timedelta(hours=6)).timestamp():
                 import tempfile
-                formatted = Path(tempfile.gettempdir()) / f'risk_analysis_formatted_{run_id}.md'
+                fd, tmp_path = tempfile.mkstemp(suffix='.md', prefix='risk_analysis_formatted_')
+                os.close(fd)
+                formatted = Path(tmp_path)
                 try:
                     result = subprocess.run(
                         ['cat', str(risk_file)],
@@ -385,6 +397,11 @@ def auto_redeliver_evening(alerts: list[str]) -> None:
                             alerts.append(f"  ✅ 深度分析已补发至 WeCom")
                 except Exception as e:
                     alerts.append(f"  ⚠️ 深度分析补发异常: {e}")
+                finally:
+                    try:
+                        formatted.unlink(missing_ok=True)
+                    except OSError:
+                        pass
 
 
 def auto_redeliver_morning(alerts: list[str]) -> None:

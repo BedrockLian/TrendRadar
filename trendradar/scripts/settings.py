@@ -74,14 +74,31 @@ from trendradar.scripts.file_utils import (
 from trendradar.scripts.logging_config import get_logger  # noqa: E402, F401
 
 # ── 存储单例 ─────────────────────────────────────────────
-from functools import lru_cache as _lru_cache
+import threading as _threading
 
+_STORAGE_LOCK = _threading.Lock()
+_STORAGE_VAL = None
+_STORAGE_SENTINEL = object()
 
-@_lru_cache()
 def get_storage():
     """返回全局 Storage 单例（共享连接池 + WAL checkpoint）。"""
-    from trendradar.scripts.storage import Storage
-    return Storage(get_data_dir())
+    global _STORAGE_VAL
+    if _STORAGE_VAL is not None:
+        return _STORAGE_VAL
+    with _STORAGE_LOCK:
+        if _STORAGE_VAL is not None:
+            return _STORAGE_VAL
+        from trendradar.scripts.storage import Storage
+        _STORAGE_VAL = Storage(get_data_dir())
+        return _STORAGE_VAL
+
+
+def ensure_db_migrated(db_path=None):
+    """确保数据库 schema 为最新版本。"""
+    from trendradar.migrations.runner import migrate
+    if db_path is None:
+        db_path = get_data_dir() / 'fingerprints.db'
+    return migrate(db_path)
 
 
 # ── GIL 检查（保留原逻辑）─────────────────────────────────
@@ -104,18 +121,15 @@ def _check_gil():
 
 
 _GIL_OK = None
+_GIL_LOCK = _threading.Lock()
 
 
 def _ensure_gil_ok():
     global _GIL_OK
-    if _GIL_OK is None:
+    if _GIL_OK is not None:
+        return _GIL_OK
+    with _GIL_LOCK:
+        if _GIL_OK is not None:
+            return _GIL_OK
         _check_gil()
-    return _GIL_OK
-
-
-def ensure_db_migrated(db_path=None):
-    """确保数据库 schema 为最新版本。"""
-    from trendradar.migrations.runner import migrate
-    if db_path is None:
-        db_path = get_data_dir() / 'fingerprints.db'
-    return migrate(db_path)
+        return _GIL_OK

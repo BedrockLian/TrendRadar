@@ -17,12 +17,10 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, List, Tuple
 
 from trendradar.scripts.settings import get_data_dir, get_storage
-
-from functools import lru_cache
-
 DB_PATH = str(get_data_dir() / 'fingerprints.db')
 _STORE = get_storage()  # 统一存储入口（单例）
 _INITIALIZED = False
+_INIT_LOCK = threading.Lock()
 _local = threading.local()  # per-thread connection storage
 
 
@@ -52,7 +50,7 @@ def get_db() -> sqlite3.Connection:
         except Exception as e:
             log.warning(f"Storage.db 失败，直连兜底: {e}")
             # 兜底：直接连接（兼容测试/非标准部署）
-            _local.conn = sqlite3.connect(DB_PATH)
+            _local.conn = sqlite3.connect(str(get_data_dir() / 'fingerprints.db'))
             _local.conn.row_factory = sqlite3.Row
             _configure_connection(_local.conn)
     _ensure_indexes(_local.conn)
@@ -64,11 +62,14 @@ def init_db():
     global _INITIALIZED
     if _INITIALIZED:
         return
-    from trendradar.scripts.settings import ensure_db_migrated
-    ensure_db_migrated(DB_PATH)
-    conn = get_db()
-    conn.execute("PRAGMA journal_mode=WAL")
-    _INITIALIZED = True
+    with _INIT_LOCK:
+        if _INITIALIZED:
+            return
+        from trendradar.scripts.settings import ensure_db_migrated
+        ensure_db_migrated(DB_PATH)
+        conn = get_db()
+        conn.execute("PRAGMA journal_mode=WAL")
+        _INITIALIZED = True
 
 
 def _ensure_indexes(conn: sqlite3.Connection):
@@ -77,26 +78,41 @@ def _ensure_indexes(conn: sqlite3.Connection):
     conn.execute("CREATE INDEX IF NOT EXISTS idx_heat_status_platcount ON heat_tracker(status, platform_count)")
 
 
-@lru_cache(maxsize=1024)
+_FINGERPRINT_CACHE: dict = {}
+_FINGERPRINT_LOCK = threading.Lock()
+
 def make_fingerprint(title: str, url: str = '') -> str:
     """生成指纹（保留中日文字符 + URL域/首段防碰撞）。
     4Gamer等日语源标题相似度高，加入URL特征避免重复项占据TOP10。"""
-    norm = title.lower().strip()
-    # 保留 CJK（中日韩）+ 片假名/平假名 + 字母数字
-    norm = re.sub(r'[^\w\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]', '', norm)
-    # 加入 URL 域名 + 前3段路径防碰撞（如 4Gamer 同一游戏不同文章）
-    if url:
-        try:
-            from urllib.parse import urlparse
-            parsed = urlparse(url)
-            from trendradar.scripts.settings import FINGERPRINT_URL_SEGMENTS
-            segments = [s for s in parsed.path.split('/') if s][:FINGERPRINT_URL_SEGMENTS]
-            url_key = parsed.netloc + '/' + '/'.join(segments)
-            norm += url_key.lower()
-        except (ValueError, AttributeError):
-            log.debug("URL 解析失败，使用原始 URL: %s", url)
-    from trendradar.scripts.settings import FINGERPRINT_MD5_LEN
-    return hashlib.md5(norm.encode()).hexdigest()[:FINGERPRINT_MD5_LEN]
+    key = (title, url)
+    if key in _FINGERPRINT_CACHE:
+        return _FINGERPRINT_CACHE[key]
+    with _FINGERPRINT_LOCK:
+        if key in _FINGERPRINT_CACHE:
+            return _FINGERPRINT_CACHE[key]
+        norm = title.lower().strip()
+        # 保留 CJK（中日韩）+ 片假名/平假名 + 字母数字
+        norm = re.sub(r'[^\w\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]', '', norm)
+        # 加入 URL 域名 + 前3段路径防碰撞（如 4Gamer 同一游戏不同文章）
+        if url:
+            try:
+                from urllib.parse import urlparse
+                parsed = urlparse(url)
+                from trendradar.scripts.settings import FINGERPRINT_URL_SEGMENTS
+                segments = [s for s in parsed.path.split('/') if s][:FINGERPRINT_URL_SEGMENTS]
+                url_key = parsed.netloc + '/' + '/'.join(segments)
+                norm += url_key.lower()
+            except (ValueError, AttributeError):
+                log.debug("URL 解析失败，使用原始 URL: %s", url)
+        from trendradar.scripts.settings import FINGERPRINT_MD5_LEN
+        result = hashlib.md5(norm.encode()).hexdigest()[:FINGERPRINT_MD5_LEN]
+        _FINGERPRINT_CACHE[key] = result
+        # Simple eviction: if cache grows too large, clear half
+        if len(_FINGERPRINT_CACHE) > 2048:
+            keys = list(_FINGERPRINT_CACHE.keys())
+            for old_key in keys[:1024]:
+                del _FINGERPRINT_CACHE[old_key]
+        return result
 
 
 def _gen_fingerprints(items: list, push_id: str, now: str) -> dict:

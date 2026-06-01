@@ -6,6 +6,7 @@ from pathlib import Path
 
 # 动态发现 data 目录
 from trendradar.scripts.settings import get_data_dir
+from trendradar.config.domains import DOMAINS
 DATA_DIR = get_data_dir()
 if not DATA_DIR.exists():
     print(f"ERROR: data dir not found: {DATA_DIR}", file=sys.stderr)
@@ -19,7 +20,7 @@ for f in sorted(DATA_DIR.glob('curated_*.json')):
     files_checked += 1
     data = json.loads(f.read_text())
     changed = False
-    for domain in ['top_headlines', 'foreign_china', 'tech', 'economy', 'gaming']:
+    for domain in DOMAINS:
         for item in data.get(domain, []):
             # 清理 title_cn 假翻译
             tc = item.get('title_cn')

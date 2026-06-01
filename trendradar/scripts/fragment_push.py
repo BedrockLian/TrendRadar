@@ -27,10 +27,15 @@ import re
 import sys
 
 # WeCom limit is 4096 bytes. 3800 leaves room for JSON wrapper + metadata.
-MAX_BYTES = 3800
-# Continuation markers for hard-split fragments
-CONT_MARKER = "\n...(续)"
-PREV_MARKER = "(接上)...\n"
+from trendradar.config.delivery import (
+    WECOM_MAX_BYTES,
+    WECOM_FRAGMENT_SAFE_BYTES,
+    WECOM_CONT_MARKER,
+    WECOM_PREV_MARKER,
+)
+MAX_BYTES = WECOM_FRAGMENT_SAFE_BYTES
+CONT_MARKER = WECOM_CONT_MARKER
+PREV_MARKER = WECOM_PREV_MARKER
 
 
 def _byte_len(text: str) -> int:

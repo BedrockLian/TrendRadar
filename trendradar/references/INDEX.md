@@ -11,11 +11,11 @@
 | `ARCHITECTURE.md` | 系统架构、分类、关键词、渲染、迁移、健康检查、API 模式 | 9 份原始文档 |
 | `PIPELINE.md` | 管线数据流、性能瓶颈、渲染格式规范、深度分析格式 | 4 份原始文档 |
 | `SETUP.md` | 代理配置、缓存清理、cron 运维、迁移回滚、cron prompt、自动投递、源管理 | 9 份原始文档 |
-| `TRAPS.md` | 所有已知陷阱（48 个陷阱） | 12 份原始文档 |
+| `TRAPS.md` | 所有已知陷阱（41 个陷阱） | 12 份原始文档 |
 | `REPO-SYNC.md` | Git 仓库同步流程（三处路径） | 保持原样 |
-| `REFERENCES-CONSISTENCY-GUIDE.md` | 参考文档跨 Skill 同步指南 | 精简版（删历史修复步骤） |
-| `SKILL-AUDIT.md` | 技能审计检查清单（7 个维度） | 保持原样 |
+| `MAINTENANCE.md` | References 一致性维护 + Skill 审计清单 | 合并版 |
 | `DELIVERY-WATERMARK.md` | 投递水印机制：MarkerDir + delivery_watchdog + 手动标记 | 保持原样 |
+| `deep-analysis-wecom-format.md` | 深度分析 WeCom 投递格式规范（v3.0） | 保持原样 |
 
 ## 存档
 

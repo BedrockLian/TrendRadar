@@ -1,6 +1,6 @@
 # TrendRadar 📡
 
-> **v5.7.1** — 多源 RSS 聚合 + AI 策展 + Pro 深度分析 → 企业微信日/周/月报。含自动体检、偏好收敛、编排器一键管线、全链路安全加固、CI 持续集成。
+> **v5.7.0** — 多源 RSS 聚合 + AI 策展 + Pro 深度分析 → 企业微信日/周/月报。含自动体检、偏好收敛、编排器一键管线、全链路安全加固、CI 持续集成。
 
 > 📖 **[从零搭建指南 → SETUP.md](SETUP.md)** — 从 Hermes Agent 全新安装到测试部署一站完成。
 
@@ -56,7 +56,7 @@ pipeline_orchestrator.py（一键6阶段）
 - **兴趣偏好评分** — YAML 配置正面加分/排除过滤，CLI 管理
 - **来源多样性保护** — 同源 >3 条权重减半，source_health 负反馈学习环自动淘汰低质源
 - **指纹去重 + 热度追踪** — MD5 指纹（48h 窗口）+ SQLite 热度持久化
-- **API 熔断退避** — 翻译层指数退避 2→30s + jitter + 连续 3 失败熔断
+- **API 熔断退避** — 翻译层指数退避 2→30s + jitter + 连续 5 失败熔断
 - **发布前拦截器** — sanity_check 编排器前言剥离/中英文禁语扫描/HTML残留检测/死链检测(代理感知)/敏感词脱敏
 - **自动体检 + 推送质量优化 + 看门狗** — 每日自检/评分调优/自动补投
 - **CI 持续集成** — GitHub Actions：ruff lint + bandit + mypy + pytest + refs 一致性校验
@@ -65,16 +65,14 @@ pipeline_orchestrator.py（一键6阶段）
 
 ## Skills
 
-本系统深度集成 [Hermes Agent](https://hermes-agent.nousresearch.com)，6 个 skill 定义完整的 Agent 行为：
+本系统深度集成 [Hermes Agent](https://hermes-agent.nousresearch.com)，4 个 skill 定义完整的 Agent 行为：
 
 | Skill | 版本 | 职责 |
 |-------|------|------|
-| `news-secretary` | v6.9.0 | 日报推送（核心），早/午/晚三段管线 + 晚间 Pro 深度分析 |
-| `self-healing` | v3.4.0 | 每日 15:00 自动体检 DB/配置/API/Gateway，修复常见故障 |
-| `performance-optimizer` | v2.4.0 | 每日 21:15 推送质量评分 + 偏好收敛调优 |
-| `system-config` | v2.11.0 | 项目路径/Python 环境/Cron 任务/代理配置速查 |
-| `weekly-report` | v2.4.0 | 每周一 Pro 深度趋势研判，五大板块 × 信息茧房突围 |
-| `monthly-report` | v2.3.0 | 每月初全景复盘，4 期周报聚合 + heat_tracker Top10 |
+| `news-secretary` | v6.21.0 | 日报推送（核心），早/午/晚三段管线 + 晚间 Pro 深度分析 |
+| `self-healing` | v3.6.0 | 每日 15:00 自动体检 DB/配置/API/Gateway，修复常见故障 |
+| `report-generator` | v1.1.0 | 周报/月报生成，Pro 深度研判 + 全景复盘 |
+| `system-config` | v2.19.0 | 项目路径/Python 环境/Cron 任务/代理配置速查 |
 
 | 功能 | 依赖 Hermes 的组件 |
 |------|-------------------|
@@ -130,13 +128,11 @@ TrendRadar/
 │   ├── migrations/           #   SQLite 数据库迁移引擎
 │   │   ├── 001_initial.sql           # 初始表结构
 │   │   └── runner.py                 # 迁移执行器（up + down 回滚）
-│   ├── skills/               #   Hermes Agent 技能定义（6个）
-│   │   ├── news-secretary/           # 日报推送 v6.9.0
-│   │   ├── self-healing/             # 自动体检 v3.4.0
-│   │   ├── performance-optimizer/    # 推送质量优化 v2.4.0
-│   │   ├── system-config/            # 系统配置速查 v2.11.0
-│   │   ├── weekly-report/            # 周报深度研判 v2.4.0
-│   │   └── monthly-report/           # 月报全景分析 v2.3.0
+│   ├── skills/               #   Hermes Agent 技能定义（4个）
+│   │   ├── news-secretary/           # 日报推送 v6.21.0
+│   │   ├── self-healing/             # 自动体检 v3.6.0
+│   │   ├── report-generator/         # 报告生成 v1.1.0
+│   │   └── system-config/            # 系统配置速查 v2.19.0
 │   ├── references/           #   核心参考文档（10 根 + 36 存档 + INDEX.md 索引）
 │   ├── tests/                #   测试用例（146 用例，含 E2E 管线 + 边界测试）
 │   │   ├── conftest.py

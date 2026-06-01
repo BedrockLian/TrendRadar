@@ -1,17 +1,5 @@
 """Tests for scorer.py — scoring, penalty loading, domain curation."""
 
-import sys
-from pathlib import Path
-
-# Ensure scripts/ and project root are importable
-_SCRIPTS_PATH = Path(__file__).resolve().parent.parent / 'scripts'
-SCRIPTS_DIR = str(_SCRIPTS_PATH)
-if SCRIPTS_DIR not in sys.path:
-    sys.path.insert(0, SCRIPTS_DIR)
-_ROODIR = str(_SCRIPTS_PATH.parent)  # trendradar/
-if _ROODIR not in sys.path:
-    sys.path.insert(0, _ROODIR)
-
 import pytest
 import json
 from datetime import datetime, timezone, timedelta
@@ -55,9 +43,9 @@ def _strong_item(**overrides):
 
 
 def _patch_scorer_deps():
-    """Context manager that patches curate_and_push deps used by scorer."""
+    """Context manager that patches domain_metadata deps used by scorer."""
     return patch.multiple(
-        'trendradar.scripts.curate_and_push',
+        'trendradar.scripts.domain_metadata',
         _authority=MagicMock(return_value=_mock_authority()),
         _econ_boost=MagicMock(return_value=_mock_econ_boost()),
         _econ_extra=MagicMock(return_value=_mock_econ_extra()),
@@ -106,7 +94,7 @@ class TestScoreItem:
         """_econ_boost() returns a frozenset (not dict)."""
         # Test the actual function if sources.json exists, else test mock
         try:
-            from trendradar.scripts.curate_and_push import _econ_boost
+            from trendradar.scripts.domain_metadata import _econ_boost
             result = _econ_boost()
         except (SystemExit, FileNotFoundError):
             # sources.json not available — test mock behavior

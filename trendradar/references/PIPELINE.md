@@ -1,4 +1,4 @@
-<!-- version: 2.8.0 | last-reviewed: 2026-05-26 -->
+<!-- version: 2.9.0 | last-reviewed: 2026-05-26 -->
 
 # Pipeline — TrendRadar 日报推送管线
 

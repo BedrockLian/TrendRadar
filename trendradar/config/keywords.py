@@ -146,6 +146,8 @@ ALL_KEYWORDS = {
 }
 
 # ── AC 自动机加速（v5.2.0） ───────────────────────────────────────────
+import threading
+
 try:
     import ahocorasick
     _HAS_AC = True
@@ -153,18 +155,22 @@ except ImportError:
     _HAS_AC = False
 
 _AC_CACHE: dict[str, "ahocorasick.Automaton"] = {}
+_AC_LOCK = threading.Lock()
 _AC_WARNED = False
 
 
 def get_ac(tag: str, kw_set: frozenset):
     if tag in _AC_CACHE:
         return _AC_CACHE[tag]
-    A = ahocorasick.Automaton()
-    for k in kw_set:
-        A.add_word(k, k)
-    A.make_automaton()
-    _AC_CACHE[tag] = A
-    return A
+    with _AC_LOCK:
+        if tag in _AC_CACHE:
+            return _AC_CACHE[tag]
+        A = ahocorasick.Automaton()
+        for k in kw_set:
+            A.add_word(k, k)
+        A.make_automaton()
+        _AC_CACHE[tag] = A
+        return A
 
 
 def has_keyword_match(text: str, tag: str, kw_set: frozenset) -> bool:

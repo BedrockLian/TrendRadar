@@ -6,6 +6,7 @@ log = get_logger('batch-fetch')
 import json, sys, asyncio, subprocess, re, os
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
+import threading
 
 try:
     import charset_normalizer
@@ -21,6 +22,7 @@ TIMEOUT = 15
 PROXY = PROXY_URL
 _MIHOMO_CHECKED = False
 _MIHOMO_ALIVE = None
+_MIHOMO_LOCK = threading.Lock()
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
 MAX_ITEMS = 20
 SEARCH_DOMAINS = ('top_headlines', 'foreign_china')
@@ -74,27 +76,30 @@ def _proxy_alive() -> bool:
     global _MIHOMO_CHECKED, _MIHOMO_ALIVE
     if _MIHOMO_CHECKED:
         return _MIHOMO_ALIVE
-    _MIHOMO_CHECKED = True
-    try:
-        import socket
-        from urllib.parse import urlparse
-        parsed = urlparse(PROXY)
-        host = parsed.hostname or '127.0.0.1'
-        port = parsed.port or 7890
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(2)
-        result = s.connect_ex((host, port))
-        s.close()
-        _MIHOMO_ALIVE = (result == 0)
-        if not _MIHOMO_ALIVE:
-            log.info(f'{host}:{port} 不可达，直连抓取')
-        return _MIHOMO_ALIVE
-    except Exception:
-        _MIHOMO_ALIVE = False
-        host = parsed.hostname or '127.0.0.1'
-        port = parsed.port or 7890
-        log.warning(f"代理检测异常: {host}:{port}")
-        return False
+    with _MIHOMO_LOCK:
+        if _MIHOMO_CHECKED:
+            return _MIHOMO_ALIVE
+        _MIHOMO_CHECKED = True
+        try:
+            import socket
+            from urllib.parse import urlparse
+            parsed = urlparse(PROXY)
+            host = parsed.hostname or '127.0.0.1'
+            port = parsed.port or 7890
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(2)
+            result = s.connect_ex((host, port))
+            s.close()
+            _MIHOMO_ALIVE = (result == 0)
+            if not _MIHOMO_ALIVE:
+                log.info(f'{host}:{port} 不可达，直连抓取')
+            return _MIHOMO_ALIVE
+        except Exception:
+            _MIHOMO_ALIVE = False
+            host = parsed.hostname or '127.0.0.1'
+            port = parsed.port or 7890
+            log.warning(f"代理检测异常: {host}:{port}")
+            return False
 
 
 async def fetch_aiohttp(sem: asyncio.Semaphore, session, item: dict) -> dict | None:

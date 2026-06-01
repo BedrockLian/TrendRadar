@@ -116,57 +116,69 @@ class TestCircuitBreaker:
 class TestBatchTranslate:
     """batch_translate() — mock API 翻译"""
 
-    @pytest.mark.asyncio
-    async def test_empty_items_returns_empty(self):
-        from ai_translate import batch_translate
-        session = MagicMock()
-        result = await batch_translate(session, [], 'fake_key', 'English')
-        assert result == []
-
-    @pytest.mark.asyncio
-    async def test_successful_translation(self):
-        from ai_translate import batch_translate
-        session = MagicMock()
+    def test_empty_items_returns_empty(self):
+        import asyncio
         
-        mock_response = AsyncMock()
-        mock_response.json = AsyncMock(return_value={
+        async def _run():
+            from ai_translate import batch_translate
+            session = MagicMock()
+            result = await batch_translate(session, [], 'fake_key', 'English')
+            assert result == []
+
+        
+        asyncio.run(_run())
+    def test_successful_translation(self):
+        import asyncio
+        
+        async def _run():
+            from ai_translate import batch_translate
+            session = MagicMock()
+
+            mock_response = AsyncMock()
+            mock_response.json = AsyncMock(return_value={
             'choices': [{
-                'message': {
-                    'content': '中文标题\n中文摘要'
-                }
+            'message': {
+            'content': '中文标题\n中文摘要'
+            }
             }]
-        })
-        session.post = MagicMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_response)))
-        
-        items = [('Test Title', 'Test Summary')]
-        result = await batch_translate(session, items, 'fake_key', 'English')
-        
-        assert len(result) == 1
-        assert result[0][0] == '中文标题'
-        assert result[0][1] == '中文摘要'
+            })
+            session.post = MagicMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_response)))
 
-    @pytest.mark.asyncio
-    async def test_malformed_api_response_pads_with_failure(self):
-        from ai_translate import batch_translate
-        session = MagicMock()
+            items = [('Test Title', 'Test Summary')]
+            result = await batch_translate(session, items, 'fake_key', 'English')
+
+            assert len(result) == 1
+            assert result[0][0] == '中文标题'
+            assert result[0][1] == '中文摘要'
+
         
-        mock_response = AsyncMock()
-        mock_response.json = AsyncMock(return_value={
+        asyncio.run(_run())
+    def test_malformed_api_response_pads_with_failure(self):
+        import asyncio
+        
+        async def _run():
+            from ai_translate import batch_translate
+            session = MagicMock()
+
+            mock_response = AsyncMock()
+            mock_response.json = AsyncMock(return_value={
             'choices': [{
-                'message': {
-                    'content': '只有标题'
-                }
+            'message': {
+            'content': '只有标题'
+            }
             }]
-        })
-        session.post = MagicMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_response)))
-        
-        items = [('Title 1', 'Summary 1'), ('Title 2', 'Summary 2')]
-        result = await batch_translate(session, items, 'fake_key', 'English')
-        
-        assert len(result) == 2
-        assert result[1] == ('[翻译失败]', '[翻译失败]')
+            })
+            session.post = MagicMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_response)))
+
+            items = [('Title 1', 'Summary 1'), ('Title 2', 'Summary 2')]
+            result = await batch_translate(session, items, 'fake_key', 'English')
+
+            assert len(result) == 2
+            assert result[1] == ('[翻译失败]', '[翻译失败]')
 
 
+        
+        asyncio.run(_run())
 class TestTranslateConfigConsistency:
     """C8: sources.json 语言字段完整性"""
 

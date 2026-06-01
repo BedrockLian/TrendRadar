@@ -2,27 +2,30 @@
 import os
 import sys
 import logging as _logging
-
+import threading
 
 _LOGGERS: dict[str, _logging.Logger] = {}
-
+_LOGGERS_LOCK = threading.Lock()
 
 def get_logger(name: str = 'trendradar') -> _logging.Logger:
     """获取结构化 logger，按模块名复用。TRENDRADAR_LOG_LEVEL 控制级别。"""
     if name in _LOGGERS:
         return _LOGGERS[name]
-    logger = _logging.getLogger(f'trendradar.{name}')
-    if not logger.handlers:
-        handler = _logging.StreamHandler(sys.stderr)
-        handler.setFormatter(_RunIdFormatter(
-            '[%(asctime)s] [%(levelname)-5s] [%(name)s] %(message)s',
-            datefmt='%Y-%m-%dT%H:%M:%S'
-        ))
-        logger.addHandler(handler)
-        level = os.environ.get('TRENDRADAR_LOG_LEVEL', 'INFO')
-        logger.setLevel(getattr(_logging, level, _logging.INFO))
-    _LOGGERS[name] = logger
-    return logger
+    with _LOGGERS_LOCK:
+        if name in _LOGGERS:
+            return _LOGGERS[name]
+        logger = _logging.getLogger(f'trendradar.{name}')
+        if not logger.handlers:
+            handler = _logging.StreamHandler(sys.stderr)
+            handler.setFormatter(_RunIdFormatter(
+                '[%(asctime)s] [%(levelname)-5s] [%(name)s] %(message)s',
+                datefmt='%Y-%m-%dT%H:%M:%S'
+            ))
+            logger.addHandler(handler)
+            level = os.environ.get('TRENDRADAR_LOG_LEVEL', 'INFO')
+            logger.setLevel(getattr(_logging, level, _logging.INFO))
+        _LOGGERS[name] = logger
+        return logger
 
 
 class _RunIdFormatter(_logging.Formatter):

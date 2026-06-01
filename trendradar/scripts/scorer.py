@@ -119,7 +119,7 @@ def _get_source_priority(platform: str, domain: str = '') -> int:
 
 def _get_item_authority(item: dict) -> int:
     """Get authority level for an item's source (lazy import to avoid circular dep)."""
-    from trendradar.scripts.curate_and_push import _authority
+    from trendradar.scripts.domain_metadata import _authority
     platform = item.get('source_platform', '')
     auth_map = _authority()
     return next((v for k, v in auth_map.items() if k in platform), 1)
@@ -133,7 +133,7 @@ def score_item(item: dict, domain: str = 'tech') -> dict:
     外部来源惩罚通过 --penalty-file 传入，由盲点审计产出。
     """
     # Lazy imports to avoid circular dependency with curate_and_push
-    from trendradar.scripts.curate_and_push import _authority, _econ_boost, _econ_extra, _all_source_category
+    from trendradar.scripts.domain_metadata import _authority, _econ_boost, _econ_extra, _all_source_category
 
     title, platform, url = item.get('title', ''), item.get('source_platform', ''), item.get('url', '')
     clarity = 1 if (any(c in title for c in '?？') or len(title) < 10) else 2 if len(title) > 40 else 3

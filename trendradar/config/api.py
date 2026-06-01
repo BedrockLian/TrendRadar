@@ -1,7 +1,6 @@
 """TrendRadar API 配置 — Key 加载、端点、模型。"""
 import os
 from pathlib import Path
-from functools import lru_cache
 
 TRENDRADAR_HOME = Path(os.environ.get('TRENDRADAR_HOME', Path.home() / '.hermes' / 'trendradar'))
 
@@ -34,11 +33,9 @@ def get_api_key(key_name: str | None = None) -> str | None:
     return None
 
 
-@lru_cache()
 def get_api_endpoint() -> str:
     return os.environ.get(API_ENDPOINT_ENV, DEFAULT_ENDPOINT)
 
 
-@lru_cache()
 def get_model() -> str:
     return os.environ.get(MODEL_ENV, DEFAULT_MODEL)

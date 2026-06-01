@@ -74,6 +74,7 @@ def resend(date: str, slot: str, auto_confirm: bool = False):
 
     # 用 fragment_push 的分片逻辑切割
     from trendradar.scripts.fragment_push import split_fragments
+    from trendradar.config.delivery import WECOM_FRAGMENT_SAFE_BYTES
     fragments = split_fragments(content)
 
     # 打印预览
@@ -88,7 +89,7 @@ def resend(date: str, slot: str, auto_confirm: bool = False):
     print("─" * 40)
     for i, frag in enumerate(fragments):
         b = len(frag.encode('utf-8'))
-        label = " ⚠️ 超限" if b > 3800 else ""
+        label = " ⚠️ 超限" if b > WECOM_FRAGMENT_SAFE_BYTES else ""
         print(f"  片{i+1}: {len(frag)} chars / {b} bytes{label}")
 
     # 确认
@@ -140,8 +141,8 @@ def main():
         print("\n请指定 --slot 或使用 --list 查看可用存档")
         sys.exit(1)
 
-    from datetime import datetime, timezone, timedelta
-    CST = timezone(timedelta(hours=8))
+    from datetime import datetime
+    from trendradar.scripts.common import CST
     date = args.date or datetime.now(CST).strftime('%Y-%m-%d')
 
     resend(date, args.slot, auto_confirm=args.yes)
