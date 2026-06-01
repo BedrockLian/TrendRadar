@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
 from trendradar.scripts.common import CST
+#!/usr/bin/env python3
 """
 pipeline_orchestrator.py — 一键运行 TrendRadar 推送全流程。
 
@@ -30,16 +30,17 @@ import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-from trendradar.scripts.common import EXIT_CONFIG_ERROR
+from trendradar.scripts.exitcodes import EXIT_CONFIG_ERROR
 from trendradar.scripts.settings import get_logger, get_storage
 
 log = get_logger('orchestrator')
 
+CST = timezone(timedelta(hours=8))
 PYTHON = os.environ.get("PYTHON", sys.executable)
 PYTHON_GIL = os.environ.get("PYTHON_GIL", "0")
 SCRIPTS_DIR = Path(__file__).resolve().parent
-from trendradar.scripts.file_utils import get_data_dir
-DATA_DIR = get_data_dir()
+TREND_DIR = SCRIPTS_DIR.parent
+DATA_DIR = TREND_DIR / "data"
 
 # Pipeline version — must stay in sync with corresponding SKILL.md version
 __version__ = "2.9.0"  # v2.9: subprocess → direct function calls

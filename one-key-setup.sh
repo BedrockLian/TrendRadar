@@ -1,25 +1,21 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════
-# TrendRadar 一键安装与迁移脚本 v2.0
-# 用法: bash one-key-setup.sh
+# TrendRadar 一键安装与迁移脚本 v1.0
+# 用法: curl -sSL <raw-url> | bash  或  bash one-key-setup.sh
 # ═══════════════════════════════════════════════════════════════
 set -e
 
 APP_NAME="TrendRadar"
 HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
-# 注意：TRENDRADAR_HOME 是运行时根路径（含 trendradar/ 包子目录）
 TRENDRADAR_HOME="${TRENDRADAR_HOME:-$HERMES_HOME/trendradar}"
-# 包路径（含 scripts/ config/ 等）
-TRENDRADAR_PKG="$TRENDRADAR_HOME/trendradar"
 PYTHON_TARGET="${PYTHON:-/usr/local/bin/python3.14t}"
 GIT_REMOTE="${GIT_REMOTE:-origin}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "🚀 $APP_NAME 一键部署开始..."
-echo "   Hermes 目录:   $HERMES_HOME"
-echo "   TrendRadar:    $TRENDRADAR_HOME"
-echo "   包目录:        $TRENDRADAR_PKG"
-echo "   Python:        $PYTHON_TARGET"
+echo "   Hermes 目录: $HERMES_HOME"
+echo "   TrendRadar:  $TRENDRADAR_HOME"
+echo "   Python:      $PYTHON_TARGET"
 
 # ── 1. 环境预检 ─────────────────────────────────────────────
 if [ ! -x "$PYTHON_TARGET" ]; then
@@ -37,8 +33,7 @@ if [ "$PY_VER" != "3.14" ]; then
 fi
 
 # ── 2. 目录初始化 ───────────────────────────────────────────
-# 运行时数据在 TRENDRADAR_PKG/data/ 下
-mkdir -p "$TRENDRADAR_PKG"/{data,cache,config}
+mkdir -p "$TRENDRADAR_HOME"/{data,cache,config,output}
 mkdir -p "$HERMES_HOME"/{skills/trendradar,scripts}
 
 echo "📁 目录已就绪"
@@ -62,28 +57,22 @@ fi
 # ── 4. 配置模板 ─────────────────────────────────────────────
 echo "⚙️  初始化配置..."
 
-# sources.json — 配置文件，放 config/ 下
-if [ ! -f "$TRENDRADAR_PKG/config/sources.json" ]; then
+# sources.json
+if [ ! -f "$TRENDRADAR_HOME/data/sources.json" ]; then
     if [ -f "$SCRIPT_DIR/config/sources.json" ]; then
-        cp "$SCRIPT_DIR/config/sources.json" "$TRENDRADAR_PKG/config/sources.json"
-        echo "   ✅ sources.json 已从仓库复制到 config/"
+        cp "$SCRIPT_DIR/config/sources.json" "$TRENDRADAR_HOME/data/sources.json"
+        echo "   ✅ sources.json 已从仓库复制"
     else
-        # 也尝试 data/ 旧位置（迁移兼容）
-        if [ -f "$SCRIPT_DIR/data/sources.json" ]; then
-            cp "$SCRIPT_DIR/data/sources.json" "$TRENDRADAR_PKG/config/sources.json"
-            echo "   ✅ sources.json 已从 data/ 迁移到 config/"
-        else
-            echo "   ⚠️  请手动配置 $TRENDRADAR_PKG/config/sources.json"
-        fi
+        echo "   ⚠️  请手动配置 $TRENDRADAR_HOME/data/sources.json"
     fi
 fi
 
 # timeline.yaml
-if [ ! -f "$TRENDRADAR_PKG/config/timeline.yaml" ]; then
+if [ ! -f "$TRENDRADAR_HOME/config/timeline.yaml" ]; then
     if [ -f "$SCRIPT_DIR/config/timeline.yaml" ]; then
-        cp "$SCRIPT_DIR/config/timeline.yaml" "$TRENDRADAR_PKG/config/timeline.yaml"
+        cp "$SCRIPT_DIR/config/timeline.yaml" "$TRENDRADAR_HOME/config/timeline.yaml"
     else
-        cat > "$TRENDRADAR_PKG/config/timeline.yaml" << 'YAML'
+        cat > "$TRENDRADAR_HOME/config/timeline.yaml" << 'YAML'
 slots:
   morning:
     time: "09:00"
@@ -106,8 +95,8 @@ YAML
 fi
 
 # ai_interests.yaml
-if [ ! -f "$TRENDRADAR_PKG/config/ai_interests.yaml" ]; then
-    cat > "$TRENDRADAR_PKG/config/ai_interests.yaml" << 'YAML'
+if [ ! -f "$TRENDRADAR_HOME/config/ai_interests.yaml" ]; then
+    cat > "$TRENDRADAR_HOME/config/ai_interests.yaml" << 'YAML'
 positive:
   - AI 人工智能
   - 芯片 半导体
@@ -125,23 +114,21 @@ YAML
 fi
 
 # source_health.json
-if [ ! -f "$TRENDRADAR_PKG/data/source_health.json" ]; then
-    echo '{"version": 1, "updated_at": "", "sources": {}}' > "$TRENDRADAR_PKG/data/source_health.json"
+if [ ! -f "$TRENDRADAR_HOME/data/source_health.json" ]; then
+    echo '{"version": 1, "updated_at": "", "sources": {}}' > "$TRENDRADAR_HOME/data/source_health.json"
     echo "   ✅ source_health.json 已初始化"
 fi
 
 # ── 5. 数据库迁移 ───────────────────────────────────────────
 echo "🗄️  数据库迁移..."
 
-DB_PATH="$TRENDRADAR_PKG/data/fingerprints.db"
-# PYTHONPATH 指向 TRENDRADAR_HOME（包父目录），让 import trendradar 可用
-export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$TRENDRADAR_HOME"
-# ⚠️ Python 3.14t 不支持 PYTHON_GIL=0（子进程崩溃），必须 unset
-unset PYTHON_GIL
+DB_PATH="$TRENDRADAR_HOME/data/fingerprints.db"
+export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$HERMES_HOME"
+export PYTHON_GIL=0
 
 if [ -f "$SCRIPT_DIR/migrations/runner.py" ]; then
     "$PYTHON_TARGET" -c "
-import sys; sys.path.insert(0, '$TRENDRADAR_HOME')
+import sys; sys.path.insert(0, '$HERMES_HOME')
 from trendradar.migrations.runner import migrate
 ver = migrate('$DB_PATH')
 print(f'DB schema v{ver}')
@@ -158,15 +145,10 @@ if [ -n "$SHELL_RC" ] && ! grep -q "TRENDRADAR_HOME" "$SHELL_RC" 2>/dev/null; th
     cat >> "$SHELL_RC" << 'EOF'
 
 # ── TrendRadar ──────────────────────────────────────────
-# TRENDRADAR_HOME 是 TrendRadar 的根目录，含 trendradar/ 包子目录
 export TRENDRADAR_HOME="$HOME/.hermes/trendradar"
-# PYTHONPATH 指向包父目录，使 import trendradar 可工作
-export PYTHONPATH="$HOME/.hermes/trendradar${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONPATH="$HOME/.hermes${PYTHONPATH:+:$PYTHONPATH}"
 export PYTHON="/usr/local/bin/python3.14t"
-# ⚠️ PYTHON_GIL=0 会导致 Python 3.14t 子进程崩溃（config_read_gil: not supported）
-# 不要设置 PYTHON_GIL，让脚本在需要时自行 unset
-# 日文翻译模型（deepseek-chat 翻译日文必然返回原文）
-export DEEPSEEK_MODEL=deepseek-v4-flash
+export PYTHON_GIL=0
 EOF
     echo "   ✅ 环境变量已写入 $SHELL_RC"
 fi
@@ -175,18 +157,11 @@ fi
 echo ""
 echo "✅ $APP_NAME 部署完成！"
 echo ""
-echo "验证命令（注意 PYTHONPATH 和 GIL）："
-echo "  cd $TRENDRADAR_HOME"
-echo "  PYTHONPATH=$TRENDRADAR_HOME PYTHON_GIL= $PYTHON_TARGET trendradar/scripts/push_slot_detect.py"
-echo "  PYTHONPATH=$TRENDRADAR_HOME PYTHON_GIL= $PYTHON_TARGET trendradar/scripts/pipeline_orchestrator.py --list-steps"
+echo "验证命令:"
+echo "  cd $SCRIPT_DIR"
+echo "  PYTHONPATH=$HERMES_HOME $PYTHON_TARGET scripts/push_slot_detect.py"
+echo "  PYTHONPATH=$HERMES_HOME $PYTHON_TARGET scripts/pipeline_orchestrator.py --list-steps"
+echo "  PYTHONPATH=$HERMES_HOME $PYTHON_TARGET scripts/pipeline_orchestrator.py --check-version"
 echo ""
 echo "手动运行一次推送:"
-echo "  cd $TRENDRADAR_HOME"
-echo "  DEEPSEEK_MODEL=deepseek-v4-flash TRENDRADAR_HOME=$TRENDRADAR_PKG \\"
-echo "    PYTHONPATH=$TRENDRADAR_HOME PYTHON_GIL= \\"
-echo "    $PYTHON_TARGET trendradar/scripts/pipeline_orchestrator.py --push-id noon"
-echo ""
-echo "补发存档:"
-echo "  cd $TRENDRADAR_HOME"
-echo "  TRENDRADAR_HOME=$TRENDRADAR_PKG PYTHONPATH=$TRENDRADAR_HOME PYTHON_GIL= \\"
-echo "    $PYTHON_TARGET trendradar/scripts/archive_resend.py --date YYYY-MM-DD --slot noon"
+echo "  PYTHONPATH=$HERMES_HOME PYTHON_GIL=0 $PYTHON_TARGET scripts/pipeline_orchestrator.py"

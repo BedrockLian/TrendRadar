@@ -13,9 +13,3 @@ trendradar/output/
 trendradar/*.db
 trendradar/.env
 trendradar/config/ai_interests.txt.bak
-*.sqlite
-*.pem
-*.key
-*.p12
-venv/
-.venv/

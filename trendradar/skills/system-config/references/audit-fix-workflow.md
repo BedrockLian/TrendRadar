@@ -32,3 +32,22 @@
 | 异常吞噬 | `except: pass` → 加 `log.warning` 或缩小异常范围 | 12 处一次性修复 |
 | 缺超时 | 无 `ClientTimeout` → 加 `timeout=ClientTimeout(total=30)` | `fetch_feeds.py` Session |
 | 循环导入 | A↔B 互相 import → 第三方模块解耦 | `storage↔settings` → `file_utils` |
+
+## 第二轮审计（Reference 专项）
+
+大修完成后应跑一次 reference 专项审计（如 `SKILL-REFERENCES-AUDIT.md`），它会发现第一轮遗漏的：
+
+- 仍存在于 skill references 中的内容副本（已被顶层 references 覆盖）
+- 已删除文件留下的死链引用（如 `pipeline.md`/`render-format.md` 被删后 skills 仍引用）
+- 过时的合并来源声明（`合并自: ...` 注释行、HTML 注释的 `Consolidated from ...`）
+- 旧版本号残留
+
+**执行模式**：读审计报告 → 4 阶段执行（新增 TRAPS 条目 → 删冗余文件 → 修死链 → 清旧声明），每阶段完成后同步工作树 ↔ cron 副本。
+
+## 修复后验证清单
+
+1. `PYTHONPATH=$PWD python3 -c "import trendradar.scripts; print('import OK')"` — 包导入正常
+2. `python3 -m pytest tests/ -x -q` — 测试全绿
+3. `TRENDRADAR_HOME=... python3 ~/.hermes/scripts/trendradar_health_check.py` — 无假阳性
+4. `git status --short` — 确认工作树改动与预期一致
+5. `diff <(ls ~/.hermes/skills/trendradar/) <(ls trendradar/skills/)` — 技能两端一致

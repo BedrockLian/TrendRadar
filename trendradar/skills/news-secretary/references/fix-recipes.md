@@ -34,7 +34,78 @@
 **症状**：`⚠️ Skill(s) not found and skipped`。详见 traps.md 中的 Trap 14。
 **检查**：`hermes cron list | grep Skills:` + `ls ~/.hermes/skills/trendradar/`。**修复**：`cronjob action=update job_id=xxx skills=["new-name"]`。
 
-## 验证修复
+## 6. 扩写/翻译结果 [扩写失败] + 内容串位（批次响应乱序）
+
+**2026-05-31 案例**：午报经济民生第2条 DeepSeek 显示 `[扩写失败]`，同时科技第2条（铜价）的 summary_cn 写成了 DeepSeek 的内容。
+
+**根因**：`ai_translate.py` 的 `_parse_line_pairs()` 按 AI 返回顺序分配结果。若 AI 响应顺序与请求不一致，条目 A 收到 B 的数据，B 则因无剩余响应 fallback 为 `[扩写失败]`（`fallback_label="[扩写失败]"`）。
+
+**检测**：
+```bash
+python3 -c "
+import json
+d=json.load(open('data/curated_{slot}_{date}.json'))
+for s in ['tech','economy','gaming','foreign_china','top_headlines']:
+    for i,item in enumerate(d.get(s,[])):
+        sc = item.get('summary_cn','')
+        if sc == '[扩写失败]':
+            print(f'{s}#{i}: [扩写失败] — {item[\"title\"][:50]}')
+        elif sc and item.get('title') and sc[:15] not in item['title'] and sc[:15] not in (item.get('summary','') or '')[:15]:
+            print(f'{s}#{i}: ⚠️ 内容可能串位 — {item[\"title\"][:40]}')
+            print(f'      summary_cn={sc[:60]}')
+"
+```
+
+**修复**：
+```bash
+# 1. 清除失败 marker 和串位内容（注意：可能涉及多个条目）
+python3 -c "
+import json
+d=json.load(open('data/curated_{slot}_{date}.json'))
+for s in d:
+    if isinstance(d[s], list):
+        for item in d[s]:
+            if item.get('summary_cn') == '[扩写失败]':
+                del item['summary_cn']
+            if 'title_cn' in item and item['title_cn'] == '[扩写失败]':
+                del item['title_cn']
+            # 也清除串位的正确内容（手动判断）
+json.dump(d, open('data/curated_{slot}_{date}.json','w'), ensure_ascii=False, indent=2)
+"
+
+# 2. 重新翻译+扩写
+python3 scripts/ai_translate.py --push-id {slot}
+
+# 3. 重新渲染
+python3 scripts/render_markdown.py --push-id {slot}
+
+# 4. 补推
+python3 scripts/archive_resend.py --date YYYY-MM-DD --slot {slot} --yes
+```
+
+**预防**：单条扩写不受影响。多条批次时风险存在。当前 `TRANSLATE_BATCH_SIZE=10`，若频繁出现可考虑降低。
+
+## 7. RSS URL 路径含未编码空格（Sixth Tone 案例）
+
+**2026-05-31 案例**：Sixth Tone RSS 的 `<link>` 元素返回如 `//www.sixthtone.com/news/1018594/He Quit Baidu...`，路径含空格。Markdown 链接 `[【Sixth Tone】](url)` 断裂（空格后的内容被当作独立 token）。
+
+**检测**：渲染后的简报中某条链接不可点击，或 Markdown 源码中 URL 含空格。
+
+**修复**（已内置在代码中，无需手动操作）：
+- **`fetch_feeds.py` `_parse_rss()`** — RSS 解析时检测 URL 路径含空格，用 `urllib.parse.quote` 编码为 `%20`
+- **`render_markdown.py` `_format_item()`** — 渲染层兜底，读取 item URL 时再次清洗
+
+**影响源**：所有使用 `urllib.parse.quote` 编码路径中空格。Sixth Tone 的 RSS 路径用标题做 slug，空格最多。Google News RSS、部分独立博客也可能出现。
+
+```bash
+python3 -c "
+import json
+d=json.load(open('data/raw_{date}.json'))
+for i in d['items']:
+    if ' ' in i.get('url',''):
+        print(f'[空格] {i[\"source_platform\"]}: {i[\"url\"][:80]}')
+"
+```
 
 ```bash
 grep -n "修改内容" path/to/file                     # 1. 确认保存

@@ -1,5 +1,5 @@
+from trendradar.scripts.common import CST
 #!/usr/bin/env python3
-from trendradar.scripts.common import CST, STOP_WORDS, list_curated_files
 """
 aggregate_monthly.py — 月度统计聚合 + 兴趣漂移检测
 
@@ -19,10 +19,25 @@ import argparse, json, os, sys, re
 from datetime import datetime, timezone, timedelta
 from collections import Counter, defaultdict
 
-from trendradar.scripts.file_utils import get_data_dir, TRENDRADAR_HOME
-DATA_DIR = get_data_dir()
+SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(os.path.dirname(SCRIPTS_DIR), 'data')
+TRENDRADAR_HOME = os.path.dirname(SCRIPTS_DIR)
 
 from trendradar.scripts.settings import DOMAINS, DOMAIN_LABELS
+
+
+def list_recent_files(days: int = 32):
+    """List curated JSON files within the last N days."""
+    cutoff = datetime.now(CST) - timedelta(days=days)
+    files = []
+    for f in os.listdir(DATA_DIR):
+        if not f.startswith('curated_') or not f.endswith('.json'):
+            continue
+        fpath = os.path.join(DATA_DIR, f)
+        mtime = datetime.fromtimestamp(os.path.getmtime(fpath), tz=CST)
+        if mtime >= cutoff:
+            files.append(fpath)
+    return sorted(files)
 
 
 def _extract_word_fragments(text: str, min_len: int = 2, max_len: int = 4) -> list[str]:
@@ -30,13 +45,28 @@ def _extract_word_fragments(text: str, min_len: int = 2, max_len: int = 4) -> li
     
     Skips common stopwords and single-use tokens.
     """
+    stopwords = {
+        '关注', '我关注', '特别是', '尤其是', '方面', '方向', '影响', '变化',
+        '竞争', '进展', '动态', '格局', '政策', '领域', '情况', '调整',
+        '战略', '应用', '落地', '态势', '热点', '赛道', '曲线',
+        '部署', '突破', '升级', '趋势', '市场', '产业', '发展', '推动',
+        '提升', '分析', '报告', '状况', '环节', '相关', '就是',
+        '不会', '还是', '可以', '这个', '那个', '什么', '怎么', '因为',
+        '所以', '如果', '但是', '而且', '或者', '虽然', '由于', '关于',
+        '基于', '通过', '采用', '进行', '开始', '继续', '实现', '成为',
+        '带来', '加大', '进入', '超过', '达到', '保持', '构成', '形成',
+        '目前', '正在', '已经', '主要', '其中', '以及', '可能', '需要',
+        '表示', '认为', '指出', '预计', '显示', '公布', '宣布',
+        '数据', '同比', '环比', '增长', '下降', '其中', '此外',
+        '一些', '这种', '一种', '所有', '这些', '那些',
+    }
     chars = list(re.findall(r'[\u4e00-\u9fff]', text))
     fragments = []
     for i in range(len(chars)):
         for wlen in range(min_len, max_len + 1):
             if i + wlen <= len(chars):
                 word = ''.join(chars[i:i+wlen])
-                if word not in STOP_WORDS:
+                if word not in stopwords:
                     fragments.append(word)
     return fragments
 
@@ -119,7 +149,7 @@ def main():
                         help='Also output interest drift suggestions')
     args = parser.parse_args()
 
-    files = list_curated_files(args.days)
+    files = list_recent_files(args.days)
     if not files:
         print(json.dumps({"error": f"No curated files in last {args.days} days"},
                          ensure_ascii=False))

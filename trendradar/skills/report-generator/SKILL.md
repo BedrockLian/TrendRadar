@@ -1,7 +1,7 @@
 ---
 name: report-generator
 slug: report-generator
-version: 1.0.0
+version: 1.1.0
 description: 周/月度趋势深度报告。五大板块+信息茧房突围，逐主题搜索验证。
 author: Hermes Agent
 metadata:
@@ -77,3 +77,4 @@ metadata:
 |------|------|
 | `references/report-templates.md` | 周报+月报格式模板 & 空行规范 |
 | `../../references/PIPELINE.md` | 管线流程 + 渲染格式规范 |
+| `../news-secretary/references/fragment-delivery-pitfall.md` | 分片投递陷阱：cron prompt 误用 final response 致 WeCom 截断（跨 skill 共享） |

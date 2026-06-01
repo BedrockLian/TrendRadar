@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
 from trendradar.scripts.common import CST
+#!/usr/bin/env python3
 from trendradar.scripts.settings import get_logger
 log = get_logger('blog-watcher-bridge')
 """blogwatcher ↔ TrendRadar bridge.
@@ -201,8 +201,7 @@ def write_cache(articles: list):
     if not articles:
         # 写空缓存
         empty = {'items': [], 'fetched_at': datetime.now(CST).isoformat(), 'source': 'blogwatcher'}
-        from trendradar.scripts.file_utils import atomic_write_json
-        atomic_write_json(TR_CACHE_DIR / 'raw_blogs.json', empty)
+        (TR_CACHE_DIR / 'raw_blogs.json').write_text(json.dumps(empty, ensure_ascii=False))
         log.info("无文章, 写入空缓存")
         return
 
@@ -212,8 +211,8 @@ def write_cache(articles: list):
         'source': 'blogwatcher',
         'count': len(articles),
     }
-    from trendradar.scripts.file_utils import atomic_write_json
-    atomic_write_json(TR_CACHE_DIR / 'raw_blogs.json', cache)
+    (TR_CACHE_DIR / 'raw_blogs.json').write_text(
+        json.dumps(cache, ensure_ascii=False, indent=2)
     )
     per_domain = {}
     for a in articles:
