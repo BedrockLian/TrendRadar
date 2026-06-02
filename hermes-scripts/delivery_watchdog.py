@@ -155,7 +155,7 @@ def check_sanity() -> str | None:
         result = subprocess.run(
             [PYTHON, str(script), '--json', '--no-check-links'],
             input='test', capture_output=True, text=True, timeout=10,
-            env={**os.environ, 'PYTHONPATH': str(TRENDRADAR_HOME.parent), 'PYTHON_GIL': '0'}
+            env={**os.environ, 'PYTHONPATH': str(TRENDRADAR_HOME), 'PYTHON_GIL': '0'}
         )
         if result.returncode not in (0, 3):
             return f"⚠️ sanity_check.py 异常退出 (exit={result.returncode})"
@@ -346,7 +346,7 @@ def auto_redeliver_slot(alerts: list[str], push_id: str, slot_name: str, max_age
             [PYTHON, str(TRENDRADAR_HOME / 'scripts' / 'render_markdown.py'),
              '--push-id', push_id],
             capture_output=True, text=True, timeout=30,
-            env={**os.environ, 'PYTHONPATH': str(TRENDRADAR_HOME.parent), 'PYTHON_GIL': '0'}
+            env={**os.environ, 'PYTHONPATH': str(TRENDRADAR_HOME), 'PYTHON_GIL': '0'}
         )
         if result.returncode == 0 and result.stdout.strip():
             briefing_path.write_text(result.stdout)
@@ -354,7 +354,7 @@ def auto_redeliver_slot(alerts: list[str], push_id: str, slot_name: str, max_age
                 [PYTHON, str(TRENDRADAR_HOME / 'scripts' / 'sanity_check.py'),
                  '--push-id', push_id],
                 capture_output=True, timeout=15,
-                env={**os.environ, 'PYTHONPATH': str(TRENDRADAR_HOME.parent), 'PYTHON_GIL': '0'}
+                env={**os.environ, 'PYTHONPATH': str(TRENDRADAR_HOME), 'PYTHON_GIL': '0'}
             )
             if send_to_wecom(briefing_path):
                 alerts.append(f"  ✅ {slot_name}已补发至 WeCom")
