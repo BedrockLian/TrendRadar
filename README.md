@@ -100,7 +100,6 @@ TrendRadar/
 │   │   ├── fetch_feeds.py               # 多 RSS 异步抓取
 │   │   ├── curate_and_push.py           # 5 域并行精选 + 多样性惩罚
 │   │   ├── ai_translate.py              # AI 批量翻译 + 熔断退避
-│   │   ├── batch_fetch.py               # 10 并发全文抓取
 │   │   ├── render_markdown.py           # 纯脚本渲染（摘要120字上限+句号边界截断）
 │   │   ├── render_deep_analysis.py      # Pro 深度分析 + 知识图谱
 │   │   ├── fragment_push.py             # UTF-8 字节计数分片
@@ -142,7 +141,6 @@ TrendRadar/
 │   │   ├── test_fetch_feeds.py
 │   │   ├── test_curate_and_push.py
 │   │   ├── test_ai_translate.py
-│   │   ├── test_batch_fetch.py
 │   │   ├── test_render_markdown.py
 │   │   ├── test_sanity_check.py
 │   │   ├── test_push_prepare.py

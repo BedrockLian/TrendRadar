@@ -32,7 +32,6 @@ Agent 可通过 `--list-steps` 动态获取管道步骤定义（SSOT），不再
 
 ### 数据损坏
 ```bash
-rm -f ~/.hermes/trendradar/cache/batch_{slot}.json
 rm -f ~/.hermes/trendradar/data/curated_{slot}.json
 cronjob action=run job_id=90a2866775df
 ```

@@ -12,7 +12,7 @@
    ```bash
    cd ~/.hermes/trendradar
    export PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GIL=0
-   for mod in push_prepare batch_fetch ...; do
+   for mod in push_prepare ai_translate ...; do
      $PYTHON -c "import trendradar.scripts.$mod" && echo "✅ $mod" || echo "❌ $mod"
    done
    ```

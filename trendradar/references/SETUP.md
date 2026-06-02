@@ -17,7 +17,6 @@ RSS 抓取 (fetch_feeds.py)
                                            ↓
                                       Mihomo 127.0.0.1:7890
 
-文章详情 (batch_fetch.py)
   └─ 自动检测 127.0.0.1:7890 可达性
        ├─ 可达 → 国外全文走代理
        └─ 不可达 → 直连回退
@@ -41,7 +40,6 @@ RSS 抓取 (fetch_feeds.py)
 ### 代理不可达的后果
 
 - `fetch_feeds.py`：国外源全部失败 → 日报仅有国内内容
-- `batch_fetch.py`：自动降级为直连（curl 回退），国外全文可能无法获取
 - `self-healing` 的 `check_api` 项检测互联网出口是否可达
 
 ### Mihomo 监听配置（局域网可访问）
@@ -83,7 +81,7 @@ python3 -c "from scripts.settings import needs_proxy; print('needs proxy:', need
 ```bash
 # 1. TrendRadar 旧缓存
 cd ~/.hermes/trendradar/cache
-rm -f raw_$(date -d yesterday +%Y%m%d).json batch_*.json
+rm -f raw_$(date -d yesterday +%Y%m%d).json
 
 # 2. __pycache__（排除 venv）
 find ~/.hermes -path "*/venv/*" -prune -o -name __pycache__ -type d -exec rm -rf {} +
@@ -253,7 +251,7 @@ export PYTHON_GIL=0
 
 0. $PYTHON scripts/push_slot_detect.py
 1. $PYTHON scripts/push_prepare.py --push-id {PUSH_ID} {DEDUP_FLAG}
-2. [并行] $PYTHON scripts/ai_translate.py --push-id {PUSH_ID} & $PYTHON scripts/batch_fetch.py --push-id {PUSH_ID}; wait
+2. [翻译] $PYTHON scripts/ai_translate.py --push-id {PUSH_ID}
 3. BRIEFING=$($PYTHON scripts/render_markdown.py --push-id {PUSH_ID})
 4. NEW_COUNT=0 → [SILENT]
 5. $PYTHON scripts/record_fingerprints.py --push-id {PUSH_ID}

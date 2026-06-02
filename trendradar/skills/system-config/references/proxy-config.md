@@ -11,7 +11,6 @@ RSS 采集 (fetch_feeds.py)
                                           ↓
                                     米霍姆 127.0.0.1:7890
 
-文章详情 (batch_fetch.py)
   └─ 自动检测 127.0.0.1:7890 是否可达
        ├─ 可达 → 走米霍姆代理抓取外媒全文
        └─ 不可达 → 直连兜底
@@ -54,7 +53,6 @@ Environment="NO_PROXY=localhost,127.0.0.1,api.deepseek.com"
 ## 代理不可达的后果
 
 - `fetch_feeds.py`：外媒源和 RSSHub 源采集全部失败 → 日报只有国内源内容
-- `batch_fetch.py`：自动降级为直连（curl 兜底），外媒全文可能抓不到
 - `self-healing` 的 `check_api` 项会检测外网出口是否可达
 
 ## 米霍姆监听配置（局域网可访问）

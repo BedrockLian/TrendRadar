@@ -35,14 +35,13 @@ def run_stage(name: str, func, *args, timeout: int = 300, **kwargs) -> dict
 | 1 | push_prepare.py | `run_curation(push_id)` | `-> dict` (已存在) |
 | 2 | track_events.py | `load_curated()` + `compare()` | 内联 lambda |
 | 3 | ai_translate.py | `process_curated(push_id)` | `async -> dict` (已存在) |
-| 3 | batch_fetch.py | `batch_fetch(push_id)` | `async -> dict` (已存在) |
 | 4 | render_markdown.py | `render_briefing(push_id)` | `-> str` (新增) |
 | 5 | fragment_push.py | `split_fragments(markdown)` | `-> list[str]` (已存在) |
 | 6 | record_fingerprints.py | `record(push_id)` | 副作用 (已存在) |
 
 ## 异步阶段处理
 
-translate + batch_fetch 都是 `async def`，通过 `asyncio.run()` + `ThreadPoolExecutor(max_workers=2)` 并行：
+ai_translate 为串行阶段（batch_fetch 已移除）：
 
 ```python
 def _run_translate():
@@ -50,7 +49,6 @@ def _run_translate():
     return asyncio.run(process_curated(push_id))
 
 def _run_fetch():
-    from trendradar.scripts.batch_fetch import batch_fetch as bf
     return asyncio.run(bf(push_id))
 
 with ThreadPoolExecutor(max_workers=2) as executor:
