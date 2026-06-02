@@ -17,7 +17,6 @@ import os
 import sys
 import re
 import asyncio
-import random
 import threading
 from pathlib import Path
 
@@ -106,24 +105,28 @@ def get_source_lang(source_platform: str) -> str | None:
     return None
 
 
-# ── Translation API ──────────────────────────────────────────────────────────
+# ── Translation API (provider-agnostic via llm_providers.py) ───────────────
 
-from trendradar.scripts.settings import get_api_key, get_api_endpoint, get_model
+from trendradar.scripts.llm_providers import (
+    LLMProvider,
+    LLMError,
+    LLMAuthError,
+    LLMRateLimit,
+    LLMResponseError,
+    create_provider,
+    get_default_provider,
+)
 from string import Template
 
-API_ENDPOINT = get_api_endpoint()
-MODEL = get_model()
+# Per-batch max concurrent translation requests
 from trendradar.scripts.settings import TRANSLATE_BATCH_SIZE, TRANSLATE_BATCH_MAX_CONCURRENT
 BATCH_SIZE = TRANSLATE_BATCH_SIZE
 MAX_CONCURRENT_BATCHES = TRANSLATE_BATCH_MAX_CONCURRENT
 
 # ── Exponential Backoff 熔断配置 ────────────────────────────────────────────
-# 针对 Trap 28: DeepSeek openresty 流中断 (RemoteProtocolError)
+# Per-Provider backoff: handled inside LLMProvider.chat() (exponential + jitter).
+# Module-level circuit breaker: extra safety on top of provider's own retries.
 from trendradar.config.translation import (
-    RETRY_BASE_DELAY,
-    RETRY_MAX_DELAY,
-    RETRY_JITTER,
-    RETRY_MAX_ATTEMPTS,
     CIRCUIT_BREAKER_THRESHOLD,
 )
 
@@ -168,52 +171,21 @@ async def _make_request(
     session: aiohttp.ClientSession,
     api_key: str,
     messages: list,
-) -> dict:
-    """Send a single API request with exponential backoff + jitter retry.
+) -> str:
+    """Send a chat request via the default LLMProvider.
 
-    Retry strategy:
-    - Base delay 2s, doubles each retry (2→4→8→16→30s capped)
-    - ±50% random jitter to avoid thundering herd
-    - Max 5 total attempts (initial + 4 retries)
-    - On RemoteProtocolError (Trap 28 — DeepSeek stream drop), retries with
-      increased timeout budget
+    Backward-compat shim — new code should use `provider.chat()` directly.
+    Returns the raw assistant text (not a dict), since the new layer normalizes
+    provider-specific response shapes.
     """
-    payload = {
-        "model": MODEL,
-        "messages": messages,
-        "temperature": 0.3,
-        "max_tokens": 4096,
-    }
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}",
-    }
-
-    last_error = None
-    for attempt in range(RETRY_MAX_ATTEMPTS + 1):
-        # Increase timeout on retries (stream drops may need longer)
-        timeout_seconds = 30 + len(messages) * 3 + (attempt * 15)
-        timeout = aiohttp.ClientTimeout(total=timeout_seconds)
-
-        try:
-            async with session.post(
-                API_ENDPOINT, json=payload, headers=headers, timeout=timeout
-            ) as resp:
-                return await resp.json()
-        except (aiohttp.ClientError, asyncio.TimeoutError, json.JSONDecodeError) as e:
-            last_error = e
-            if attempt < RETRY_MAX_ATTEMPTS:
-                delay = min(RETRY_BASE_DELAY * (2 ** attempt), RETRY_MAX_DELAY)
-                jitter = delay * RETRY_JITTER * (random.random() * 2 - 1)
-                delay += jitter
-                log.warning(
-                    f"API error (attempt {attempt+1}/{RETRY_MAX_ATTEMPTS+1}), "
-                    f"retrying in {delay:.1f}s: {e}")
-                await asyncio.sleep(delay)
-
-    if last_error is None:
-        raise RuntimeError("_make_request failed but no error was captured")
-    raise last_error
+    # The api_key/session args are kept for backward compat but unused;
+    # the provider reads its own key from env / constructor.
+    try:
+        provider = get_default_provider()
+        return await provider.chat(messages=messages)
+    except LLMError as e:
+        log.error(f"LLM provider error: {e}")
+        raise
 
 
 def circuit_broken() -> bool:
@@ -265,13 +237,8 @@ async def batch_translate(
         {"role": "user", "content": user_message},
     ]
 
-    response = await _make_request(session, api_key, messages)
-    if 'choices' not in response or not response['choices']:
-        raise ValueError(
-            f"Unexpected API response: "
-            f"{response.get('error', {}).get('message', 'unknown')}"
-        )
-    content = response["choices"][0]["message"]["content"].strip()
+    # _make_request now returns raw assistant text via the LLMProvider layer
+    content = await _make_request(session, api_key, messages)
     return _parse_line_pairs(content, len(items), fallback_label="[翻译失败]")
 
 
@@ -430,12 +397,8 @@ async def batch_expand(
     ]
 
     response = await _make_request(session, api_key, messages)
-    if 'choices' not in response or not response['choices']:
-        raise ValueError(
-            f"Unexpected API response: "
-            f"{response.get('error', {}).get('message', 'unknown')}"
-        )
-    content = response["choices"][0]["message"]["content"].strip()
+    # _make_request now returns raw assistant text via the LLMProvider layer
+    content = response if isinstance(response, str) else ""
     return _parse_line_pairs(content, len(items), fallback_label="[扩写失败]")
 
 
@@ -519,12 +482,18 @@ async def process_curated(push_id: str) -> dict:
             f"No items need processing for push-id '{push_id}'")
         return data
 
+    # Check that a usable provider is available (provider-specific key check).
+    # Ollama is special: it has no auth, so a missing API key is fine.
     from trendradar.scripts.settings import get_api_key
     api_key = get_api_key()
-    if not api_key:
+    provider_name = os.environ.get('TRENDRADAR_LLM_PROVIDER', 'openai_chat').lower()
+    if not api_key and provider_name != 'ollama':
         log.warning(
-            "DEEPSEEK_API_KEY not set — skipping translation "
-            "(graceful degradation)")
+            "No API key set for LLM provider — skipping translation "
+            "(graceful degradation). Set TRENDRADAR_LLM_API_KEY or "
+            "provider-specific env (DEEPSEEK_API_KEY, OPENAI_API_KEY, "
+            "ANTHROPIC_API_KEY, GOOGLE_API_KEY, etc.)"
+        )
         from trendradar.scripts.common import EXIT_NO_CONTENT
         sys.exit(EXIT_NO_CONTENT)
 
