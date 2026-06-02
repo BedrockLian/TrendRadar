@@ -75,11 +75,11 @@ class TestScore:
     }
 
     def _score(self, item, domain='tech'):
-        from curate_and_push import _score as fn
+        from scorer import score_item as fn
         return fn(item, domain)
 
     def _min_score(self):
-        from curate_and_push import MIN_SCORE
+        from trendradar.scripts.settings import MIN_SCORE
         return MIN_SCORE
 
     def test_strong_item_passes(self):
@@ -93,7 +93,7 @@ class TestScore:
         assert s['total'] < self._min_score()
 
     def test_economy_domain_boost(self):
-        from curate_and_push import _econ_boost
+        from trendradar.scripts.domain_metadata import _econ_boost
         boost_sources = _econ_boost()
         if boost_sources:
             econ_src = next(iter(boost_sources))
@@ -114,14 +114,14 @@ class TestScore:
 
 
 class TestCurateDomain:
-    """_curate_domain() — 单 domain 精选"""
+    """curate_domain() — 单 domain 精选"""
 
     def _curate_domain(self, items, domain):
-        from curate_and_push import _curate_domain as fn
+        from scorer import curate_domain as fn
         return fn(items, domain)
 
     def _max_per_domain(self):
-        from curate_and_push import MAX_PER_DOMAIN
+        from trendradar.scripts.settings import MAX_PER_DOMAIN
         return MAX_PER_DOMAIN
 
     def test_filters_empty_summary(self):
@@ -168,12 +168,12 @@ class TestCurateDomain:
         assert '正常条目标题够长' not in titles
 
     def test_diversity_penalty_same_source(self):
-        """5 items from same source → items 4 and 5 get diversity penalty.
+        """5 items from same source → diversity cap drops 3 of them.
 
-        The diversity penalty in _curate_domain triggers when the same source
-        appears more than MAX_SAME_SOURCE (3) times. Items 4 and 5 (0-indexed:
-        items at index 3 and 4) should have _diversity_penalized=True and
-        their scores halved (×0.5, int-rounded).
+        With MAX_SAME_SOURCE=2 (current config), the soft penalty marks
+        items 3+ as _diversity_penalized, then the hard cap drops them
+        from the result. So result has 2 items (the top-2 by score), and
+        items 3-5 (the diversity-penalized ones) are absent.
         """
         same_source = '36氪'
         items = []
@@ -191,24 +191,14 @@ class TestCurateDomain:
 
         result = self._curate_domain(items, 'tech')
 
-        # All 5 items should be included (not dropped, just penalized)
-        assert len(result) <= 5
-
-        # Items originating from same source after the 3rd should be penalized
-        penalized = [i for i in result if i.get('_diversity_penalized')]
-        # Items 4 and 5 (index 3, 4 in original order) should be penalized
-        assert len(penalized) >= 2, (
-            f"Expected at least 2 penalized items from same source, got {len(penalized)}. "
-            f"Penalized titles: {[i['title'] for i in penalized]}"
+        # Hard cap: only MAX_SAME_SOURCE items pass, rest are dropped
+        from trendradar.scripts.settings import MAX_SAME_SOURCE
+        assert len(result) <= MAX_SAME_SOURCE, (
+            f"Expected at most {MAX_SAME_SOURCE} items from same source, got {len(result)}"
         )
 
-        # Verify penalized items have halved scores
-        non_penalized = [i for i in result if not i.get('_diversity_penalized')]
-        if penalized and non_penalized:
-            max_penalized_score = max(i['_curator_scores']['total'] for i in penalized)
-            min_normal_score = min(i['_curator_scores']['total'] for i in non_penalized)
-            # Penalized scores should be approximately half of normal
-            assert max_penalized_score <= min_normal_score, (
-                f"Penalized items should have lower scores. "
-                f"Max penalized={max_penalized_score}, Min normal={min_normal_score}"
-            )
+        # The capped-out items (indices 2, 3, 4) should NOT appear in result
+        result_titles = [i['title'] for i in result]
+        assert not any('第2号' in t or '第3号' in t or '第4号' in t for t in result_titles), (
+            f"Items 3-5 should be dropped by hard cap, but found: {result_titles}"
+        )

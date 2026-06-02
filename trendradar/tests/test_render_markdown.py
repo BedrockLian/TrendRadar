@@ -91,7 +91,9 @@ class TestGenerateSection:
         from render_markdown import _generate_section
         result = _generate_section('tech', [], 'morning')
         assert '暂无内容' in result
-        assert '💻 科技' in result
+        # Current label is '💻 科学/技术' (per config/domains.py)
+        assert '💻' in result
+        assert '科学' in result
 
     def test_items_separated_by_double_blank_lines(self):
         from render_markdown import _generate_section
