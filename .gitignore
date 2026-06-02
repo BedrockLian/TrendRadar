@@ -13,3 +13,4 @@ trendradar/output/
 trendradar/*.db
 trendradar/.env
 trendradar/config/ai_interests.txt.bak
+.env

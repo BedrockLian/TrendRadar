@@ -82,13 +82,11 @@ def atomic_write_json(path: Path, data, **kwargs):
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix='.tmp_', suffix='.json')
     try:
         with os.fdopen(fd, 'w', encoding='utf-8') as f:
-            _json.dump(data, f, ensure_ascii=False, indent=2, **kwargs)
+            _json.dump(data, f, ensure_ascii=False, **kwargs)
         os.replace(tmp, path)
     except Exception:
         os.unlink(tmp)
         raise
-
-
 def _get_zstd():
     try:
         from compression import zstd
