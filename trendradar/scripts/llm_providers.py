@@ -507,6 +507,17 @@ def _resolve_api_key_env(provider_name: str) -> str | None:
         val = os.environ.get(env_name)
         if val:
             return val
+    # 链全部 miss 后 fallback 到 settings.get_api_key()（支持 .env 文件）
+    # Bug 修复 (2026-06-02 22:11): 21:00 evening ai_translate 401 假阳性根因 —
+    # _resolve_api_key_env 只查 os.environ，cron agent env 没注入 DEEPSEEK_API_KEY，
+    # 但 settings.get_api_key() 有 TRENDRADAR_HOME/.env + ~/.hermes/.env 双重 fallback。
+    try:
+        from trendradar.scripts.settings import get_api_key as _gk
+        fallback = _gk()
+        if fallback:
+            return fallback
+    except Exception:
+        pass
     return None
 
 
