@@ -161,7 +161,7 @@ safety: 纯中文 31 词（灾害/安全类别）
 - 空行规则硬编码（无 LLM 漂移）
 - 输出兼容 `fragment_push.py`
 
-**`render_deep_analysis.py`** — 从 stdin 读取 Pro 子 agent 输出 → 格式化为企业微信移动端友好格式。
+**`render_deep_analysis.py`** — 从 stdin 读取 flash 子 agent 输出 → 格式化为企业微信移动端友好格式。
 - 去除表格/代码块/水平线（企业微信不支持）
 - 按关键词检测章节标题 → 添加 emoji（📈🎯📌⚡）
 - 自动截断至 1600 字符（企业微信单条消息限制）
@@ -170,7 +170,7 @@ safety: 纯中文 31 词（灾害/安全类别）
 | 场景 | 渲染器 |
 |------|--------|
 | 每日简报（早/午/晚） | `render_markdown.py`（始终） |
-| 深度分析（晚间 Pro agent） | `render_deep_analysis.py`（始终） |
+| 深度分析（晚间 flash agent） | `render_deep_analysis.py`（始终） |
 | LLM 回退 | 不需要 — 脚本覆盖所有情况 |
 
 ---

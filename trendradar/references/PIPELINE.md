@@ -63,7 +63,7 @@ cd ~/.hermes/trendradar
 `curate_and_push.py` | 5 domain 并行精选 + 来源多样性惩罚
 `ai_translate.py` | AI 批量翻译 + 指数退避重试 + 熔断器
 `render_markdown.py` | 纯脚本渲染（替代 Agent 手动渲染）
-`render_deep_analysis.py` | Pro 深度分析格式化排版
+`render_deep_analysis.py` | flash 深度分析格式化排版
 `fragment_push.py` | UTF-8 字节计数分片（3800B/片），三级递降拆分
 `track_events.py` | 跨日事件追踪
 `record_fingerprints.py` | 指纹记录（Storage 统一接入）
@@ -168,7 +168,7 @@ source = (item.get('source_platform') or '').split('+')[0].strip()
 
 ## 深度分析格式化（render_deep_analysis.py）
 
-> Pro 子 agent 产出分析文本后，经 `render_deep_analysis.py` 格式化再推送 WeCom。
+> flash 子 agent 产出分析文本后，经 `render_deep_analysis.py` 格式化再推送 WeCom。
 > 避免子 agent 自由输出中的表格/代码块/横线等 WeCom 不支持的标记。
 
 ### 用法

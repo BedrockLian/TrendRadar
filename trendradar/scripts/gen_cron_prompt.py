@@ -138,7 +138,7 @@
 139|    lines.append("")
 140|    lines.append("Only when `push_id=evening` and `needs_deep_analysis=true`:")
 141|    lines.append("")
-142|    lines.append("1. Launch 3 Pro `delegate_task` sub-agents in parallel (trends/cross-domain/risks)")
+142|    lines.append("1. Launch 3 flash `delegate_task` sub-agents in parallel (trends/cross-domain/risks, deepseek-v4-flash)")
 143|    lines.append("2. Pipe each result through render_deep_analysis.py:")
 144|    lines.append('   `echo "$ANALYSIS" | $PYTHON scripts/render_deep_analysis.py --topic "主题" --push-id evening --context`')
 145|    lines.append("3. Output each formatted analysis as separate final response")

@@ -18,7 +18,7 @@
 
 cron prompt 的步骤 4 要求：
 ```
-并行启动 3 个 Pro delegate_task 子 Agent（趋势/跨域/风险）。
+并行启动 3 个 flash delegate_task 子 Agent（趋势/跨域/风险）。
 各分析结果通过管道传给 render_deep_analysis.py 格式化：
   echo "$ANALYSIS_TEXT" | $PYTHON scripts/render_deep_analysis.py --topic "主题" --push-id evening --context
 然后作为独立 final response 分别输出

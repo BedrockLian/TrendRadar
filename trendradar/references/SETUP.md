@@ -242,7 +242,7 @@ export PYTHON_GIL=0
 3. 输出 JSON briefing 字段（sanity_check.py 自动拦截禁止的前缀/后缀）
 
 4. 仅 push_id=evening（JSON needs_deep_analysis=true）:
-   并行启动 3 个 Pro delegate_task 子 agent（趋势/跨域/风险）。
+   并行启动 3 个 flash delegate_task 子 agent（趋势/跨域/风险）。
    每个分析结果通过 render_deep_analysis.py 管道处理:
      echo "$ANALYSIS_TEXT" | $PYTHON scripts/render_deep_analysis.py --topic "主题" --push-id evening --context
    然后作为独立的最终回复输出 — 每份分析作为单独消息。

@@ -61,7 +61,7 @@
 
 - 趋势和跨域的数据卡来源于 `curated_{push_id}_{date}.json` 各 domain 筛选
 - 风险分析基于当日精选文章蕴含的风险信号
-- 三篇由 Pro 模型 delegate_task 并行生成
+- 三篇由 flash 模型 delegate_task 并行生成
 
 ## 投递方式
 

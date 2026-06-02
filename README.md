@@ -1,6 +1,6 @@
 # TrendRadar 📡
 
-> **v5.7.0** — 多源 RSS 聚合 + AI 策展 + Pro 深度分析 → 企业微信日/周/月报。含自动体检、偏好收敛、编排器一键管线、全链路安全加固、CI 持续集成。
+> **v5.7.0** — 多源 RSS 聚合 + AI 策展 + flash/Pro 深度分析 → 企业微信日/周/月报。含自动体检、偏好收敛、编排器一键管线、全链路安全加固、CI 持续集成。
 
 > 📖 **[从零搭建指南 → SETUP.md](SETUP.md)** — 从 Hermes Agent 全新安装到测试部署一站完成。
 
@@ -16,14 +16,14 @@ TrendRadar 是一个三层结构的新闻聚合与智能推送系统：**日报*
 pipeline_orchestrator.py（一键6阶段）
   ① slot检测 → ② fetch+curate → ③ 并行(翻译+全文抓取) → ④ 脚本渲染 → ⑤ 分片 → ⑥ 指纹记录
   → 输出 JSON → auto-delivery → WeCom
-  [晚间] 追加 3×Pro delegate_task 深度分析
+  [晚间] 追加 3×flash delegate_task 深度分析（2026-06-02 从 Pro 改 flash）
 ```
 
 | 时段 | 时间 | 条数 | 特点 |
 |------|------|------|------|
 | 🌅 早报 | 09:00 | 30 | 全天精选 |
 | 🌤️ 午间速递 | 12:00 | 30 | 增量去重 |
-| 🌙 今日回顾 | 21:00 | 20 | 总结 + 3×Pro 深度分析 |
+| 🌙 今日回顾 | 21:00 | 20 | 总结 + 3×flash 深度分析 |
 
 ### 📆 周报 — Pro 深度研判，每周一推送
 
@@ -51,7 +51,7 @@ pipeline_orchestrator.py（一键6阶段）
 - **多源异步抓取** — aiohttp 并发 + AC 自动机分类（6 域），比线性匹配快 4×
 - **纯脚本渲染** — render_markdown 从 curated JSON 直接拼接，零 token 成本，格式硬编码一致
 - **UTF-8 字节分片** — 三级递降拆分（段落→句子→硬切），防 WeCom 静默截断
-- **日报/周报/月报** — 日报早/午/晚三段 + 晚间 3×Pro 深度分析；每周一 Pro 趋势研判；每月初全景复盘
+- **日报/周报/月报** — 日报早/午/晚三段 + 晚间 3×flash 深度分析；每周一 Pro 趋势研判；每月初全景复盘
 - **AI 翻译 + 中文扩写** — 外文摘要自动翻译 + 中文短摘要（<90字）AI 扩写为完整信息句
 - **兴趣偏好评分** — YAML 配置正面加分/排除过滤，CLI 管理
 - **来源多样性保护** — 同源 >3 条权重减半，source_health 负反馈学习环自动淘汰低质源
@@ -69,7 +69,7 @@ pipeline_orchestrator.py（一键6阶段）
 
 | Skill | 版本 | 职责 |
 |-------|------|------|
-| `news-secretary` | v6.21.0 | 日报推送（核心），早/午/晚三段管线 + 晚间 Pro 深度分析 |
+| `news-secretary` | v6.22.0 | 日报推送（核心），早/午/晚三段管线 + 晚间 flash 深度分析 |
 | `self-healing` | v3.6.0 | 每日 15:00 自动体检 DB/配置/API/Gateway，修复常见故障 |
 | `report-generator` | v1.1.0 | 周报/月报生成，Pro 深度研判 + 全景复盘 |
 | `system-config` | v2.19.0 | 项目路径/Python 环境/Cron 任务/代理配置速查 |
@@ -79,7 +79,7 @@ pipeline_orchestrator.py（一键6阶段）
 | **推送调度** | 日报 cron（`0 9,12,21 * * *`）+ 周报 cron（`30 9 * * 1`）+ 月报 cron（`0 9 1 * *`） |
 | **6 个 skill** | 上述定义，脱离 Hermes 无意义 |
 | **WeCom 投递** | cron final response → Gateway auto-delivery |
-| **晚间深度分析** | `delegate_task` 3×Pro 子 Agent 并行 |
+| **晚间深度分析** | `delegate_task` 3×flash 子 Agent 并行（2026-06-02 从 Pro 改 flash） |
 | **周报/月报 Pro 分析** | `delegate_task` + `deep-research-cli` 六步协议 |
 | **KV 缓存共享** | Hermes KV cache（3 日报共池） |
 | **自动体检** | cron no_agent 模式 + health_check 脚本 |
@@ -101,7 +101,7 @@ TrendRadar/
 │   │   ├── curate_and_push.py           # 5 域并行精选 + 多样性惩罚
 │   │   ├── ai_translate.py              # AI 批量翻译 + 熔断退避
 │   │   ├── render_markdown.py           # 纯脚本渲染（摘要120字上限+句号边界截断）
-│   │   ├── render_deep_analysis.py      # Pro 深度分析 + 知识图谱
+│   │   ├── render_deep_analysis.py      # flash 深度分析 + 知识图谱
 │   │   ├── fragment_push.py             # UTF-8 字节计数分片
 │   │   ├── sanity_check.py              # 发布前拦截器(前言剥离/禁语/HTML/死链/脱敏)
 │   │   ├── blind_spot_audit.py          # 信息茧房盲点检测

@@ -1,7 +1,7 @@
 from trendradar.scripts.common import CST
 #!/usr/bin/env python3
 """
-render_deep_analysis.py — 格式化 Pro 深度分析用于 WeCom 推送。
+render_deep_analysis.py — 格式化 flash 深度分析用于 WeCom 推送。
 
 v2.0: 新增实体提取 + 历史关联（知识图谱化）
 - 提取公司名、技术词、人物
@@ -209,7 +209,7 @@ def format_analysis(text: str, topic: str = "深度分析",
 
 
 def main():
-    parser = argparse.ArgumentParser(description='格式化 Pro 深度分析 + 知识图谱')
+    parser = argparse.ArgumentParser(description='格式化 flash 深度分析 + 知识图谱')
     parser.add_argument('--topic', default='深度分析')
     parser.add_argument('--push-id', help='推送时段 (用于历史关联查询)')
     parser.add_argument('--context', action='store_true',
