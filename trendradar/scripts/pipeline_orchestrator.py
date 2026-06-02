@@ -132,9 +132,8 @@ def list_pipeline_steps() -> dict:
              "description": "Fetch RSS feeds + curate top items (fetch + curate)"},
             {"number": 2, "name": "track_events", "script": "track_events.py",
              "description": "Track event continuity (morning only)"},
-            {"number": 3, "name": "parallel", "scripts": ["ai_translate.py", "batch_fetch.py"],
-             "description": "Parallel: translate foreign articles + fetch full text",
-             "parallel": True},
+            {"number": 3, "name": "ai_translate", "script": "ai_translate.py",
+             "description": "Translate foreign articles to Chinese"},
             {"number": 4, "name": "render_markdown", "script": "render_markdown.py",
              "description": "Render curated items to WeCom markdown"},
             {"number": 5, "name": "fragment_push", "script": "fragment_push.py",
@@ -153,7 +152,7 @@ def verify_version() -> dict:
     errors = []
     scripts = [
         "push_slot_detect.py", "push_prepare.py", "ai_translate.py",
-        "batch_fetch.py", "render_markdown.py", "fragment_push.py",
+        "render_markdown.py", "fragment_push.py",
         "record_fingerprints.py",
     ]
     for script in scripts:
@@ -306,30 +305,15 @@ def main():
             if not te["ok"]:
                 errors.append(f"track_events: {te['error']}")
 
-    # ── Stage 3: Parallel (ai_translate + batch_fetch) ─────────
-    import concurrent.futures as _cf
+    # ── Stage 3: ai_translate ──────────────────────────────────
     import asyncio as _asyncio
 
     def _run_translate():
         from trendradar.scripts.ai_translate import process_curated
         return _asyncio.run(process_curated(push_id))
 
-    def _run_fetch():
-        from trendradar.scripts.batch_fetch import batch_fetch as bf
-        return _asyncio.run(bf(push_id))
-
-    with _cf.ThreadPoolExecutor(max_workers=2) as executor:
-        fut_translate = executor.submit(
-            lambda: run_stage(f"ai_translate ({push_id})", _run_translate)
-        )
-        fut_fetch = executor.submit(
-            lambda: run_stage(f"batch_fetch ({push_id})", _run_fetch, timeout=180)
-        )
-        translate_result = fut_translate.result()
-        fetch_result = fut_fetch.result()
-
+    translate_result = run_stage(f"ai_translate ({push_id})", _run_translate)
     stats["stages"]["ai_translate"] = translate_result["elapsed"]
-    stats["stages"]["batch_fetch"] = fetch_result["elapsed"]
 
     if not translate_result["ok"]:
         err = translate_result.get("error", "")
@@ -337,8 +321,6 @@ def main():
             log.info(f"ai_translate skipped (no content / no API key) — continuing")
         else:
             errors.append(f"ai_translate: {str(err)[:200]}")
-    if not fetch_result["ok"]:
-        errors.append(f"batch_fetch: {str(fetch_result.get('error', ''))[:200]}")
 
     # ── Stage 4: Render ────────────────────────────────────────
     from trendradar.scripts.render_markdown import render_briefing

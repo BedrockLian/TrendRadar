@@ -63,7 +63,6 @@ cd ~/.hermes/trendradar
 `fetch_feeds.py` | 38 RSS 异步抓取
 `curate_and_push.py` | 5 domain 并行精选 + 来源多样性惩罚
 `ai_translate.py` | AI 批量翻译 + 指数退避重试 + 熔断器
-`batch_fetch.py` | 10 并发全文抓取
 `render_markdown.py` | 纯脚本渲染（替代 Agent 手动渲染）
 `render_deep_analysis.py` | Pro 深度分析格式化排版
 `fragment_push.py` | UTF-8 字节计数分片（3800B/片），三级递降拆分
@@ -87,7 +86,6 @@ cd ~/.hermes/trendradar
 互不依赖脚本用 `& wait`:
 ```bash
 python3 scripts/ai_translate.py & T1=$!
-python3 scripts/batch_fetch.py & T2=$!
 wait $T1 $T2
 ```
 收益 = max(T1,T2) 替代 T1+T2。

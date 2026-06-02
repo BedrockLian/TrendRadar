@@ -241,6 +241,10 @@ def _parse_line_pairs(
                 l = l[6:].strip()
             elif l.upper().startswith('SUMMARY:'):
                 l = l[8:].strip()
+            elif l.upper().startswith('REWRITTEN TITLE:'):
+                l = l[16:].strip()
+            elif l.upper().startswith('REWRITTEN SUMMARY:'):
+                l = l[18:].strip()
             if not l:
                 continue
             collected.append(l)
@@ -271,6 +275,13 @@ def _parse_line_pairs(
         summary_cn = lines[i + 1] if i + 1 < len(lines) else fallback_label
         title_cn = re.sub(r'^[\［\（\(]?\d+[\］\）\)]?[.、．\s]*', '', title_cn).strip()
         summary_cn = re.sub(r'^[\［\（\(]?\d+[\］\）\)]?[.、．\s]*', '', summary_cn).strip()
+        # Strip REWRITTEN TITLE/SUMMARY prefixes
+        for prefix in ('REWRITTEN TITLE:', 'TITLE:'):
+            if title_cn.upper().startswith(prefix):
+                title_cn = title_cn[len(prefix):].strip()
+        for prefix in ('REWRITTEN SUMMARY:', 'SUMMARY:'):
+            if summary_cn.upper().startswith(prefix):
+                summary_cn = summary_cn[len(prefix):].strip()
         if title_cn.startswith(('---', '===')):
             continue
         results.append((title_cn, summary_cn))
