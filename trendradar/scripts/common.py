@@ -6,7 +6,7 @@ import contextvars
 import threading
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from typing import Optional, TypedDict
+from typing import Optional
 
 CST = timezone(timedelta(hours=8))
 
@@ -20,11 +20,17 @@ def gen_run_id(slot: str = "") -> str:
 
 
 def parse_run_id(run_id: str) -> dict:
-    """解析追溯号"""
+    """解析追溯号 — 反向工程 gen_run_id() 输出。
+
+    Returns:
+        {date, slot, uid} dict; missing fields default to ''.
+    """
     parts = run_id.split("_")
-    if len(parts) < 2:
-        return {"date": parts[0], "slot": "", "uid": ""}
-    return {"date": parts[0], "slot": parts[1] if len(parts) > 2 else "", "uid": parts[-1]}
+    return {
+        "date": parts[0] if parts else "",
+        "slot": parts[1] if len(parts) > 2 else "",
+        "uid": parts[-1] if len(parts) > 1 else "",
+    }
 
 
 def run_id_marker(run_id: str) -> str:
@@ -56,33 +62,7 @@ __all__ = ['CST', 'current_run_id', 'gen_run_id', 'parse_run_id',
            'EXIT_SUCCESS', 'EXIT_NO_CONTENT', 'EXIT_PARTIAL',
            'EXIT_CONFIG_ERROR', 'EXIT_API_ERROR', 'EXIT_DB_ERROR', 'EXIT_FATAL',
            'STOP_WORDS', 'list_curated_files', 'find_curated_file',
-           'get_data_dir_for_common', 'PipelineItem']
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# PipelineItem TypedDict — data contract for items flowing through the pipeline
-# ═══════════════════════════════════════════════════════════════════════════════
-
-class PipelineItem(TypedDict, total=False):
-    """Data contract documenting internal underscore-prefixed fields.
-
-    All fields are optional (total=False) since different pipeline stages
-    populate different subsets.
-    """
-    title: str
-    summary: str
-    source_platform: str
-    source_url: str
-    _likely_domain: Optional[str]
-    _drop: bool
-    _coverage_count: int
-    _coverage_platforms: list[str]
-    _heat: Optional[dict]
-    _needs_search: bool
-    _curator_scores: Optional[dict]
-    _diversity_penalized: bool
-    _is_blog: bool
-    _track: Optional[str]
+           'get_data_dir_for_common']
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

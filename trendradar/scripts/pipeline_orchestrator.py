@@ -1,4 +1,3 @@
-from trendradar.scripts.common import CST
 #!/usr/bin/env python3
 """
 pipeline_orchestrator.py — 一键运行 TrendRadar 推送全流程。
@@ -30,13 +29,12 @@ import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-from trendradar.scripts.common import EXIT_CONFIG_ERROR
+from trendradar.scripts.common import CST, EXIT_CONFIG_ERROR
 from trendradar.scripts.settings import get_logger, get_storage
 
 log = get_logger('orchestrator')
 
 PYTHON = os.environ.get("PYTHON", sys.executable)
-PYTHON_GIL = os.environ.get("PYTHON_GIL", "0")
 SCRIPTS_DIR = Path(__file__).resolve().parent
 TREND_DIR = SCRIPTS_DIR.parent
 DATA_DIR = TREND_DIR / "data"
@@ -412,11 +410,9 @@ def main():
     from trendradar.scripts.fragment_push import split_fragments
     try:
         fragments = split_fragments(briefing)
-        frag_ok = True
     except Exception as e:
         errors.append(f"fragment_push: {e}")
         log.exception(f"fragment_push failed: {e}")
-        frag_ok = False
         fragments = [briefing]
 
     stats["stages"]["fragment_push"] = 0
