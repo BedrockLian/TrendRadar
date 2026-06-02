@@ -206,7 +206,7 @@ class TestPipelineE2EReal:
         step_names = [s['name'] for s in steps]
         assert 'slot_detect' in step_names
         assert 'push_prepare' in step_names
-        assert 'parallel' in step_names
+        assert 'ai_translate' in step_names
         assert 'render_markdown' in step_names
         assert 'fragment_push' in step_names
         assert 'record_fingerprints' in step_names

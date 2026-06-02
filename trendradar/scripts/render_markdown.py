@@ -89,7 +89,7 @@ def _get_item_priority(source_platform: str) -> int:
                 return s.get('priority', 1)
     except Exception as e:
         log.warning(f"render_markdown load sources failed: {e}")
-        return {}  # 降级：无来源信息
+        return 1  # 降级：默认 P1（次位/精简摘要）
     return 1
 
 

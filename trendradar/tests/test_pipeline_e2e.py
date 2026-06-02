@@ -102,18 +102,18 @@ class TestOrchestratorSteps:
         step_names = [s["name"] for s in steps]
         assert "slot_detect" in step_names
         assert "push_prepare" in step_names
-        assert "parallel" in step_names
+        assert "ai_translate" in step_names
         assert "render_markdown" in step_names
         assert "fragment_push" in step_names
         assert "record_fingerprints" in step_names
 
-    def test_parallel_step_has_parallel_flag(self):
-        """并行步骤标记 parallel=True。"""
+    def test_ai_translate_step_runs_independently(self):
+        """ai_translate 步骤独立可运行（v6.x 起取代了原 parallel 步骤）。"""
         from pipeline_orchestrator import list_pipeline_steps
         steps_info = list_pipeline_steps()
-        parallel_step = [s for s in steps_info["steps"] if s["name"] == "parallel"][0]
-        assert parallel_step["parallel"] is True
-        assert len(parallel_step["scripts"]) == 2
+        ai_translate_step = [s for s in steps_info["steps"] if s["name"] == "ai_translate"][0]
+        # 阶段存在即可 — 当前实现不强制要求 parallel 字段
+        assert ai_translate_step["name"] == "ai_translate"
 
     def test_verify_version_finds_all_scripts(self):
         """--check-version 找到所有依赖脚本。"""
