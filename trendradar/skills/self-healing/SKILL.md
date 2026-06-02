@@ -2,6 +2,7 @@
 name: self-healing
 slug: self-healing
 version: 3.6.0
+pipeline_compat: ">=2.9.0"
 description: 自动体检 TrendRadar 各组件：DB/配置/API/Gateway/记忆。修复常见故障。
 author: Hermes Agent
 metadata:

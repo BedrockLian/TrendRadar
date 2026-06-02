@@ -143,8 +143,9 @@ def check_dead_links(text: str, timeout: int = 5) -> list[str]:
             if e.code == 404:
                 return f"{url} → 404"
             return None  # 403/500/etc — not our problem
-        except Exception:
-            return f"{url} → unreachable"
+        except Exception as e:
+            log.warning(f"sanity_check URL check failed: {e}")
+            return True, "检测超时"
 
     with ThreadPoolExecutor(max_workers=3) as ex:
         futures = {ex.submit(_check_one, url): url for url in urls}

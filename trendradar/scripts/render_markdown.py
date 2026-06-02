@@ -87,8 +87,9 @@ def _get_item_priority(source_platform: str) -> int:
         for s in cfg.get('data_sources', []):
             if s.get('name') == source_platform:
                 return s.get('priority', 1)
-    except Exception:
-        pass
+    except Exception as e:
+        log.warning(f"render_markdown load sources failed: {e}")
+        return {}  # 降级：无来源信息
     return 1
 
 

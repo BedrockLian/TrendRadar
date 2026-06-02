@@ -490,13 +490,18 @@ async def process_curated(push_id: str) -> dict:
     provider_name = os.environ.get('TRENDRADAR_LLM_PROVIDER', 'openai_chat').lower()
     if not api_key and provider_name != 'ollama':
         log.warning(
-            "No API key set for LLM provider — skipping translation "
-            "(graceful degradation). Set TRENDRADAR_LLM_API_KEY or "
-            "provider-specific env (DEEPSEEK_API_KEY, OPENAI_API_KEY, "
-            "ANTHROPIC_API_KEY, GOOGLE_API_KEY, etc.)"
+            "No API key set for LLM provider — translation degraded. "
+            "Set DEEPSEEK_API_KEY or other provider env to enable translation."
         )
-        from trendradar.scripts.common import EXIT_NO_CONTENT
-        sys.exit(EXIT_NO_CONTENT)
+        # 降级：为所有需翻译的外媒条目打上标记
+        for domain, idx, item, title, summary, needs_title, needs_summary, _lang in items_to_translate:
+            if needs_title:
+                item['title_cn'] = f"[未翻译] {title}"
+            if needs_summary:
+                item['summary_cn'] = f"[{item.get('source_platform', '外媒')}] {summary[:80]}"
+        _write_back(data, curated_path, push_id)
+        log.info(f"Translation degraded: {len(items_to_translate)} items marked as untranslated")
+        return data
 
     total_chars = 0
     translated_count = 0
@@ -513,6 +518,14 @@ async def process_curated(push_id: str) -> dict:
 
             for batch, translations, error in batch_results:
                 if error:
+                    # 降级：为失败批次的条目打上标记
+                    for entry in batch:
+                        domain, idx, item, title, summary, needs_title, needs_summary, _lang = entry
+                        if needs_title:
+                            item['title_cn'] = f"[翻译失败] {title}"
+                        if needs_summary:
+                            item['summary_cn'] = f"[{item.get('source_platform', '外媒')}] {summary[:80]}"
+                    log.warning(f"Translation batch failed: {error}, {len(batch)} items degraded")
                     continue
                 for entry, (title_cn, summary_cn) in zip(batch, translations, strict=True):
                     domain, idx, item, title, summary, needs_title, needs_summary, _source_lang = entry

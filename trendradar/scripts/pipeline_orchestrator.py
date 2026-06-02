@@ -110,7 +110,8 @@ def _write_push_log(push_id: str, result: dict, errors: list):
             with fu:
                 json.dump(entries, fu, ensure_ascii=False, indent=2)
             _os.replace(tmp, log_path)
-        except Exception:
+        except Exception as e:
+            log.warning(f"push_log write failed: {e}")
             _os.unlink(tmp)
             raise
     except Exception as e:

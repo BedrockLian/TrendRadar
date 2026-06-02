@@ -2,6 +2,7 @@
 name: system-config
 slug: system-config
 version: 2.19.0
+pipeline_compat: ">=2.9.0"
 description: TrendRadar 项目路径、Python 环境、Cron 任务、代理配置速查。
 author: Hermes Agent
 metadata:

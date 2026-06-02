@@ -113,8 +113,9 @@ def find_historical_context(entities: dict[str, list[str]], push_id: str, days: 
 
         conn.close()
         return results[:3]  # max 3 historical references
-    except Exception:
-        return []
+    except Exception as e:
+        log.warning(f"render_deep_analysis failed: {e}")
+        return ''  # 降级：返回空
 
 
 def format_historical_context(historical: list[dict]) -> str:

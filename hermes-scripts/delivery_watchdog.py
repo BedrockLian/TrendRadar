@@ -289,6 +289,11 @@ def auto_redeliver_slot(alerts: list[str], push_id: str, slot_name: str, max_age
         slot_name: 中文名称 for logging
         max_age_hours: 超过此时限的推送不补发
     """
+    VALID_PUSH_IDS = {'morning', 'noon', 'evening'}
+    if push_id not in VALID_PUSH_IDS:
+        alerts.append(f"⚠️ 无效 push_id: {push_id}，跳过补发")
+        return
+    
     latest = get_latest_push_for_slot(push_id)
     
     if not latest:

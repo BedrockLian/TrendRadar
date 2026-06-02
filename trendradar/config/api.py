@@ -11,25 +11,38 @@ DEFAULT_ENDPOINT = os.environ.get('TRENDRADAR_DEFAULT_ENDPOINT', 'https://api.de
 DEFAULT_MODEL = os.environ.get('TRENDRADAR_DEFAULT_MODEL', 'deepseek-chat')
 
 
+def _read_env_file(env_path: Path, key_name: str) -> str | None:
+    """Read a key from .env file. Returns value or None."""
+    if not env_path.exists():
+        return None
+    for line in env_path.read_text().splitlines():
+        line = line.strip()
+        if line.startswith('#') or '=' not in line:
+            continue
+        name, _, val = line.partition('=')
+        if name.strip() == key_name:
+            return val.strip().strip('"').strip("'")
+    return None
+
+
 def get_api_key(key_name: str | None = None) -> str | None:
-    """Get API key from env var first, fallback to .env file."""
+    """Get API key: env var → TRENDRADAR_HOME/.env → ~/.hermes/.env."""
     key = os.environ.get(key_name or API_KEY_ENV)
     if key:
         return key
+    lookup = key_name or API_KEY_ENV
+    # 1. TRENDRADAR_HOME/.env (默认 ~/.hermes/trendradar/.env)
     env_path = Path(os.environ.get('TRENDRADAR_ENV', TRENDRADAR_HOME / '.env'))
-    if (TRENDRADAR_HOME not in env_path.resolve().parents
-            and env_path.resolve() != TRENDRADAR_HOME.resolve()):
-        import warnings
-        warnings.warn(f"TRENDRADAR_ENV 路径 {env_path} 不在 TRENDRADAR_HOME 内，已忽略")
-        return None
     if env_path.exists():
-        for line in env_path.read_text().splitlines():
-            line = line.strip()
-            if line.startswith('#') or '=' not in line:
-                continue
-            name, _, val = line.partition('=')
-            if name.strip() == (key_name or API_KEY_ENV):
-                return val.strip().strip('"').strip("'")
+        val = _read_env_file(env_path, lookup)
+        if val:
+            return val
+    # 2. ~/.hermes/.env (Hermes Agent 共享 env)
+    hermes_env = Path.home() / '.hermes' / '.env'
+    if hermes_env.exists():
+        val = _read_env_file(hermes_env, lookup)
+        if val:
+            return val
     return None
 
 

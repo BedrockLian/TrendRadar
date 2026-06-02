@@ -53,7 +53,7 @@ from trendradar.config.fetching import (
 
 # ── 代理配置 ─────────────────────────────────────────────
 from trendradar.config.proxy import (
-    PROXY_URL, DOMESTIC_PROXY_PATTERNS, needs_proxy,
+    PROXY_URL, DOMESTIC_PROXY_PATTERNS, needs_proxy, check_proxy_alive,
 )
 
 # ── 热度追踪 ─────────────────────────────────────────────

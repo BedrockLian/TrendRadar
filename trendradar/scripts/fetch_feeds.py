@@ -11,30 +11,22 @@ from trendradar.config.keywords import has_keyword_match_ci
 import feedparser
 import aiohttp
 import concurrent.futures
-import threading
+from trendradar.scripts.common import Lazy
 
-_PARSE_POOL = None
-_PARSE_POOL_LOCK = threading.Lock()
+def _make_parse_pool():
+    try:
+        return concurrent.futures.InterpreterPoolExecutor(max_workers=24)
+    except (ImportError, AttributeError):
+        log.warning('InterpreterPoolExecutor 不可用，降级为 ThreadPoolExecutor')
+        return concurrent.futures.ThreadPoolExecutor(max_workers=24)
 
-def _get_parse_pool():
-    global _PARSE_POOL
-    if _PARSE_POOL is not None:
-        return _PARSE_POOL
-    with _PARSE_POOL_LOCK:
-        if _PARSE_POOL is not None:
-            return _PARSE_POOL
-        try:
-            _PARSE_POOL = concurrent.futures.InterpreterPoolExecutor(max_workers=24)
-        except (ImportError, AttributeError):
-            _PARSE_POOL = concurrent.futures.ThreadPoolExecutor(max_workers=24)
-            log.warning('InterpreterPoolExecutor 不可用，降级为 ThreadPoolExecutor')
-        return _PARSE_POOL
+_PARSE_POOL = Lazy(_make_parse_pool)
 
 from trendradar.scripts.common import CST
 
 from trendradar.scripts.settings import get_data_dir, get_cache_dir, get_config_dir, write_compressed
 from trendradar.scripts.settings import EXTERNAL_CONCURRENT, TIMEOUT_SEC
-from trendradar.scripts.settings import PROXY_URL, needs_proxy
+from trendradar.scripts.settings import PROXY_URL, needs_proxy, check_proxy_alive
 DATA_DIR = get_data_dir()
 CACHE_DIR = get_cache_dir()
 
@@ -42,20 +34,11 @@ USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
 RSS_FRESHNESS_MAX_AGE_DAYS = 1  # 全局默认，单源可在 sources.json 中覆盖 freshness_days
 
 
-_CONFIG_LOCK = threading.Lock()
-_CONFIG_VAL: dict = None
-_CONFIG_SENTINEL = object()
+_CONFIG = Lazy(lambda: json.loads((get_config_dir() / 'sources.json').read_text()))
 
 def _load_config() -> dict:
     """缓存 sources.json 读取（__main__ 多次调用时复用）"""
-    global _CONFIG_VAL
-    if _CONFIG_VAL is not None:
-        return _CONFIG_VAL
-    with _CONFIG_LOCK:
-        if _CONFIG_VAL is not None:
-            return _CONFIG_VAL
-        _CONFIG_VAL = json.loads((get_config_dir() / 'sources.json').read_text())
-        return _CONFIG_VAL
+    return _CONFIG.get()
 
 
 def _get_sources() -> list[tuple[str, str, int]]:
@@ -155,6 +138,15 @@ async def fetch_all(push_id: str = '') -> dict:
     # 分流：国内源直连，外媒源走米霍姆代理
     direct_sources = [(n, u, fd) for n, u, fd in sources if not needs_proxy(u)]
     proxy_sources = [(n, u, fd) for n, u, fd in sources if needs_proxy(u)]
+
+    # 代理健康检查
+    proxy_ok = check_proxy_alive()
+    if not proxy_ok and proxy_sources:
+        log.warning(f'代理 {PROXY_URL} 不可用！{len(proxy_sources)} 个外媒源将全部失败（WSL 直连互联网不可用）')
+        # 降级：把 proxy_sources 也走直连尝试（虽然会失败，但至少明确记录原因）
+        direct_sources.extend(proxy_sources)
+        proxy_sources = []
+
     print(f'[FETCH] {len(sources)}源（直连 {len(direct_sources)} + 代理 {len(proxy_sources)}）')
 
     sem = asyncio.Semaphore(EXTERNAL_CONCURRENT)

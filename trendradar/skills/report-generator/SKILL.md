@@ -2,6 +2,7 @@
 name: report-generator
 slug: report-generator
 version: 1.1.0
+pipeline_compat: ">=2.9.0"
 description: 周/月度趋势深度报告。五大板块+信息茧房突围，逐主题搜索验证。
 author: Hermes Agent
 metadata:

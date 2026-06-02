@@ -112,8 +112,9 @@ def _get_source_priority(platform: str, domain: str = '') -> int:
                     if domain_map.get(domain, '') != s.get('category', ''):
                         return 2
                 return pri
-    except Exception:
-        pass
+    except Exception as e:
+        log.warning(f"scorer load sources failed: {e}")
+        return {}  # 降级：无惩罚
     return 1
 
 
