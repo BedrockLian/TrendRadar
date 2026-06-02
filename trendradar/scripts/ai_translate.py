@@ -134,7 +134,7 @@ _translate_failures = 0        # 模块级熔断计数器
 
 _EXPAND_TEMPLATE = Template("""You are a professional news editor. The following Chinese news items have very short summaries (often just a tagline or metaphor).
 
-Rewrite each item's TITLE into a complete, informative Chinese sentence of 50-80 characters. Separately, rewrite the SUMMARY into another complete, informative Chinese sentence of 50-80 characters. Do NOT combine them into one sentence.
+Rewrite each item's TITLE into a complete, informative Chinese sentence of 90-110 characters. Separately, rewrite the SUMMARY into another complete, informative Chinese sentence of 90-110 characters. Do NOT combine them into one sentence.
 
 Rules:
 1. Preserve all factual details (company names, numbers, dates, percentages).
@@ -158,9 +158,10 @@ Rules:
    you MUST translate it into Chinese. Do NOT output the original Japanese. Every title must be in Chinese.
 5. Start each item with "Item N:" on its own line, then the translated title on the next line,
    then the translated summary on the line after that.
-6. Each line must be a single line (no line breaks inside).
-7. Do NOT add any extra commentary outside the numbered items.
-8. Output exactly 4N lines for N input items (N × "Item N:" + title + summary lines).""")
+6. The translated title should be ~80-100 Chinese characters. The translated summary should be ~90-110 Chinese characters — a complete, informative sentence, not a fragment.
+7. Each line must be a single line (no line breaks inside).
+8. Do NOT add any extra commentary outside the numbered items.
+9. Output exactly 4N lines for N input items (N × "Item N:" + title + summary lines).""")
 
 def get_system_prompt(source_lang: str = 'English') -> str:
     """Render translation prompt template."""
@@ -451,8 +452,8 @@ def _load_and_scan(push_id: str) -> tuple[dict, list, list, Path]:
                         (domain, idx, item, title, summary, needs_title, needs_summary, source_lang)
                     )
             else:
-                # Chinese source: check if summary is too short (< 50 chars) and needs expansion
-                if not has_summary_cn and len(summary) > 0 and len(summary) < 50:
+                # Chinese source: check if summary is too short (< 90 chars) and needs expansion
+                if not has_summary_cn and len(summary) > 0 and len(summary) < 90:
                     items_to_expand.append(
                         (domain, idx, item, title, summary, True, True, 'Chinese')
                     )

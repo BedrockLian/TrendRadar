@@ -101,10 +101,10 @@ SOURCE_DOMAIN_OVERRIDE = {
 6. **假翻译自动拦截** — `process_curated()` 写入 title_cn/summary_cn 前检测 `title_cn.strip() == title.strip()`，若相等则丢弃不保存。防止模型返回原文被当成&#8203;`已翻译`&#8203;，导致后续运行时 `_load_and_scan` 跳过该条目。拦截后条目保持在待翻译队列，下次运行自动重试。
 
     **⚠️ 日文短标题误拦截陷阱**（2026-05-31）：`deepseek-v4-flash` 对短日文标题经常直接返回原文（认为标题`自解释`），虽然摘要成功翻译。拦截器会丢弃 `title_cn`，导致日文标题在简报中保留原文。修复：`_TRANSLATE_TEMPLATE` 中增加规则 #4 强制要求翻译所有日文标题。排查：检查 `curated_{slot}.json` 中该条目 `title_cn` 为空而 `summary_cn` 非空。 — `process_curated()` 写入 title_cn/summary_cn 前检测 `title_cn.strip() == title.strip()`，若相等则丢弃不保存。防止模型返回原文被当成"已翻译"，导致后续运行时 `_load_and_scan` 跳过该条目。拦截后条目保持在待翻译队列，下次运行自动重试。
-6. **中文短摘要 AI 扩写**（v6.10.0） — `ai_translate.py` 新增中文条目短摘要扩写通道。对中文源（source_lang 为 None）中原始摘要 `<50 字` 的条目，自动用 AI 扩写成 50-80 字的完整信息句。扩写 prompt 在 `_EXPAND_TEMPLATE` 中，约束：不虚构事实、基于标题上下文展开、保持新闻风格。2026-05-27 用户反馈摘要过短后添加，虎嗅/钛媒体短条目从 23/26 字扩至 37/51 字。
+6. **中文短摘要 AI 扩写**（v6.10.0） — `ai_translate.py` 新增中文条目短摘要扩写通道。对中文源（source_lang 为 None）中原始摘要 `<90 字` 的条目，自动用 AI 扩写成 90-110 字的完整信息句。扩写 prompt 在 `_EXPAND_TEMPLATE` 中，约束：不虚构事实、基于标题上下文展开、保持新闻风格。2026-05-27 用户反馈摘要过短后添加，虎嗅/钛媒体短条目从 23/26 字扩至 37/51 字。
 
     **⚠️ Expand prompt 歧义陷阱**（2026-06-01）：`_EXPAND_TEMPLATE` 原措辞 "Rewrite each item's TITLE and SUMMARY into a complete sentence"（单数）会导致 AI 将 title+summary 合并为一行输出。`_write_anchored` 期望每条目 2 行但只收到 1 行 → summary = `[扩写失败]`。修复：改为 "into TWO separate sentences, Do NOT merge them"。排查：发现 `summary_cn = "[扩写失败]"` 但 `title_cn` 正确时（而非两者都错），即为此问题。
-7. **摘要长度与 render 联动** — `render_markdown.py` 的 `_shorten(max_len=80)` 控制最终展示长度（参见输出规范第5条）。英文/日文翻译产出通常 40-70 字，render 基本保留；中文条目从 `summary` 字段取前 80 字（旧 50 字截断的改进，但 300 字长摘要仍会被截）。扩写通道只覆盖 `<50 字` 的极短条目。用户反馈摘要过短时，需同步检查两个配置点：`ai_translate.py` 的扩写逻辑和 `render_markdown.py` 的 `max_len`。
+7. **摘要长度与 render 联动** — `render_markdown.py` 的 `_shorten(max_len=120)` 控制最终展示长度（参见输出规范第5条）。英文/日文翻译产出通常 90-110 字，render 基本保留；中文条目从 `summary` 字段取前 120 字。扩写通道覆盖 `<90 字` 的短条目。用户反馈摘要过短时，需同步检查两个配置点：`ai_translate.py` 的扩写逻辑和 `render_markdown.py` 的 `max_len`。
 
     **⚠️ 扩写/翻译批处理响应乱序陷阱**（2026-05-31，已修复）：`batch_expand()` / `batch_translate()` 将一组条目发送给 AI。旧版 `_parse_line_pairs()` 按返回顺序配对，AI 乱序时条目串位。
     - 条目 A 收到了条目 B 的扩写/翻译内容（标题谈铜价、摘要讲 DeepSeek）
@@ -213,7 +213,7 @@ SOURCE_DOMAIN_OVERRIDE = {
     **2026-05-31 升级**：部分 RSS 源（如 Sixth Tone）的 URL 路径本身含未编码空格（`/He Quit Baidu. But First...`），渲染层清理不够，Markdown 链接仍然断裂。已在 `fetch_feeds.py` `_parse_rss()` 的 RSS 解析层和 `render_markdown.py` `_format_item()` 的渲染层双层添加 `urllib.parse.quote` 路径编码。排查方法：渲染后的 `[【源名】](url)` 中 url 被空格截断 → 查 raw JSON 中该条目的 url 字段是否含空格。
 3. **深度分析独立投递** — 晚间 3 条深度分析各自作为单独 final response 输出。
 4. **空行铁律** — 板块标题后 `\\n\\n\\n`，条目间 `\\n\\n\\n`，全文无 `---`/`***` 横线。
-5. **摘要约束** — 每条摘要 80 字内且为逻辑自洽的完整句子，不允许断句（不能被 `…` 截断成半截话）。由 `render_markdown.py` 的 `_shorten(max_len=80)` 保证，无句号时优先找逗号边界，最后兜底干净截断不加 `…`。
+5. **摘要约束** — 每条摘要 120 字内且为逻辑自洽的完整句子，不允许断句（不能被 `…` 截断成半截话）。由 `render_markdown.py` 的 `_shorten(max_len=120)` 保证，无句号时优先找逗号边界，最后兜底干净截断不加 `…`。
 6. **格式契约** — 完整规则在 `render_markdown.py` 模块 docstring 中，修改格式必须先更新契约。
 
 ## 质量自愈（吸收自 performance-optimizer）
@@ -273,7 +273,7 @@ if domain_map.get(domain, '') != s.get('category', ''):
 
 `scorer.py` + `render_markdown.py` 联合实现三级优先级排版，源级配置（`sources.json` `priority` 字段）：
 
-- **P0（priority=0）**：首位/全文摘要（80字）。定调源：AP News, Reuters, Bloomberg, FT, MIT Tech Review, Nikkei Asia 等。
+- **P0（priority=0）**：首位/全文摘要（120字）。定调源：AP News, Reuters, Bloomberg, FT, MIT Tech Review, Nikkei Asia 等。
 - **P1（priority=1）**：次位/精简摘要（40字）。立场补充：NYT·世界, Al Jazeera, Science News, Ars Technica 等。
 - **P2（priority=2）**：末尾/仅标题+链接。查漏补缺：联合早报, 界面, PC Gamer, TechCrunch 等。
 
@@ -293,7 +293,7 @@ P0 源文章优先填充配额，P1 补充，P2 仅当仍有空位时入选。
 总量 30 条不变。
 
 **渲染差异**（`render_markdown.py` `_format_item()`）：
-- P0: 标题 + 摘要(80字) + 链接
+- P0: 标题 + 摘要(120字) + 链接
 - P1: 标题 + 摘要(40字) + 链接
 - P2: 标题 + 链接（无摘要）
 

@@ -52,7 +52,7 @@ pipeline_orchestrator.py（一键6阶段）
 - **纯脚本渲染** — render_markdown 从 curated JSON 直接拼接，零 token 成本，格式硬编码一致
 - **UTF-8 字节分片** — 三级递降拆分（段落→句子→硬切），防 WeCom 静默截断
 - **日报/周报/月报** — 日报早/午/晚三段 + 晚间 3×Pro 深度分析；每周一 Pro 趋势研判；每月初全景复盘
-- **AI 翻译 + 中文扩写** — 外文摘要自动翻译 + 中文短摘要（<50字）AI 扩写为完整信息句
+- **AI 翻译 + 中文扩写** — 外文摘要自动翻译 + 中文短摘要（<90字）AI 扩写为完整信息句
 - **兴趣偏好评分** — YAML 配置正面加分/排除过滤，CLI 管理
 - **来源多样性保护** — 同源 >3 条权重减半，source_health 负反馈学习环自动淘汰低质源
 - **指纹去重 + 热度追踪** — MD5 指纹（48h 窗口）+ SQLite 热度持久化
@@ -101,7 +101,7 @@ TrendRadar/
 │   │   ├── curate_and_push.py           # 5 域并行精选 + 多样性惩罚
 │   │   ├── ai_translate.py              # AI 批量翻译 + 熔断退避
 │   │   ├── batch_fetch.py               # 10 并发全文抓取
-│   │   ├── render_markdown.py           # 纯脚本渲染（摘要80字上限+句号边界截断）
+│   │   ├── render_markdown.py           # 纯脚本渲染（摘要120字上限+句号边界截断）
 │   │   ├── render_deep_analysis.py      # Pro 深度分析 + 知识图谱
 │   │   ├── fragment_push.py             # UTF-8 字节计数分片
 │   │   ├── sanity_check.py              # 发布前拦截器(前言剥离/禁语/HTML/死链/脱敏)

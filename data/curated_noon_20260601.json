@@ -1,0 +1,624 @@
+{
+  "top_headlines": [
+    {
+      "title": "Blue Origin investigates rocket explosion as public is warned about possible wreckage washing ashore - AP News",
+      "summary": "Blue Origin investigates rocket explosion as public is warned about possible wreckage washing ashore&nbsp;&nbsp;AP News",
+      "source_platform": "AP News",
+      "hot_rank": 4,
+      "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxPNVRIdTJfMUJtam8xcGM0RE5sRDdBTUQxYXBtZmpOSDkwb1cxZy0wejExeDJscXg1WjE2Z0s2NHRYREZ6RlhoQ3BMNGVBWldqcHRXZzdCNmFzdUhCVm1XaUpNS3hpYVNuaFNGMy0temY4clptRG9KODg2TUtNSmJFN2VYM1MtMGlCOEtlMF9pMnpkYTRXYjBTNTYzRkR6Z0k?oc=5",
+      "timestamp": "2026-05-30T00:15:00+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "AP News"
+      ],
+      "_likely_domain": "headline",
+      "_curator_scores": {
+        "total": 8,
+        "pass": true
+      },
+      "_needs_search": true,
+      "title_cn": "蓝色起源调查火箭爆炸，公众被警告可能有残骸冲上岸",
+      "summary_cn": "蓝色起源调查火箭爆炸，公众被警告可能有残骸冲上岸"
+    },
+    {
+      "title": "Joby Demonstrated its Air Taxi in Manhattan, but You Can’t Fly in It Yet",
+      "summary": "[纽约时报·世界+纽约时报·科技] [纽约时报·世界] Aviation start-ups and the Trump administration want to replace helicopters with electric aircraft, but the new vehicles still have to pass arduous tests before the public can use them. // [纽约时报·科技] Aviation start-ups and the Trump administration want to replace helicopters with electric aircraft, but the new vehicles still have to pass arduous tests before the public can use them. // [纽约时报·商务] Aviation start-ups and the Trump administration want to replace helicopters with electric aircraft, but the new vehicles still have to pass arduous tests before the public can use them.",
+      "source_platform": "纽约时报·世界+纽约时报·科技+纽约时报·商务",
+      "hot_rank": 13,
+      "url": "https://www.nytimes.com/2026/05/31/business/air-taxis-joby-helicopters.html",
+      "timestamp": "2026-05-31T09:00:06+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 3,
+      "_coverage_platforms": [
+        "纽约时报·科技",
+        "纽约时报·商务",
+        "纽约时报·世界"
+      ],
+      "_likely_domain": "headline",
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true,
+      "title_cn": "Joby在曼哈顿展示其空中出租车，但公众尚无法乘坐",
+      "summary_cn": "航空初创公司与特朗普政府希望用电动飞机取代直升机，但这些新飞行器仍需通过严苛测试才能投入公众使用"
+    },
+    {
+      "title": "2025 Wildfires Were the Costliest Ever, Researchers Say",
+      "summary": "[纽约时报·世界] Severe, hard-to-control blazes in densely populated areas like Los Angeles drove the year’s record losses. // [纽约时报·科学] Severe, hard-to-control blazes in densely populated areas like Los Angeles drove the year’s record losses.",
+      "source_platform": "纽约时报·世界+纽约时报·科学",
+      "hot_rank": 9,
+      "url": "https://www.nytimes.com/2026/05/31/climate/2025-wildfire-damage.html",
+      "timestamp": "2026-05-31T23:01:04+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 2,
+      "_coverage_platforms": [
+        "纽约时报·科学",
+        "纽约时报·世界"
+      ],
+      "_likely_domain": "headline",
+      "_curator_scores": {
+        "total": 10,
+        "pass": true
+      },
+      "_needs_search": true,
+      "title_cn": "2025年野火成为史上损失最惨重，研究人员称",
+      "summary_cn": "洛杉矶等人口密集地区的严重且难以控制的大火导致了今年的创纪录损失"
+    },
+    {
+      "title": "Iran war live: Israel’s expanding invasion of Lebanon draws global alarm",
+      "summary": "France requests UN Security Council meeting over Israel&#039;s expanding invasion in Lebanon.",
+      "source_platform": "Al Jazeera",
+      "hot_rank": 2,
+      "url": "https://www.aljazeera.com/news/liveblog/2026/6/1/iran-war-live-israels-expanding-invasion-of-lebanon-draws-global-alarm?traffic_source=rss",
+      "timestamp": "2026-06-01T00:00:00+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "Al Jazeera"
+      ],
+      "_likely_domain": "headline",
+      "_curator_scores": {
+        "total": 9,
+        "pass": true
+      },
+      "_needs_search": true,
+      "title_cn": "伊朗战争直播：以色列扩大入侵黎巴嫩引发全球警觉",
+      "summary_cn": "法国因以色列扩大入侵黎巴嫩请求联合国安理会召开会议"
+    },
+    {
+      "title": "Cepeda, de la Espriella advance in Colombia’s presidential election",
+      "summary": "The left-wing senator and far-right newcomer will face each other in a run-off on June 21, with security a top issue.",
+      "source_platform": "Al Jazeera",
+      "hot_rank": 3,
+      "url": "https://www.aljazeera.com/news/2026/5/31/cepeda-de-la-espriella-advance-in-colombias-presidential-election?traffic_source=rss",
+      "timestamp": "2026-05-31T23:02:53+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "Al Jazeera"
+      ],
+      "_likely_domain": "headline",
+      "_curator_scores": {
+        "total": 9,
+        "pass": true
+      },
+      "_needs_search": true,
+      "title_cn": "塞佩达和德·拉·埃斯普列利亚在哥伦比亚总统选举中晋级",
+      "summary_cn": "这位左翼参议员与极右翼新秀将于6月21日进行决选，安全问题是首要议题"
+    },
+    {
+      "title": "人物｜被AI吞没的人：数据劳工的创伤与沉默",
+      "summary": "凌晨五点，内罗毕的天还没有亮，迈克尔·杰弗里·艾什亚（Michael Geoffrey Asia）仍然睡不着。失眠已经持续很多年了。自从他开始替人工智能系统“清理世界”，训练机器如何说话、如何安慰人、如何模仿爱，他的身体就再也难以回到正常的状态。他会在深夜想起自己曾写下的那些句子——扮演一个永远在线、永远体贴、永远知道该说什么的人。很多时候，那些“我理解你”“我想你”“我爱你”并不属于他，却要由他发出去，最终变成平台可以计量和售卖的服务。迈克尔常说：“人工智能其实并不‘智能’，每一个AI背后都有人的面孔。”在他看来，今天的生成式AI热潮不只是算法、芯片和数据中心的故事，也建立在一套很少被讨论的",
+      "source_platform": "澎湃新闻",
+      "hot_rank": 5,
+      "url": "https://m.thepaper.cn/detail/33263132",
+      "timestamp": "2026-05-31T23:12:10+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "澎湃新闻"
+      ],
+      "_likely_domain": "headline",
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": false
+    },
+    {
+      "title": "经济日报：华为韬定律为何出道即顶流",
+      "summary": "近日，华为芯片业务负责人何庭波在IEEE国际电路与系统研讨会上正式发布韬（τ）定律。这一以“时间缩微”替代“几何缩微”的全新芯片演进理论，迅速引发全网热议。作为中国首次在全球半导体领域提出的产业发展新原则，韬定律甫一问世便自带“顶流”光环，其背后既有产业变革的迫切需求，也有中国科技自主突围的深层叙事。要理解韬定律，先要了解摩尔定律。长期以来，全球芯片行业遵循“几何缩微”的摩尔定律，即芯片上可容纳的晶体管数量大约每两年翻番，性能同步提升、成本持续下降。几十年来，芯片晶体管越做越小，从微米级迭代至如今的纳米级，开始触及物理极限的高墙。当晶体管小到几个纳米级别，继续挤压芯片物理尺寸，就会遭遇量子隧穿",
+      "source_platform": "澎湃新闻",
+      "hot_rank": 7,
+      "url": "https://m.thepaper.cn/detail/33278739",
+      "timestamp": "2026-05-31T22:59:26+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "澎湃新闻"
+      ],
+      "_likely_domain": "headline",
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": false
+    },
+    {
+      "title": "中国驻美大使：和平共处理性认知是跨越修昔底德秘钥",
+      "summary": "中国驻美国大使谢锋在谈及中美关系时强调，竞争不可避免，但应该是你追我赶的积极竞争、遵守规则的公平竞争，并说这种相互尊重、和平共处、合作共赢的理性认知，既是读懂大国相处之道的逻辑，更是跨越修昔底德陷阱的秘钥。中国驻美大使馆官网公布，谢锋上星期六（5月30日）在使馆举办的“匹克球之夜”活动上说，半个月前中美两国元首在北京举行了历史性、标志性的会晤，中国国家主席习近平和美国总统特朗普同意将“中美建设性战略稳定关系”作为两国关系的新定位，为未来三年乃至更长时间的中美关系作出战略指引。谢锋强调，北京会晤不仅为中美关系指明了方向，也为两国青年交流注入了新动能。他也说：“我们要沿着两国元首明确的方向，朝着合",
+      "source_platform": "联合早报·中国",
+      "hot_rank": 1,
+      "url": "https://www.zaobao.com/news/china/story20260601-9135842",
+      "timestamp": "2026-05-31T23:47:51+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "联合早报·中国"
+      ],
+      "_likely_domain": "headline",
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": false
+    }
+  ],
+  "foreign_china": [
+    {
+      "title": "Hong Kong’s John Lee on Central Asia mission to explore new markets, expand ties",
+      "summary": "[南华早报] Hong Kong’s leader begins an official visit to Central Asia on Monday with his largest delegation to date, aiming to explore new markets amid geopolitical uncertainties and help mainland Chinese companies “go global”.\nSources said dozens of memorandums of understanding (MOUs) were expected to be sig // [SCMP 中国] Hong Kong’s leader begins an official visit to Central Asia on Monday with his largest delegation to date, aiming to explore new markets amid geopolitical uncertainties and help mainland Chinese companies “go global”.\nSources said dozens of memorandums of understanding (MOUs) were expected to be sig",
+      "source_platform": "南华早报+SCMP 中国",
+      "hot_rank": 1,
+      "url": "https://www.scmp.com/news/hong-kong/hong-kong-economy/article/3355485/hong-kongs-john-lee-central-asia-mission-explore-new-markets-expand-ties?utm_source=rss_feed",
+      "timestamp": "2026-06-01T01:00:13+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 2,
+      "_coverage_platforms": [
+        "SCMP 中国",
+        "南华早报"
+      ],
+      "_likely_domain": "foreign_china",
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true,
+      "title_cn": "香港特首李家超出访中亚开拓新市场、扩大联系",
+      "summary_cn": "香港特区行政长官携历来最大规模代表团于周一开启对中亚的正式访问，旨在在地缘政治不确定背景下开拓新市场并协助内地企业\"走出去\"。消息人士称预计将签署数十份谅解备忘录"
+    },
+    {
+      "title": "Confronting cancer in Hong Kong",
+      "summary": "[南华早报]  // [SCMP 中国] ",
+      "source_platform": "南华早报+SCMP 中国",
+      "hot_rank": 8,
+      "url": "https://www.scmp.com/news/hong-kong/health-environment/series/3355467/confronting-cancer-hong-kong?utm_source=rss_feed",
+      "timestamp": "2026-05-31T11:02:57+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 2,
+      "_coverage_platforms": [
+        "SCMP 中国",
+        "南华早报"
+      ],
+      "_likely_domain": "foreign_china",
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true,
+      "title_cn": "香港直面癌症",
+      "summary_cn": "南华早报关于香港癌症问题的报道"
+    },
+    {
+      "title": "He Quit Baidu. But First He Had to Build an AI Version of Himself.",
+      "summary": "As Chinese firms expand internal AI systems, some employees are being asked to build digital versions of themselves before leaving their jobs.",
+      "source_platform": "Sixth Tone",
+      "hot_rank": 4,
+      "url": "https://www.sixthtone.com/news/1018594/He%20Quit%20Baidu.%20But%20First%20He%20Had%20to%20Build%20an%20AI%20Version%20of%20Himself.",
+      "timestamp": "2026-06-01T09:03:32.268183+08:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "Sixth Tone"
+      ],
+      "_likely_domain": "foreign_china",
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": true,
+      "title_cn": "他离开了百度，但在此之前他必须构建一个AI版的自己",
+      "summary_cn": "随着中国企业扩大内部AI系统应用，一些员工在离职前被要求构建自己的数字版本"
+    },
+    {
+      "title": "China Tightens Online Pharmacy Rules on AI Use and Prescriptions",
+      "summary": "The country aims to curb abuses in obtaining prescription medication online — a practice that has become easier with the rise of pharmaceutical e-commerce platforms.",
+      "source_platform": "Sixth Tone",
+      "hot_rank": 8,
+      "url": "https://www.sixthtone.com/news/1018580/China%20Tightens%20Online%20Pharmacy%20Rules%20on%20AI%20Use%20and%20Prescriptions",
+      "timestamp": "2026-06-01T09:03:32.268225+08:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "Sixth Tone"
+      ],
+      "_likely_domain": "foreign_china",
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": false,
+      "title_cn": "中国收紧在线药房关于AI使用和处方的规定",
+      "summary_cn": "该国旨在遏制在线获取处方药的滥用行为——随着医药电商平台的兴起，这种行为变得更加容易"
+    },
+    {
+      "title": "TSMC’s Local Investors Narrow Valuation Gap With Wall Street",
+      "summary": "Local investors are driving the premium on Taiwan Semiconductor Manufacturing Co.’s US-listed shares to a two-year low as they pile into the chipmaker’s stock in Taipei on bets the AI boom has further to run.",
+      "source_platform": "Bloomberg",
+      "hot_rank": 6,
+      "url": "https://www.bloomberg.com/news/articles/2026-05-31/tsmc-s-local-investors-narrow-valuation-gap-with-wall-street",
+      "timestamp": "2026-05-31T23:53:02+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "Bloomberg"
+      ],
+      "_likely_domain": "foreign_china",
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": false,
+      "title_cn": "台积电本地投资者缩小与华尔街的估值差距",
+      "summary_cn": "本地投资者正推动台积电在美国上市股票的溢价降至两年低点，因为他们押注AI热潮仍有进一步空间，在台北大量买入这家芯片制造商的股票"
+    }
+  ],
+  "tech": [
+    {
+      "title": "别光给Agent加Tool了，它根本选不明白！复旦×通义提出全新CUA训练范式",
+      "summary": "下一代CUA训练范式",
+      "source_platform": "量子位",
+      "hot_rank": 2,
+      "url": "https://www.qbitai.com/2026/05/427005.html",
+      "timestamp": "2026-05-31T14:25:18+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "量子位"
+      ],
+      "_likely_domain": "tech",
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": true,
+      "title_cn": "复旦与通义千问团队联合提出一种全新的CUA训练范式，专门解决当前Agent在工具选择上无法自主决策的难题。",
+      "summary_cn": "该CUA训练范式通过全新的训练方法使Agent具备自主理解并正确选择工具的能力，为下一代智能体交互奠定基础。"
+    },
+    {
+      "title": "截至2025年底全国共有少先队员1.12亿名",
+      "summary": "今天（6月1日），全国少工委发布中国少年先锋队统计主要数据，截至2025年12月31日，全国共有少先队员1.12亿名，中小学校少先队大、中队辅导员298.9万名。中小学校少工委17.2万个、少先队大队17.2万个、中队282.8万个。",
+      "source_platform": "界面新闻",
+      "hot_rank": 15,
+      "url": "https://www.jiemian.com/article/14511543.html",
+      "timestamp": "2026-06-01T00:01:38+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "界面新闻"
+      ],
+      "_likely_domain": "tech",
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "Everyone Has Their Targets Set on the MacBook Neo",
+      "summary": "Dell, Microsoft, and others are unveiling new laptops to compete directly with the Neo, but not all are learning the right lessons from Apple.",
+      "source_platform": "Wired",
+      "hot_rank": 1,
+      "url": "https://www.wired.com/story/everyone-has-their-targets-set-on-the-macbook-neo/",
+      "timestamp": "2026-05-31T23:00:00+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "Wired"
+      ],
+      "_likely_domain": "tech",
+      "_curator_scores": {
+        "total": 10,
+        "pass": true
+      },
+      "_needs_search": true,
+      "summary_cn": "戴尔、微软等公司纷纷推出新款笔记本电脑，直接与MacBook Neo展开竞争，但并非所有厂商都从苹果那里学到了正确的教训。"
+    },
+    {
+      "title": "从Token无上限到全员Agent：MiniMax的AI Native组织进化实践",
+      "summary": "与其焦虑AI，不如加入AI",
+      "source_platform": "量子位",
+      "hot_rank": 8,
+      "url": "https://www.qbitai.com/2026/05/426793.html",
+      "timestamp": "2026-05-31T01:29:42+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "量子位"
+      ],
+      "_likely_domain": "tech",
+      "_curator_scores": {
+        "total": 10,
+        "pass": true
+      },
+      "_needs_search": true,
+      "title_cn": "MiniMax公司从实现Token无上限到全员Agent的转变，充分展示了其AI原生的组织进化实践路径。",
+      "summary_cn": "MiniMax主张与其对AI焦虑，不如主动加入AI变革，通过实现Token无上限到全员Agent的实践推动组织进化。"
+    },
+    {
+      "title": "关停三年后 天涯社区明起恢复访问",
+      "summary": "中国网络社群“天涯社区”暂停运营三年多后，将于星期一（6月1日）正式恢复访问。21世纪经济、《新京报》等媒体星期天（5月31日）晚间报道了上述消息。天涯社区官方微博3月1日发文说：“你写的那些帖子，你认识的那些朋友，你收藏的那些好文都还在。那些年的记忆，那个曾经的精神家园，都将重新打开大门，等你回家。”此前在2月6日，新天涯联合工作组、成都天涯客网络科技公司、天涯好东西（海南）电子商务发布联合公告称，正推进天涯社区于今年6月1日恢复访问。公告称，天涯社区自2019年始在成都锦江区遭遇了不公对待，所引发的资金流动性困难，导致2023年4月1日起因电信互联网数据中心欠费而暂停访问，天涯数据面临灭失",
+      "source_platform": "联合早报·中国",
+      "hot_rank": 4,
+      "url": "https://www.zaobao.com/news/china/story20260531-9134950",
+      "timestamp": "2026-05-31T13:14:19+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "联合早报·中国"
+      ],
+      "_likely_domain": "tech",
+      "_curator_scores": {
+        "total": 10,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "‘This is fine’ artist KC Green reaches agreement with AI startup Artisan",
+      "summary": "The startup has apparently taken down the ads using KC Green's \"This is fine\" meme.",
+      "source_platform": "TechCrunch",
+      "hot_rank": 3,
+      "url": "https://techcrunch.com/2026/05/31/this-is-fine-artist-kc-green-reaches-agreement-with-ai-startup-artisan/",
+      "timestamp": "2026-05-31T18:28:17+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "TechCrunch"
+      ],
+      "_likely_domain": "tech",
+      "_curator_scores": {
+        "total": 10,
+        "pass": true
+      },
+      "_needs_search": false,
+      "summary_cn": "这家初创公司已撤下使用KC Green的“This is fine”表情包的广告。"
+    },
+    {
+      "title": "TechCrunch Mobility: It doesn’t matter that people hate the Ferrari Luce",
+      "summary": "Welcome back to TechCrunch Mobility, your hub for the future of transportation and now, more than ever, how AI is playing a part.",
+      "source_platform": "TechCrunch",
+      "hot_rank": 4,
+      "url": "https://techcrunch.com/2026/05/31/techcrunch-mobility-it-doesnt-matter-that-people-hate-the-ferrari-luce/",
+      "timestamp": "2026-05-31T16:05:00+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "TechCrunch"
+      ],
+      "_likely_domain": "tech",
+      "_curator_scores": {
+        "total": 10,
+        "pass": true
+      },
+      "_needs_search": false,
+      "summary_cn": "欢迎回到TechCrunch Mobility栏目，这里是未来交通的枢纽，如今更是AI发挥作用的舞台。"
+    }
+  ],
+  "economy": [
+    {
+      "title": "Wall Street bulls bet US stocks rally will defy bubble fears",
+      "summary": "Investors and strategists shrug off worries that markets could be overheating by betting on huge gains for AI-linked shares",
+      "source_platform": "Financial Times",
+      "hot_rank": 1,
+      "url": "https://www.ft.com/content/90dbca8c-fb63-4fa5-a5d6-e6d6d9f6d10e",
+      "timestamp": "2026-05-31T12:00:10+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "Financial Times"
+      ],
+      "_likely_domain": "economy",
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": true,
+      "summary_cn": "投资者和策略师押注AI相关股票将大幅上涨，无视市场可能过热的担忧。"
+    },
+    {
+      "title": "澜沧江畔的“互为他者”：对话李小云，当中国经验遇见老挝的慢时光｜907编辑部",
+      "summary": "当我们在谈论“发展”时，我们在谈论什么？本期节目，我们邀请到了被誉为“中国发展学之父”的李小云教授。他于今年5月下旬与老挝琅勃拉邦的“专班学员”走访了西双版纳的河边村与曼峦站。在这次跨越边境的经验交流中，李小云提出了一个引人深思的概念——“发展的互为想象”。位于云南西双版纳雨林深处的河边村。在老挝，人们有着悠闲的生活哲学，这常被外界解读为“懒散”或“慢节奏”。但在李小云看来，这背后隐藏着发展的霸权：谁有权定义什么是好的生活？与此同时，当中国曾经走过的扶贫路遇到同样处于快车道上的老挝，这种“平行经验”为何比西方理论更具生命力？这是一次关于内生动力、长期主义以及文化亲密感的深度对谈。李小云告诉我们",
+      "source_platform": "澎湃新闻",
+      "hot_rank": 4,
+      "url": "https://m.thepaper.cn/detail/33271137",
+      "timestamp": "2026-05-31T23:12:48+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "澎湃新闻"
+      ],
+      "_likely_domain": "economy",
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "【专访】程强：“六张网”背后的调控新思维：辩证看待投资与消费",
+      "summary": "德邦证券首席经济学家程强在接受界面新闻专访时表示，“六张网”建设是畅通国内大循环的关键战略抓手，也是充分发挥我国集中力量办大事优势，在复杂激烈的大国博弈中赢得战略主动的关键一招。",
+      "source_platform": "界面新闻",
+      "hot_rank": 18,
+      "url": "https://www.jiemian.com/article/14500848.html",
+      "timestamp": "2026-06-01T00:00:00+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "界面新闻"
+      ],
+      "_likely_domain": "economy",
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "Bloomberg This Weekend 5/31/2026",
+      "summary": "The news doesn’t stop when markets close. Hosts David Gura, Christina Ruffini and Lisa Mateo bring clarity, context and a bit of humor to the weekend’s biggest headlines, LIVE from New York. Joined by New York Times Chief Africa Correspondent Declan Walsh, Harvard Kennedy School Center for Public Le",
+      "source_platform": "Bloomberg",
+      "hot_rank": 15,
+      "url": "https://www.bloomberg.com/news/videos/2026-05-31/bloomberg-this-weekend-5-31-2026-video",
+      "timestamp": "2026-05-31T17:07:18+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "Bloomberg"
+      ],
+      "_likely_domain": "economy",
+      "_curator_scores": {
+        "total": 10,
+        "pass": true
+      },
+      "_needs_search": false,
+      "summary_cn": "当市场收盘后，新闻仍在持续。主播David Gura、Christina Ruffini和Lisa Mateo从纽约现场带来周末头条新闻的清晰解读、背景分析和些许幽默。加入节目的还有《纽约时报》首席非洲记者Declan Walsh、哈佛肯尼迪学院公共…"
+    },
+    {
+      "title": "AI is here. What do you want from it?",
+      "summary": "The technology’s development belongs to everyone — share your vision with us",
+      "source_platform": "Financial Times",
+      "hot_rank": 2,
+      "url": "https://www.ft.com/content/da80e72b-31e5-42ca-995c-5fc7d457915e",
+      "timestamp": "2026-05-31T04:00:08+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "Financial Times"
+      ],
+      "_likely_domain": "economy",
+      "_curator_scores": {
+        "total": 10,
+        "pass": true
+      },
+      "_needs_search": false,
+      "summary_cn": "这项技术的发展属于每个人——请与我们分享您的愿景。"
+    }
+  ],
+  "gaming": [
+    {
+      "title": "一起加入喝水俱乐部！「机组成员」系列夏日新品清凉上架",
+      "summary": "大家好，欢迎光临吉考斯工业！今天「机组成员」系列又迎来夏季新品发售，这次上新的每一款都有着不同的主题、大到人生意义，小到日常喝水，我们再次用图案与文字等具象的平面设计通过服装这一载体来表达我们的主张，希望这些颇具玩味的服饰你能喜欢！特别提醒：618 优惠季来临，5 月 31 日至 6 月 21 日期间大家可以先领券再消费更划算！「越位新规」速干短袖 polo\n&lt;点击购买&gt;\n\n\n「当体毛级越位成为历史，我们用荒诞解构新规」。本款短袖 polo 衫的图案设计灵感源自名教温格提出的「新越位规则」。在未来的绿茵场上，那些精准到毫米级、抹杀进球艺术的「体毛级越位」终将消逝。为了定格这一充满争",
+      "source_platform": "机核",
+      "hot_rank": 3,
+      "url": "https://www.gcores.com/articles/215144",
+      "timestamp": "2026-05-31T02:00:00+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "机核"
+      ],
+      "_likely_domain": "gaming",
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "新华典评：别让“电子带娃”荒芜成长时光",
+      "summary": "给孩子一台平板，家长便暂别烦闹；点开一个伴读App，家长就得以从繁琐育儿中“解脱”。过度依赖“电子带娃”，实则是借科技的便利，置换了亲情的温度，更在无形中让数字产品反客为主，主宰了孩子的童年。“六一”国际儿童节来临之际，多地发布未成年人网络保护相关案例，为青少年营造清朗网络空间。此前，2026年全国学前教育宣传月在京启动，呼吁各地幼儿园落实以游戏为基本活动，引导家长“多陪伴、多游戏、多运动、多亲近自然”的育儿理念，防止“电子带娃”。童年是身心发展的关键期，容不得半点“虚妄”的侵蚀。研究表明，过早、过多接触屏幕，对幼儿视力、注意力及情感发展的伤害往往难以逆转。更堪忧者，部分商业机构借“智能”之名",
+      "source_platform": "澎湃新闻",
+      "hot_rank": 2,
+      "url": "https://m.thepaper.cn/detail/33278814",
+      "timestamp": "2026-05-31T23:16:37+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "澎湃新闻"
+      ],
+      "_likely_domain": "gaming",
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "Mass Effect and Metal Gear actor Jennifer Hale calls on studios to take responsibility for their AI use: 'Ain't nobody making you do it'",
+      "summary": "\"The tool does what the human holding the tool tells it to.\"",
+      "source_platform": "PC Gamer",
+      "hot_rank": 10,
+      "url": "https://www.pcgamer.com/gaming-industry/mass-effect-and-metal-gear-actor-jennifer-hale-calls-on-studios-to-take-responsibility-for-their-ai-use-aint-nobody-making-you-do-it/",
+      "timestamp": "2026-05-31T13:23:13+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "PC Gamer"
+      ],
+      "_likely_domain": "gaming",
+      "_curator_scores": {
+        "total": 10,
+        "pass": true
+      },
+      "_needs_search": true,
+      "summary_cn": "“工具听从使用它的人的指令。”"
+    },
+    {
+      "title": "Okay, maybe I could be convinced AI monitors aren't all bad",
+      "summary": "MSI's \"world's first agentic AI monitor\" has one neat trick. The rest of its AI tricks, however...",
+      "source_platform": "PC Gamer",
+      "hot_rank": 12,
+      "url": "https://www.pcgamer.com/hardware/gaming-monitors/okay-maybe-i-could-be-convinced-ai-monitors-arent-all-bad/",
+      "timestamp": "2026-05-31T11:58:00+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "PC Gamer"
+      ],
+      "_likely_domain": "gaming",
+      "_curator_scores": {
+        "total": 10,
+        "pass": true
+      },
+      "_needs_search": false,
+      "summary_cn": "微星的“全球首款智能AI显示器”有一个巧妙的功能，但其余的AI功能则……"
+    },
+    {
+      "title": "造一个年轻版自己去90年代美国追寻音乐梦 再荐茶社34",
+      "summary": "🐧👉《再荐茶社》更新通知QQ群：1055561149感谢大家一直以来的赞赏、订阅和支持，欢迎朋友们在评论中和我们一起分享游戏体验！BGM: Solitary - lofi hip hop beatprod. by Riddiman近期新闻雏选- 一大堆联动- Steam商店标签更新- 《耀西不可思议的图鉴》发售- 国行Switch停服- 战马工作室两款新作宣布- epic免费赠送《纪念碑谷3》近期新游李选- The Guardian of Nature -自然守护者-- 面面俱盗- 与舰同沉- 地狱黑杰克 Black Jacket- 归零巡礼：亡谍镇魂曲Mixtape皓白初晓喇叭之城Sunde",
+      "source_platform": "机核",
+      "hot_rank": 2,
+      "url": "https://www.gcores.com/radios/215201",
+      "timestamp": "2026-05-31T13:00:00+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "机核"
+      ],
+      "_likely_domain": "gaming",
+      "_curator_scores": {
+        "total": 9,
+        "pass": true
+      },
+      "_needs_search": false
+    }
+  ],
+  "total": 30,
+  "curated_at": "2026-06-01T12:04:47.458161+08:00",
+  "push_id": "noon",
+  "run_id": "20260601_noon_fc06f1e1",
+  "run_id_marker": "\n​[rid:20260601_noon_fc06f1e1]"
+}

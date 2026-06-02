@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "last_updated": "2026-05-30T11:30:00+08:00",
+  "last_updated": "2026-05-31T12:30:00+08:00",
   "data_sources": [
     {
       "id": "ifanr",
@@ -21,6 +21,30 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/huxiu",
+      "authority": 2,
+      "language": "zh"
+    },
+    {
+      "id": "36kr",
+      "name": "36氪",
+      "platform": "36kr",
+      "type": "rss",
+      "category": "tech",
+      "enabled": true,
+      "feed_url": "https://plink.anyfeeder.com/36kr",
+      "desc": "中国领先的科技与财经媒体，覆盖创业、AI、商业深度",
+      "authority": 2,
+      "language": "zh"
+    },
+    {
+      "id": "jiemian",
+      "name": "界面新闻",
+      "platform": "jiemian",
+      "type": "rss",
+      "category": "news",
+      "enabled": true,
+      "feed_url": "https://a.jiemian.com/index.php?m=article&a=rss",
+      "desc": "上海报业集团旗下，深度财经与商业新闻",
       "authority": 3,
       "language": "zh"
     },
@@ -54,7 +78,7 @@
       "category": "news",
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/zaobao/realtime/china",
-      "authority": 1,
+      "authority": 2,
       "language": "zh"
     },
     {
@@ -65,7 +89,7 @@
       "category": "news",
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/zaobao/realtime/world",
-      "authority": 1,
+      "authority": 2,
       "language": "zh"
     },
     {
@@ -76,7 +100,7 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://plink.anyfeeder.com/tmtpost",
-      "authority": 3,
+      "authority": 2,
       "language": "zh"
     },
     {
@@ -98,7 +122,7 @@
       "category": "game",
       "enabled": true,
       "feed_url": "https://www.theverge.com/rss/games/index.xml",
-      "authority": 1,
+      "authority": 2,
       "language": "en"
     },
     {
@@ -399,7 +423,7 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
-      "authority": 3,
+      "authority": 2,
       "language": "en"
     },
     {
@@ -487,7 +511,7 @@
       "category": "news",
       "enabled": true,
       "feed_url": "https://www3.nhk.or.jp/rss/news/cat4.xml",
-      "authority": 3,
+      "authority": 2,
       "language": "ja"
     },
     {
@@ -498,20 +522,8 @@
       "category": "news",
       "enabled": true,
       "feed_url": "https://www.koreaherald.com/rss/newsAll",
-      "authority": 3,
+      "authority": 2,
       "language": "en"
-    },
-    {
-      "id": "nikkei-asia",
-      "name": "日经亚洲",
-      "platform": "nikkei-asia",
-      "type": "rss",
-      "category": "foreign_china",
-      "enabled": true,
-      "feed_url": "https://asia.nikkei.com/rss/feed/nar",
-      "authority": 3,
-      "language": "en",
-      "desc": "亚洲商业、政治、科技新闻"
     }
   ],
   "exploration_sources": [],

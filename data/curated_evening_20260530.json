@@ -1,0 +1,602 @@
+{
+  "top_headlines": [
+    {
+      "title": "Americans echo Pope Leo’s concerns about AI: ‘It threatens workers, privacy and human life’",
+      "summary": "[卫报·科技] Guardian readers in the US spoke of fears about unregulated AI in response to the pope’s encyclical warning about the risks of the technologyIn his first major papal text since assuming leadership of the Catholic church last year, Pope Leo issued a stark warning about the rise of artificial intellig // [卫报·商务] Guardian readers in the US spoke of fears about unregulated AI in response to the pope’s encyclical warning about the risks of the technologyIn his first major papal text since assuming leadership of the Catholic church last year, Pope Leo issued a stark warning about the rise of artificial intellig",
+      "source_platform": "卫报·科技+卫报·商务",
+      "hot_rank": 1,
+      "url": "https://www.theguardian.com/world/2026/may/30/pope-leo-ai-reaction",
+      "timestamp": "2026-05-30T11:00:17+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 2,
+      "_coverage_platforms": [
+        "卫报·商务",
+        "卫报·科技"
+      ],
+      "_likely_domain": "headline",
+      "_heat": {
+        "fingerprint": "73be7493b0fe6338",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.9,
+        "appearances": 1,
+        "platforms": [
+          "卫报·商务",
+          "卫报·科技"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 1,
+            "time": "2026-05-30T21:10:55.917899+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "日本のポップカルチャー紹介 ドイツで最大規模のイベント開始",
+      "summary": "[NHK 商业] 日本のアニメやゲームなどポップカルチャーへの関心が高まるドイツで、29日、国内最大規模のイベントが始まりました。 // [NHK 科学医疗] 日本のアニメやゲームなどポップカルチャーへの関心が高まるドイツで、29日、国内最大規模のイベントが始まりました。",
+      "source_platform": "NHK 商业+NHK 科学医疗",
+      "hot_rank": 10,
+      "url": "http://www3.nhk.or.jp/news/html/20260530/k10015135791000.html",
+      "timestamp": "2026-05-30T05:03:10+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 2,
+      "_coverage_platforms": [
+        "NHK 商业",
+        "NHK 科学医疗"
+      ],
+      "_likely_domain": "headline",
+      "_heat": {
+        "fingerprint": "1fb8fb99fd3f263c",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.9,
+        "appearances": 1,
+        "platforms": [
+          "NHK 商业",
+          "NHK 科学医疗"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 10,
+            "time": "2026-05-30T21:10:55.917899+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "6.24亿日元，乐奇AI眼镜创日本Makuake平台众筹新纪录",
+      "summary": "北京时间5月30日，乐奇AI眼镜在日本第一的众筹平台Makuake创下了全新纪录，截至目前，该项目已累计斩获超6.24亿日元的销售额，成为同品类历史最高众筹额，刷新了该平台成立13年以来的全品类最高销售纪录。据了解，Rokid的此次众筹将于北京时间今晚21:00（日本时间22:00）正式收官。",
+      "source_platform": "36氪",
+      "hot_rank": 7,
+      "url": "https://36kr.com/newsflashes/3831673401190273?f=rss",
+      "timestamp": "2026-05-30T10:59:44+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "36氪"
+      ],
+      "_likely_domain": "headline",
+      "_heat": {
+        "fingerprint": "54913715b12a1257",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "36氪"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 7,
+            "time": "2026-05-30T21:10:55.917899+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "乘联分会崔东树：2026年1-4月中国占世界汽车份额31%",
+      "summary": "5月30日，乘联分会秘书长崔东树发文表示，2025年全球汽车销量9689万台，同比增长6%。2026年4月的世界汽车销量达到799万台，同比增4%。2026年1-4月世界汽车销量达到3096万台，同比增1%。随着美国、中国车市的年初相对负增长，2026年1-4月世界车市销量增长不强。2025年中国达到世界汽车的35.4%的份额；2026年初的中国份额30.9%，年初较低是春节因素的异常体现。随着政策刺激效果逐步恢复显现，下半年开始中国车市预计逐步走强。（新浪财经）",
+      "source_platform": "36氪",
+      "hot_rank": 11,
+      "url": "https://36kr.com/newsflashes/3831568959989637?f=rss",
+      "timestamp": "2026-05-30T09:24:55+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "36氪"
+      ],
+      "_likely_domain": "headline",
+      "_heat": {
+        "fingerprint": "a6f18113ac3f2787",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "36氪"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 11,
+            "time": "2026-05-30T21:10:55.917899+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "苏州：1—4月规模以上工业增加值同比增长9.8%",
+      "summary": "苏州市统计局发布数据，1—4月，苏州市规模以上工业增加值同比增长9.8%。规模以上工业总产值16126.5亿元，同比增长7.3%。34个工业行业大类中，有27个行业产值同比增长，行业增长面达79.4%，其中16个行业产值增速超8%。制造业高端化持续推进。规模以上高新技术产业产值9164.6亿元，同比增长11.7%，其中航空航天制造业、电子及通讯设备制造业、医药制造业、仪器仪表制造业产值分别增长23.1%、20.0%、12.1%和14.6%。新兴电子产品、新能源产品产量快速增长。智能手机、集成电路、光电子器件、锂离子电池产品产量同比分别增长8.5%、18.1%、18.2%和46.3%。（财联社）",
+      "source_platform": "36氪",
+      "hot_rank": 17,
+      "url": "https://36kr.com/newsflashes/3831444816684681?f=rss",
+      "timestamp": "2026-05-30T07:14:05+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "36氪"
+      ],
+      "_likely_domain": "headline",
+      "_heat": {
+        "fingerprint": "81aa7289c74e5e94",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "36氪"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 17,
+            "time": "2026-05-30T21:10:55.917899+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": false
+    },
+    {
+      "title": "聚焦TCG｜“上海支持我们创作”，@不刷题的吴姥姥 物理课直播在杨浦V聚场扎了根",
+      "summary": "5月30日，2026互联网优质内容创作盛典在上海世界会客厅正式启幕。同济大学退休教授、知名科普博主@不刷题的吴姥姥 表示，上海对于互联网优质创作者提供了很多支持，物理课直播已经在V聚场扎下了根。",
+      "source_platform": "澎湃新闻",
+      "hot_rank": 3,
+      "url": "https://m.thepaper.cn/detail/33273178",
+      "timestamp": "2026-05-30T12:07:34+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "澎湃新闻"
+      ],
+      "_likely_domain": "headline",
+      "_heat": {
+        "fingerprint": "cd2d99eb49e935ad",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "澎湃新闻"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 3,
+            "time": "2026-05-30T21:10:55.917899+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": false
+    }
+  ],
+  "foreign_china": [
+    {
+      "title": "NYダウ終値 初の5万1000ドル台に 米イラン協議進展へ期待感で",
+      "summary": "[NHK 商业] 29日のニューヨーク株式市場では、アメリカとイランの協議の進展などへの期待が続くなかで買い注文が広がり、ダウ平均株価は終値として初めて5万1000ドル台に乗せました。 // [NHK 经济] 29日のニューヨーク株式市場では、アメリカとイランの協議の進展などへの期待が続くなかで買い注文が広がり、ダウ平均株価は終値として初めて5万1000ドル台に乗せました。",
+      "source_platform": "NHK 商业+NHK 经济",
+      "hot_rank": 14,
+      "url": "http://www3.nhk.or.jp/news/html/20260530/k10015135671000.html",
+      "timestamp": "2026-05-29T21:45:47+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 2,
+      "_coverage_platforms": [
+        "NHK 经济",
+        "NHK 商业"
+      ],
+      "_likely_domain": "foreign_china",
+      "_heat": {
+        "fingerprint": "dc6a8c1b312b43cc",
+        "is_new": true,
+        "is_sustained": true,
+        "is_deep": false,
+        "trend": "stable",
+        "heat_score": 2.2,
+        "appearances": 2,
+        "platforms": [
+          "NHK 经济",
+          "NHK 商业"
+        ],
+        "span_hours": 12.111068891111112,
+        "rank_timeline": [
+          {
+            "rank": 3,
+            "time": "2026-05-30T09:04:16.069891+08:00"
+          },
+          {
+            "rank": 14,
+            "time": "2026-05-30T21:10:55.917899+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true
+    }
+  ],
+  "tech": [
+    {
+      "title": "全国首个绿色算力全栈AI平台在呼和浩特正式上线",
+      "summary": "5月30日，全国首个绿色算力全栈AI平台在内蒙古自贸试验区呼和浩特片区正式上线运行，填补了区域一站式算力模型词元综合服务交易的空白。平台全面兼容国产芯片与主流算力架构，首批接入三大通信运营商及头部科技厂商的十余款主流模型。根据用户需求，平台可整合全国接入节点的通算、智算、超算等多元算力资源，通过智能调度算法实现算力资源的弹性分配、高效调度、经济供给，为用户提供便捷易用、低碳绿色、质优价宜的词元（Token）交易服务。（央视新闻）",
+      "source_platform": "界面新闻",
+      "hot_rank": 24,
+      "url": "https://www.jiemian.com/article/14509924.html",
+      "timestamp": "2026-05-30T10:53:31+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "界面新闻"
+      ],
+      "_likely_domain": "tech",
+      "_heat": {
+        "fingerprint": "6e50ec1ed24ebed0",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "界面新闻"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 24,
+            "time": "2026-05-30T21:10:55.917899+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 14,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "小米MiMo首次公开模型推理系统全链路优化技术细节",
+      "summary": "5月30日，小米正式公开MiMo-V2.5系列模型的推理系统全链路优化方案。据小米方面介绍，团队围绕Hybrid SWA+MoE+多模态的复合架构，系统性重构了从KVCache管理、分级缓存、前缀缓存到调度策略与Prefill/Decode链路的完整推理栈，KVCache存储压缩至同级方案的约1/7，在长序列场景下推理成本大幅下降——这是本次降价的核心技术基础。MiMo-V2.5系列API于5月27日完成永久降价，最高降幅达99%，不区分输入长度。",
+      "source_platform": "界面新闻",
+      "hot_rank": 17,
+      "url": "https://www.jiemian.com/article/14509969.html",
+      "timestamp": "2026-05-30T11:17:21+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "界面新闻"
+      ],
+      "_likely_domain": "tech",
+      "_heat": {
+        "fingerprint": "cdc5a91e1a0e8d0b",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "界面新闻"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 17,
+            "time": "2026-05-30T21:10:55.917899+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 13,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "多少快递人想做却做不到事，终于发生了",
+      "summary": "本文来自微信公众号： 驿站 ，作者：驿站老鬼前一阵，“整条街因恶意退货太多被商家拉黑”的消息冲上热搜。一位网友在社交平台发帖称，自己在某电商平台看中了一款商品，商品界面却显示其地址无法收货。她询问客服，对方表示店铺将她所在的街道拉黑了：“这个街道不发的，‘白嫖’的人比较多。”据悉，从杭州萧山区盈丰街道到广州花都区狮岭镇，已有多个直播电商集聚区遭遇商家“地域拉黑”。“多少快递人想做却做不到，或者说不敢做的事，终于发生了。”老鬼的朋友五哥在聊到这个事情时直言，这一现象表面是商家面对恶意退货的无奈自保，实则折射出数字经济时代下，市场公平交易原则正面临严峻挑战。让人遗憾的是，当电商商家还能通过“区域限",
+      "source_platform": "虎嗅",
+      "hot_rank": 2,
+      "url": "https://www.huxiu.com/article/4863016.html?f=rss",
+      "timestamp": "2026-05-30T12:27:21+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "虎嗅"
+      ],
+      "_likely_domain": "tech",
+      "_heat": {
+        "fingerprint": "8701d33e545bb5d7",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "虎嗅"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 2,
+            "time": "2026-05-30T21:10:55.917899+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "总投资10亿元，锦瑞汽车智能装备制造总部基地项目落地合肥",
+      "summary": "5月29日，锦瑞汽车智能装备制造总部基地项目签约仪式在合肥市肥西县举行。该项目总投资10亿元，占地面积约140亩，计划建设模具车间、智能装配车间、热管理系统部件生产车间、精密注塑车间以及实验中心。（界面新闻）",
+      "source_platform": "36氪",
+      "hot_rank": 14,
+      "url": "https://36kr.com/newsflashes/3831457169860233?f=rss",
+      "timestamp": "2026-05-30T08:22:10+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "36氪"
+      ],
+      "_likely_domain": "tech",
+      "_heat": {
+        "fingerprint": "c308da15536f8c8a",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "36氪"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 14,
+            "time": "2026-05-30T21:10:55.917899+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true
+    }
+  ],
+  "economy": [
+    {
+      "title": "深圳楼市新政满月，一二手房成交同比增33%",
+      "summary": "深圳楼市新政满月。4月29日，深圳发布楼市优化新政，核心措施包括分区松绑限购、提高公积金贷款额度等。在业内人士看来，3月、4月楼市“小阳春”后，5月市场交易通常会惯性回落，但深圳楼市今年的情况有所不同。据深圳贝壳研究院监测，截至5月27日，今年5月深圳新房住宅成交量为3970套，较去年同期增长51%；二手房住宅成交量达到5006套，同比增长21%；一二手住宅合计成交8976套，同比增长33%。（21经济网）",
+      "source_platform": "36氪",
+      "hot_rank": 16,
+      "url": "https://36kr.com/newsflashes/3831448811169414?f=rss",
+      "timestamp": "2026-05-30T07:39:54+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "36氪"
+      ],
+      "_likely_domain": "economy",
+      "_heat": {
+        "fingerprint": "80fbc828a6f47d4f",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "36氪"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 16,
+            "time": "2026-05-30T21:10:55.917899+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 13,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "央企科技成果产业化联合体成立",
+      "summary": "中央企业科技成果产业化联合体（下称“联合体”）5月30日在北京成立。该联合体由国务院国资委指导、国家能源集团牵头组建、全体中央企业参与共建，并广泛吸纳科研院所、高校、产业链上下游骨干企业、创新型民营企业等多元主体，聚焦国家战略部署，推动科技创新和产业创新深度融合，搭建一站式、全链条的科技成果产业化服务体系。（第一财经）",
+      "source_platform": "36氪",
+      "hot_rank": 9,
+      "url": "https://36kr.com/newsflashes/3831601284982660?f=rss",
+      "timestamp": "2026-05-30T10:18:12+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "36氪"
+      ],
+      "_likely_domain": "economy",
+      "_heat": {
+        "fingerprint": "51ce51bad6f56b8f",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "36氪"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 9,
+            "time": "2026-05-30T21:10:55.917899+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 12,
+        "pass": true
+      },
+      "_needs_search": true
+    }
+  ],
+  "gaming": [
+    {
+      "title": "007 First Light review - a flowing thriller that blends occasional sandboxy spying into an exotic rollercoaster ride",
+      "summary": "007 First Light is built on the bones of IO Interactive&rsquo;s Hitman, and makes no effort to hide that fact. But it&rsquo;s far from just Agent 47 in a wig and doing his best posh English boarding school accent. The section that properly convinced me of this, ironically, is when First Light gets",
+      "source_platform": "Rock Paper Shotgun",
+      "hot_rank": 1,
+      "url": "https://www.rockpapershotgun.com/007-first-light-review-a-flowing-thriller-that-blends-occasional-sandboxy-spying-into-exotic-rollercoaster-ride",
+      "timestamp": "2026-05-30T09:00:00+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "Rock Paper Shotgun"
+      ],
+      "_likely_domain": "gaming",
+      "_heat": {
+        "fingerprint": "9ff882df9654cebf",
+        "is_new": true,
+        "is_sustained": false,
+        "is_deep": false,
+        "trend": "new",
+        "heat_score": 0.6,
+        "appearances": 1,
+        "platforms": [
+          "Rock Paper Shotgun"
+        ],
+        "span_hours": 0.0,
+        "rank_timeline": [
+          {
+            "rank": 1,
+            "time": "2026-05-30T21:10:55.917899+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 11,
+        "pass": true
+      },
+      "_needs_search": true
+    },
+    {
+      "title": "机洞Vol.27｜拆装一次电脑 多出六颗螺丝",
+      "summary": "本期时间轴制作：老斧子本期聊到的话题：\n 稿主和RX580这张显卡的故事。\n 因为一个契机而重新开始热爱一个事物的经历。\n 妹妹要中考了，我为什么比她还焦虑。\n 学习的专业和未来向就业的方向毫无关系，该如何应对。\n 对自己的自媒体账号充满了数据焦虑，怎么调理。\n冷笑话几则。\n本节目“机洞”取自“机核树洞”之意，你的一切生活中的烦恼，从情感工作到打电动打不过去全都可以投稿给“萝萝又卜卜”，我们会找办公室里有阅历的同事来一起阅读你的烦恼，讨论一下相关的话题，但想靠我们解决烦恼可能解决不了一点儿。 投稿方式可以是给萝卜发站内私信，也可以把你的投稿发送到萝卜的邮箱Carrotofrivia@gcore",
+      "source_platform": "机核",
+      "hot_rank": 3,
+      "url": "https://www.gcores.com/radios/214868",
+      "timestamp": "2026-05-29T15:00:00+00:00",
+      "event_type": "fermenting",
+      "_coverage_count": 1,
+      "_coverage_platforms": [
+        "机核"
+      ],
+      "_likely_domain": "gaming",
+      "_heat": {
+        "fingerprint": "27297a14660ce955",
+        "is_new": true,
+        "is_sustained": true,
+        "is_deep": false,
+        "trend": "stable",
+        "heat_score": 1.9,
+        "appearances": 2,
+        "platforms": [
+          "机核"
+        ],
+        "span_hours": 12.111068891111112,
+        "rank_timeline": [
+          {
+            "rank": 1,
+            "time": "2026-05-30T09:04:16.069891+08:00"
+          },
+          {
+            "rank": 3,
+            "time": "2026-05-30T21:10:55.917899+08:00"
+          }
+        ]
+      },
+      "_curator_scores": {
+        "total": 10,
+        "pass": true
+      },
+      "_needs_search": true
+    }
+  ],
+  "total": 15,
+  "curated_at": "2026-05-30T21:13:41.099576+08:00",
+  "push_id": "evening",
+  "truncated": true,
+  "run_id": "20260530_evening_8a9a71c1",
+  "run_id_marker": "\n​[rid:20260530_evening_8a9a71c1]"
+}

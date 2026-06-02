@@ -38,7 +38,9 @@
         "total": 11,
         "pass": true
       },
-      "_needs_search": true
+      "_needs_search": true,
+      "title_cn": "埃博拉病毒蔓延之际，科学家争分夺秒寻找疫苗与疗法",
+      "summary_cn": "[纽约时报·世界] 本迪布焦病毒是一种鲜为人知的病毒类型，此前仅引发过两次小规模疫情。如今，它正成为非洲迅速扩大的疫情中心。// [纽约时报·科学] 本迪布焦病毒是一种鲜为人知的病毒类型，此前仅引发过两次小规模疫情。如今，它正成为非洲迅速扩大的疫情中心。"
     },
     {
       "title": "Crested Ibises Get the Royal Treatment in Japan as They Fly Again",
@@ -78,7 +80,9 @@
         "total": 10,
         "pass": true
       },
-      "_needs_search": true
+      "_needs_search": true,
+      "title_cn": "朱鹮在日本重获“皇室待遇”，再度翱翔天际",
+      "summary_cn": "[纽约时报·世界] 这种色彩斑斓的鸟类曾在日本广泛分布，从相当常见到濒临灭绝。// [纽约时报·科学] 这种色彩斑斓的鸟类曾在日本广泛分布，从相当常见到濒临灭绝。"
     },
     {
       "title": "体坛联播｜库里正式签约李宁，小威重返职业网球赛场",
@@ -158,7 +162,9 @@
         "total": 12,
         "pass": true
       },
-      "_needs_search": true
+      "_needs_search": true,
+      "title_cn": "[扩写失败]",
+      "summary_cn": "[扩写失败]"
     },
     {
       "title": "比亚迪销量九个月来首次增长 海外需求强劲",
@@ -318,7 +324,9 @@
         "total": 11,
         "pass": true
       },
-      "_needs_search": false
+      "_needs_search": false,
+      "title_cn": "[扩写失败]",
+      "summary_cn": "[扩写失败]"
     }
   ],
   "foreign_china": [
@@ -360,7 +368,9 @@
         "total": 13,
         "pass": true
       },
-      "_needs_search": true
+      "_needs_search": true,
+      "title_cn": "香港特首访问有望解锁哈萨克斯坦航班，激励措施备受期待",
+      "summary_cn": "[南华早报] 直飞航班的缺乏一直是香港与哈萨克斯坦深化关系的障碍，但随着香港特首抵达阿斯塔纳，以及激励措施可能出台，突破的希望正在上升。据悉，一家总部位于香港的航空公司正在探索开通此类航线。"
     },
     {
       "title": "Chinese Military Sought Nvidia Chips for Years, Report Says",
@@ -406,7 +416,9 @@
         "total": 12,
         "pass": true
       },
-      "_needs_search": true
+      "_needs_search": true,
+      "title_cn": "报告称中国军方多年来一直寻求购买英伟达芯片",
+      "summary_cn": "[纽约时报·世界] 对六年采购记录的分析表明，中国人民解放军曾公开尝试获取受限制的美国技术。// [纽约时报·科技] 对六年采购记录的分析表明，中国人民解放军曾公开尝试获取受限制的美国技术。// [纽约时报·商务] 对六年采购记录的分析表明，中国人民解放军曾公开尝试获取受限制的美国技术。"
     },
     {
       "title": "He Quit Baidu. But First He Had to Build an AI Version of Himself.",
@@ -448,7 +460,9 @@
         "total": 12,
         "pass": true
       },
-      "_needs_search": true
+      "_needs_search": true,
+      "title_cn": "他离开了百度，但首先得建造一个AI版本的自己",
+      "summary_cn": "随着中国企业扩大内部人工智能系统，一些员工在离职前被要求构建自己的数字分身。"
     },
     {
       "title": "China Tightens Online Pharmacy Rules on AI Use and Prescriptions",
@@ -490,7 +504,9 @@
         "total": 12,
         "pass": true
       },
-      "_needs_search": false
+      "_needs_search": false,
+      "title_cn": "中国加强在线药品监管，严控AI使用与处方管理",
+      "summary_cn": "该国旨在遏制滥用在线处方药的行为——随着医药电商平台兴起，这一行为变得更加容易。"
     },
     {
       "title": "Students turn local pain points into social innovation projects in Hang Seng x HKFYG “Seek Our Ways” Ideation Programme",
@@ -534,7 +550,9 @@
         "total": 11,
         "pass": true
       },
-      "_needs_search": false
+      "_needs_search": false,
+      "title_cn": "恒生银行与香港青年协会合办“创划未来”项目，学生将本地痛点转化为社会创新方案",
+      "summary_cn": "[南华早报] [本文由广告合作伙伴制作。] 屯门一条恶臭的河流、堆积如山的快递包装以及年轻人粤语能力下降，成为一系列学生主导的社会创新项目的灵感来源，这些项目在活动中获得认可。"
     }
   ],
   "tech": [
@@ -574,7 +592,9 @@
         "total": 13,
         "pass": true
       },
-      "_needs_search": true
+      "_needs_search": true,
+      "title_cn": "[扩写失败]",
+      "summary_cn": "[扩写失败]"
     },
     {
       "title": "AI早报 | OpenAI官宣进军机器人赛道；黄仁勋：联手宇树推出1.8米人形机器人",
@@ -612,7 +632,9 @@
         "total": 12,
         "pass": true
       },
-      "_needs_search": true
+      "_needs_search": true,
+      "title_cn": "[扩写失败]",
+      "summary_cn": "[扩写失败]"
     },
     {
       "title": "More young people are looking to AI chatbots for mental health help",
@@ -654,7 +676,9 @@
         "total": 11,
         "pass": true
       },
-      "_needs_search": true
+      "_needs_search": true,
+      "title_cn": "更多年轻人转向AI聊天机器人寻求心理健康帮助",
+      "summary_cn": "一项新调查估计，有800万年轻人在感到压力、愤怒或悲伤时使用AI聊天机器人寻求帮助，这一数字较2024年有所增加。"
     },
     {
       "title": "OpenAI重返机器人赛道！四大核心岗位开招",
@@ -696,7 +720,9 @@
         "total": 11,
         "pass": true
       },
-      "_needs_search": true
+      "_needs_search": true,
+      "title_cn": "[扩写失败]",
+      "summary_cn": "[扩写失败]"
     },
     {
       "title": "Hackers duped Meta AI support chatbot to steal celebrity Instagram accounts",
@@ -734,7 +760,9 @@
         "total": 11,
         "pass": true
       },
-      "_needs_search": true
+      "_needs_search": true,
+      "title_cn": "黑客欺骗Meta AI支持聊天机器人，窃取名人Instagram账号",
+      "summary_cn": "在Meta修补漏洞之前，高价Instagram用户名被窃取并转售。"
     },
     {
       "title": "Gemini’s new AI agent is about as good as Google’s demo",
@@ -772,7 +800,9 @@
         "total": 11,
         "pass": true
       },
-      "_needs_search": false
+      "_needs_search": false,
+      "title_cn": "Gemini的新AI代理表现与谷歌演示不相上下",
+      "summary_cn": "谷歌全新的“全天候”AI代理Gemini Spark在代你执行任务时可能出奇地出色，但我并不确定它值得付出财务成本和潜在的隐私权衡。谷歌上周让我体验了Spark。谷歌将Spark宣传为一个能够接管任务并持续工作的AI代理。"
     },
     {
       "title": "Meta&#8217;s own AI was exploited to hijack Instagram accounts",
@@ -810,7 +840,9 @@
         "total": 11,
         "pass": true
       },
-      "_needs_search": false
+      "_needs_search": false,
+      "title_cn": "Meta自有AI遭利用劫持Instagram账户",
+      "summary_cn": "Meta的AI支持聊天机器人被黑客利用来劫持Instagram账户，据404 Media早前报道。在Telegram上分享的一段视频中，一名黑客展示了如何通过要求Meta的聊天机器人将他人账户关联的邮箱地址进行更改，然后重置密码来接管账户。"
     }
   ],
   "economy": [
@@ -850,7 +882,9 @@
         "total": 12,
         "pass": true
       },
-      "_needs_search": true
+      "_needs_search": true,
+      "title_cn": "Bloom CEO称无意在AI投资者追捧后出售股票",
+      "summary_cn": "Bloom Energy Corp.，甲骨文公司的供应商，其股价在过去两个月翻倍，其首席执行官表示无需出售股票以满足数据中心激增的需求。"
     },
     {
       "title": "Alphabet to sell $80bn in stock to fund AI spending spree",
@@ -888,7 +922,9 @@
         "total": 12,
         "pass": true
       },
-      "_needs_search": true
+      "_needs_search": true,
+      "title_cn": "Alphabet将出售800亿美元股票以资助AI支出狂潮",
+      "summary_cn": "里程碑式的融资计划包括向伯克希尔·哈撒韦私募配售100亿美元。"
     },
     {
       "title": "Optimum Pushes Apollo, Ares Debt Feud to Brink With Asset Shift",
@@ -926,7 +962,9 @@
         "total": 11,
         "pass": true
       },
-      "_needs_search": true
+      "_needs_search": true,
+      "title_cn": "Optimum通过资产转移将Apollo和Ares的债务纠纷推向边缘",
+      "summary_cn": "在不良债务投资领域最激烈的争斗之一，即亿万富翁Patrick Drahi与一些全球最大投资者之间的争端，突然变得更加激烈。"
     },
     {
       "title": "能源早报｜中化装备公司所属企业2人同日被查；国家能源集团广西公司原董事长被查",
@@ -1134,7 +1172,9 @@
         "total": 11,
         "pass": true
       },
-      "_needs_search": true
+      "_needs_search": true,
+      "title_cn": "\"PC正在被重塑\"——英伟达宣布推出面向AI的笔记本电脑芯片RTX Spark，外界疑虑广泛",
+      "summary_cn": "英伟达宣布推出RTX Spark电脑芯片，声称其AI能力将彻底改变个人计算。了解更多。"
     },
     {
       "title": "Anthropic offers EU access to Mythos",
@@ -1176,7 +1216,9 @@
         "total": 11,
         "pass": true
       },
-      "_needs_search": false
+      "_needs_search": false,
+      "title_cn": "Anthropic向欧盟提供Mythos访问权限",
+      "summary_cn": "欧盟正在洽谈使用美国AI模型，这是该模型在美国和英国以外的首次扩展。"
     },
     {
       "title": "Fable delayed to February 2027",
@@ -1218,7 +1260,9 @@
         "total": 10,
         "pass": true
       },
-      "_needs_search": false
+      "_needs_search": false,
+      "title_cn": "《神鬼寓言》延期至2027年2月",
+      "summary_cn": "Xbox已将Playground Games开发的《神鬼寓言》推迟至2027年2月。了解更多。"
     }
   ],
   "total": 30,
