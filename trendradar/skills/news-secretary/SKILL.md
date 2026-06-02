@@ -1,9 +1,8 @@
 ---
 name: news-secretary
 slug: news-secretary
-version: 6.21.0
-pipeline_compat: ">=2.9.0"
-description: 聚合多RSS源+博客，推送Markdown简报至企业微信。编排器一键管线 + 晚间Pro深度分析。
+version: 6.22.0
+description: 聚合多RSS源+博客，推送Markdown简报至企业微信。编排器一键管线 + 晚间flash深度分析。
 author: Hermes Agent
 metadata:
   hermes:
@@ -14,14 +13,14 @@ metadata:
 ---
 
 ## 触发
-cron `0 9,12,21 * * *` (早30/午30/晚20, 日上限80)。晚间追加 3×Pro 深度分析。
+cron `0 9,12,21 * * *` (早30/午30/晚20, 日上限80)。晚间追加 3×flash 深度分析（2026-06-02 从 Pro 改 flash）。
 
 ## 管线
 
 **curated JSON 元数据字段**：curated JSON 顶层除 5 域外还有元数据字段（`curated_at, push_id, total, run_id, run_id_marker`）。遍历域时须跳过这些字段。
 
 ```
-pipeline_orchestrator.py（v2.9.0 — 一键管线 + 层级多样性）
+pipeline_orchestrator.py（v2.10.0 — 一键7阶段 + 层级多样性）
   ① push_slot_detect → ② push_prepare(fetch+curate) → ③ ai_translate
   → ④ render_markdown → ⑤ fragment_push（UTF-8 字节计数分片） → ⑥ record_fingerprints
   → 输出 JSON: {status, fragments, briefing, stats, needs_deep_analysis}
@@ -94,8 +93,31 @@ SOURCE_DOMAIN_OVERRIDE = {
 
 1. **按来源定语言（来自 config/sources.json）** — `get_source_lang()` 读取 `get_config_dir() / 'sources.json'`（`TRENDRADAR_HOME/config/`）每个源的 `language` + `platform` + `name` 字段。单真相源：加新源设好 `language` 即可，不再维护独立的映射文件。
 2. **文件同步** — ai_translate 和 render_markdown 必须读同一文件（今日日期版 → 最新日期版 → 通用版，三层回退）。陷阱 2026-05-26: 只有两层回退时翻译写入通用版但渲染读日期版。
+
+    **P-02 (2026-06-02) atomic_write_json 去 indent=2**：`trendradar/scripts/file_utils.py` `atomic_write_json` 移除 `indent=2` 参数。curated JSON 体积下降约 21%（40KB → 34KB），磁盘 IO 同步下降。**不要回退加回 indent**——会拉低 cron 整体吞吐。
+
+    **⚠️ 手动测试 ai_translate 时的双路径陷阱**：`ai_translate.py` 通过 `get_data_dir()` 读 curated JSON，**实际解析到外层** `~/.hermes/trendradar/data/`（cron 运行时位置）。**但** `~/.hermes/trendradar/` 还有**内层** `trendradar/data/`（git 跟踪位置）。手动准备测试数据时如果写到内层，ai_translate 读不到 → "No items need processing"（看似正常其实是路径错）。**排查**：
+    ```python
+    import sys; sys.path.insert(0, '/home/asus/.hermes')
+    from trendradar.scripts.ai_translate import _load_and_scan, get_source_lang
+    data, items_t, items_e, path = _load_and_scan('evening')
+    print('path:', path)  # 应是外层 ~/.hermes/trendradar/data/curated_evening_*.json
+    ```
+    **修复**：测试数据写到外层 `~/.hermes/trendradar/data/`，测完用 md5sum + backup 还原。同步内层 `~/.hermes/trendradar/trendradar/data/` 仅为 git 跟踪，不参与 cron 运行时。
 3. **render 优先 title_cn** — `render_markdown.py` `_format_item` 取 `title_cn`/`summary_cn`，不回落到原始 title/summary。
+
+    **⚠️ `_get_item_priority()` catch 块返回类型陷阱（2026-06-02 修复）**：`_get_item_priority(source)` 原本在 `except` 分支 `return {}`（空 dict），调用方 `_format_item()` line 129 用作 int 比较 (`if priority < 2`) → TypeError。**触发场景**：sources.json 缺失或路径异常（测试 tmp_path、cron 部署 config 路径异常、sources.json 误删）。**修复**：`return {}` → `return 1`（默认 P1，行为降级而非整段 render_markdown 崩溃）。**排查**：orchestrator 报 exit 1 但 watchdog 一直在报警；`render_markdown.py` 错误日志含 `TypeError: '<' not supported between instances of 'dict' and 'int'`。
 4. **BATCH_SIZE = 10** — `config/translation.py` 中 `TRANSLATE_BATCH_SIZE` 默认 10。若未来换模型需重新验证。
+
+    **⚠️ "批次大=快"反直觉陷阱（2026-06-02 P-01 实测 6 次）**：以为 batch=20 把 2 批合成 1 批能省启动成本。**实测反向**（12 条 expand, deepseek-v4-flash）：
+    | batch | 批次数 | wall time |
+    |-------|:---:|-----------|
+    | **10** | **2 (10+2)** | **10.9-11.3s** ✓ 当前最优 |
+    | 12 | 1 | 12.8-13.0s (+18%) |
+    | 15 | 1 | 14.1-14.6s (+30%) |
+    | 20 | 1 | 15.0-16.1s (+45%) |
+
+    **根因**：单批 LLM attention O(n²) 主导，并发 2 路 (10+2) 反而比单批 12 快 ~1.5s。网络/启动延迟是常数项 ~1.7s/次，2 次调用 ≈ 3.4s 总启动成本 < 单批 12 的 attention 增量。**MAX_CONCURRENT_BATCHES=6 实际只需 2 路，6 留 buffer**。完整基线见 `references/pipeline-translation-bench.md`（含切模型重测命令、max_tokens 雷区、已知未优化清单）。
 
 5. **日→中翻译模型要求** ⚠️ — `deepseek-chat` 处理日文→中文批量翻译时**必然返回原文不变**（`title_cn == title`），不报错不告警。`deepseek-v4-flash` 可正常翻译日文（仍有抖动，偶尔返回原文）。**必须设置 `DEEPSEEK_MODEL=deepseek-v4-flash`**，在 gateway override.conf 中注入环境变量。不可用 deepseek-chat 做日文翻译。
 
@@ -105,7 +127,16 @@ SOURCE_DOMAIN_OVERRIDE = {
 6. **中文短摘要 AI 扩写**（v6.10.0） — `ai_translate.py` 新增中文条目短摘要扩写通道。对中文源（source_lang 为 None）中原始摘要 `<90 字` 的条目，自动用 AI 扩写成 90-110 字的完整信息句。扩写 prompt 在 `_EXPAND_TEMPLATE` 中，约束：不虚构事实、基于标题上下文展开、保持新闻风格。2026-05-27 用户反馈摘要过短后添加，虎嗅/钛媒体短条目从 23/26 字扩至 37/51 字。
 
     **⚠️ Expand prompt 歧义陷阱**（2026-06-01）：`_EXPAND_TEMPLATE` 原措辞 "Rewrite each item's TITLE and SUMMARY into a complete sentence"（单数）会导致 AI 将 title+summary 合并为一行输出。`_write_anchored` 期望每条目 2 行但只收到 1 行 → summary = `[扩写失败]`。修复：改为 "into TWO separate sentences, Do NOT merge them"。排查：发现 `summary_cn = "[扩写失败]"` 但 `title_cn` 正确时（而非两者都错），即为此问题。
-7. **摘要长度与 render 联动** — `render_markdown.py` 的 `_shorten(max_len=120)` 控制最终展示长度（参见输出规范第5条）。英文/日文翻译产出通常 90-110 字，render 基本保留；中文条目从 `summary` 字段取前 120 字。扩写通道覆盖 `<90 字` 的短条目。用户反馈摘要过短时，需同步检查两个配置点：`ai_translate.py` 的扩写逻辑和 `render_markdown.py` 的 `max_len`。
+7. **摘要长度与 render 联动** — `render_markdown.py` 的 `_shorten(max_len=120)` 控制最终展示长度（参见输出规范第5条）。英文/日文翻译产出通常 90-110 字，render 基本保留；中文条目从 `summary` 字段取前 120 字。扩写通道覆盖 `<90 字` 的短条目。用户反馈摘要过短时，需同步检查以下 4 个联动配置点（改一个必须改全部）：
+
+    | 配置点 | 文件 | 当前值 | 作用 |
+    |--------|------|--------|------|
+    | 扩写目标长度 | `ai_translate.py` `_EXPAND_TEMPLATE` | 90-110字 | AI 扩写产出长度 |
+    | 扩写触发阈值 | `ai_translate.py` `_load_and_scan` | `<90` | 多短才触发扩写 |
+    | 翻译摘要目标 | `ai_translate.py` `_TRANSLATE_TEMPLATE` | 90-110字 | AI 翻译产出长度 |
+    | P0 渲染截断 | `render_markdown.py` `_shorten` | 120字 | 最终展示上限 |
+    | P1 渲染截断 | `render_markdown.py` `_shorten` | 100字 | P1 摘要上限 |
+    | 标题截断 | `render_markdown.py` `_shorten` | 100字 | 标题上限 |
 
     **⚠️ 扩写/翻译批处理响应乱序陷阱**（2026-05-31，已修复）：`batch_expand()` / `batch_translate()` 将一组条目发送给 AI。旧版 `_parse_line_pairs()` 按返回顺序配对，AI 乱序时条目串位。
     - 条目 A 收到了条目 B 的扩写/翻译内容（标题谈铜价、摘要讲 DeepSeek）
@@ -131,10 +162,11 @@ SOURCE_DOMAIN_OVERRIDE = {
     预防：单条扩写不受影响（批次仅 1 个 item），多条时风险随 batch 大小增加。当前 `TRANSLATE_BATCH_SIZE=10`，如果频繁出现可考虑降低。
 8. **cron context 投递机制：fragment delivery** — Pipeline 产出 JSON，包含 `fragments` 数组（分片后的 WeCom 安全消息）。Agent 必须遍历 `fragments` 数组，对每个分片调用 `send_message(target="wecom", message=fragment)` 逐条投递。**不能输出 `briefing` 字段作为 final response**——整篇简报超出 WeCom 4KB 限制，会被静默截断。`send_message` 工具通过 `messaging` toolset 可用。
 9. **items_to_translate tuple** — `needs_title`/`needs_summary` 由 `bool(source_lang)` 驱动（非 None 就翻译），第8个元素 `source_lang` (`'English'`/`'Japanese'`/`None`) 必须存在。来源语言由 `data/sources.json` 每个源的 `language` 字段决定（`_scan()` 提取 `en`/`ja` 源的 `platform`+`name` 做子串匹配）。`translate.yaml` 已淘汰（2026-05-25）。旧 CJK 启发式函数（`_is_cjk`/`cjk_ratio`/`needs_translation`/`detect_source_lang`）已于 2026-05-25 全部移除。
-10. **TITLE:/SUMMARY: 前缀残留陷阱** — DeepSeek 翻译/扩写返回可能包含 `TITLE: ` / `SUMMARY: ` 前缀（模仿输入格式）。`_parse_line_pairs()` 有两种处理策略：
-    - **写入层**（2026-05 修复）：`process_curated()` 在写入 title_cn/summary_cn 前 strip 这些前缀。
-    - **解析层**（2026-06-01 修复）：`_parse_line_pairs()` 原代码第 261 行将 `TITLE:`/`SUMMARY:` 开头的整行跳过（认为属于"注释行"），AI 返回此类前缀时标题/摘要内容完全丢失 → `[扩写失败]`。修复：改为 strip 前缀后保留内容行，不跳过。排查：原始数据 `title_cn`/`summary_cn` 为 `[扩写失败]`，且 curated 文件无翻译/扩写历史记录 → 检查 `_parse_line_pairs` 对 `TITLE:`/`SUMMARY:` 的处理。
-11. **手动运行 ai_translate.py 需显式传 DEEPSEEK_API_KEY** — 脚本从 `TRENDRADAR_HOME/.env`（`~/.hermes/trendradar/.env`）读取 API key，但实际 key 在 `~/.hermes/.env`。手动运行时需 `export DEEPSEEK_API_KEY=*** '^DEEPSEEK_API_KEY=*** ~/.hermes/.env | cut -d= -f2- | tr -d '\\\"')`，或设置 `TRENDRADAR_ENV=~/.hermes/.env`。
+10. **TITLE:/SUMMARY:/REWRITTEN 前缀残留陷阱** — DeepSeek 翻译/扩写返回可能包含 `TITLE:` / `SUMMARY:` / `REWRITTEN TITLE:` / `REWRITTEN SUMMARY:` 前缀（AI 模仿 prompt 中的输出格式标签）。`_parse_line_pairs()` 有两种处理策略：
+    - **写入层**：`process_curated()` 在写入 title_cn/summary_cn 前 strip 这些前缀。
+    - **解析层**（2026-06-01 + 2026-06-02 修复）：`_parse_line_pairs()` 的 index-anchored 和 sequential 两个策略均已添加 4 种前缀的 strip 逻辑（`TITLE:` / `SUMMARY:` / `REWRITTEN TITLE:` / `REWRITTEN SUMMARY:`）。2026-06-02 案例：`_EXPAND_TEMPLATE` 规则 5 要求输出 "REWRITTEN TITLE" 和 "REWRITTEN SUMMARY" 行，AI 将其当成字面前缀 → 简报中出现 "**REWRITTEN TITLE: VAST公司...**"。排查：简报条目标题/摘要含英文 "REWRITTEN" 字样。
+    - **通用教训**：prompt 中的输出格式标签（如 "Item N:" / "TITLE:" / "REWRITTEN SUMMARY:"）都有可能被 AI 原样输出为前缀。新增 prompt 格式标签时，必须同步在 `_parse_line_pairs()` 的 strip 列表中添加对应前缀。
+**手动运行 ai_translate.py 需 source env** — 脚本从 `~/.hermes/.env` 读 API key，但运行时不在 env 中。手动运行前必须 `set -a && source ~/.hermes/.env && set +a`，否则 graceful degradation 跳过翻译（exit=2）。Cron 环境由 systemd override.conf 注入，不受影响。
 
 12. **被地理封锁的 RSS 源 → Google News RSS 替代** — 某些源（如 BBC 的 Akamai CDN 对中国 IP 做 SNI 阻断、Cloudflare 托管站点）直连和代理均不可达。可用 Google News RSS 代替直接源：
     ```
@@ -149,7 +181,7 @@ SOURCE_DOMAIN_OVERRIDE = {
 
 ## 晚间深度分析
 
-仅 evening。`delegate_task` 并行 3 个 Pro 子 Agent（趋势/跨域/风险），各基于当日 curated JSON（不联网）。
+仅 evening。`delegate_task` 并行 3 个 flash 子 Agent (deepseek-v4-flash)（趋势/跨域/风险），各基于当日 curated JSON（不联网）。
 输出经 `render_deep_analysis.py --topic "主题"` 管道格式化后作为 final response 逐篇投递（系统自动推送 WeCom）。
 完整协议见 `../../references/PIPELINE.md`（深度分析格式化章节）。
 
@@ -158,6 +190,38 @@ SOURCE_DOMAIN_OVERRIDE = {
 **格式化铁律**：每个 delegate_task 返回的分析文本必须通过 `render_deep_analysis.py` 管道格式化——`echo "$ANALYSIS_TEXT" | $PYTHON scripts/render_deep_analysis.py --topic "主题" --push-id evening --context`。禁止直接输出原始分析文本。格式化后的输出包含 `🔬 **主题**` 标题和 `📌 相关回顾` 部分，这是正确的格式。
 
 **3 条分开投递**：趋势、跨域、风险各作为一条独立 final response 分别输出，不要合并成一条。
+
+**降级路径（2026-06-02 21:00 实战教训）**：当 DeepSeek API upstream 异常（持续 60s timeout × 3 重试全失败），
+**不要让主 agent 整体卡死等子任务**。按以下优先级降级：
+
+1. **首选**：3 个 flash 子 agent 并行（正常路径）
+2. **次选**：若 60s 内无任何子 agent 返回，主 agent **自己**用 flash 生成 3 段分析（趋势/跨域/风险各 1 段，≤1600 字符）
+3. **兜底**：若连主 agent flash 也 timeout，**跳过深度分析**不输出（简报本身已投递，不影响主流程）
+
+**降级识别**：`delegate_task` 调用 + 60s 静默 + DeepSeek 整体超时 → 主 agent 立即接管。
+**禁止**：让 cron job 整体 timeout（21:00 那种 15 分钟 RuntimeError 就是没降级导致的）。
+
+
+
+**⚠️ emoji + `**` 双 prefix 陷阱（2026-06-02 案例）**：`render_deep_analysis.py` 章节标题检测匹配关键词（趋势/方向/分析/总结/风险/影响/机会/启示）时会**自动加 `emoji **xx**` 前缀**。如果 sub-agent 输出时已经写了 `🎯 **方向信号**`，最终输出变 `🎯 **🎯 **方向信号****`（双 emoji + 多余 `**`）。**修复**（sub-agent prompt 端）：要求 sub-agent 只输出**纯文字关键词**，不加 emoji 也不加 `**`：
+```
+🎯 **方向信号**          ← 错（让脚本再加）
+方向信号                  ← 对（让脚本自动加 🎯 **方向信号**）
+```
+
+**⚠️ 1600 字符硬截断陷阱**：`render_deep_analysis.py` 总长度上限 1600 字符（WeCom 单消息安全边界），**超出会被静默截断**（不报错不告警，可能丢结论段）。**预防**：sub-agent prompt 严格约束 `≤1600 字符 + 5-8 段 + 每段 ≤40 字`。**排查**：投递到 WeCom 后发现末尾"综合判断"/"启示"段丢失 → 检查 raw 分析文本是否 > 1600 字符。
+
+**⚠️ Sub-agent 沙箱陷阱**：`delegate_task` 子 Agent 在 cron 上下文中有独立的进程上下文，其 `terminal`/`read_file` 等工具**无法读取父 session 的文件系统**。文件路径传递（如 `cat /path/to/report.md`）会返回空。子 Agent 必须通过 inline 文本传递内容——将分析文本放在 prompt 的 `context` 字段中，而不是让子 Agent 自己去读文件。详见 `../../references/PIPELINE.md`。
+
+**flash 深度分析 6 步有效 recipe（2026-06-02 修订：从 Pro 改 flash）**：
+1. 提取 curated JSON 的 5 域核心字段（title_cn/summary_cn/source/url/heat）→ compact JSON 从 ~20KB 压到 ~4KB（inline 友好）
+2. `delegate_task` 批模式并行 3 个 flash 子 agent（趋势/跨域/风险），每个 prompt 内嵌 compact JSON 作为 context
+3. 3 个子 agent 各自输出纯文本分析（≤1600 字符 + 5-8 段 + 纯关键词无 emoji/`**`）
+4. 3 篇分别 `cat raw.txt | python3 -m trendradar.scripts.render_deep_analysis --topic "X" --push-id evening --context` 格式化
+5. 3 篇分别 `echo "$FORMATTED" | hermes send -t wecom:bl` 投递到 WeCom
+6. 验证 WeCom 收到 3 条独立消息（不是 1 条合并）
+
+**实测耗时**（deepseek-v4-pro, 12 条核心数据）：3 篇并行总耗时 ~150s（单篇 50-150s 不等）。
 
 **⚠️ 格式铁律 — 用户对此容忍度极低**：深度分析必须使用标准 pipe 表格 `|` 排版，模板见 `references/deep-analysis-wecom-format.md`。用户曾多次纠正 "排版，注意排版"——纯文本段落式分析被拒绝。每次生成后必须自检管道表格是否完整。
 
@@ -203,6 +267,14 @@ SOURCE_DOMAIN_OVERRIDE = {
 ## 投递水印机制
 
 详见 `../../references/DELIVERY-WATERMARK.md`。
+
+**⚠️ slot_direct_push.py 路径 bug（2026-06-02 修复）**：`~/.hermes/scripts/slot_direct_push.py` 的 `_resolve_trendradar_home()` 回退路径**错误指向内层** `~/.hermes/trendradar/trendradar/archive`（包含双层 `trendradar/trendradar/`），但 orchestrator 写 archive 在**外层** `~/.hermes/trendradar/archive/`。导致 cron 21:05 投递时 `archive not found` → 写 error marker → 整个 slot 当晚**静默失败**。**修复**：回退路径改为外层 `~/.hermes/trendradar`。**手动投递测试**：
+```bash
+hermes send -t wecom:bl "test msg"             # 验证 WeCom 链路通
+python3 ~/.hermes/scripts/slot_direct_push.py --slot evening  # 手动触发投递
+cat /home/asus/.hermes/trendradar/data/delivery_markers/delivered_$(date +%Y-%m-%d)_evening.marker  # 验证水印
+```
+**重要**：slot_direct_push.py 在 `~/.hermes/scripts/`（**不在 git 仓库**），修改后无法 commit，靠 memory 记录。修改前先 grep `_resolve_trendradar_home` 确认回退路径是外层。
 
 ## 输出规范
 
@@ -275,7 +347,7 @@ if domain_map.get(domain, '') != s.get('category', ''):
 `scorer.py` + `render_markdown.py` 联合实现三级优先级排版，源级配置（`sources.json` `priority` 字段）：
 
 - **P0（priority=0）**：首位/全文摘要（120字）。定调源：AP News, Reuters, Bloomberg, FT, MIT Tech Review, Nikkei Asia 等。
-- **P1（priority=1）**：次位/精简摘要（40字）。立场补充：NYT·世界, Al Jazeera, Science News, Ars Technica 等。
+- **P1（priority=1）**：次位/摘要（100字）。立场补充：NYT·世界, Al Jazeera, Science News, Ars Technica 等。
 - **P2（priority=2）**：末尾/仅标题+链接。查漏补缺：联合早报, 界面, PC Gamer, TechCrunch 等。
 
 **排序逻辑**：`curate_domain()` 和 `score_headlines()` 的 sort key 改为：
@@ -295,7 +367,7 @@ P0 源文章优先填充配额，P1 补充，P2 仅当仍有空位时入选。
 
 **渲染差异**（`render_markdown.py` `_format_item()`）：
 - P0: 标题 + 摘要(120字) + 链接
-- P1: 标题 + 摘要(40字) + 链接
+- P1: 标题 + 摘要(100字) + 链接
 - P2: 标题 + 链接（无摘要）
 
 **配置点**：每个源在 `sources.json` 中新增 `priority` 整数字段。新增源时需同步设置。
@@ -329,11 +401,21 @@ P0 源文章优先填充配额，P1 补充，P2 仅当仍有空位时入选。
 export PYTHON=/usr/local/bin/python3.14t PYTHONPATH=/home/asus/.hermes PYTHON_GIL=0
 ```
 
+**Git push 用 gh auth helper（2026-06-02 修订）**：hosts.yml 存的是 `gho_` OAuth user token，**不能**直接拼进 URL（password auth 被 GitHub 禁用）。`gh auth setup-git` 配 `credential.https://github.com.helper=!/usr/bin/gh auth git-credential` 后直连：`git -c http.proxy= -c https.proxy= push origin main`。Proxy 优先试 `http://127.0.0.1:7890`，GnuTLS 失败 fallback 直连。旧版 `set -a; source ~/.hermes/.env; export DEEPSEEK_API_KEY=*** 那一招对 DeepSeek API 有效，但 push token 不在 env 文件里——走 gh helper。
+
 **Cron job toolset 要求**：日报推送 cron job 的 `enabled_toolsets` 必须包含 `messaging`（提供 `send_message` 工具用于分片投递）。当前配置：`["terminal", "web", "delegation", "messaging"]`。缺 `messaging` 时 Agent 无法遍历 fragments 分别投递，会退化为输出整篇 briefing 导致 WeCom 截断。
 
 **双副本同步要点**：scripts/ 目录修改后需同步到两个位置：(1) /home/asus/TrendRadar/ — 工作副本，推 GitHub；(2) ~/.hermes/trendradar/ — cron 运行时副本（TRENDRADAR_HOME）。遗忘同步会导致 cron 跑旧代码。
 
 **config/ scripts/ symlink 陷阱**：`~/.hermes/trendradar/`（外层）的 `config/` 和 `scripts/` 是 symlink 指向 `trendradar/config/` 和 `trendradar/scripts/`（内层）。2026-05-29 清理 root 级重复目录后，这两条 symlink 若丢失，cron 所有阶段会静默失败（sources.json/timeline.yaml 找不到）。症状是 `pipeline_orchestrator.py` 在 push_prepare 阶段报 `FATAL: Cannot load sources.json`。修复：`cd ~/.hermes/trendradar && ln -sf trendradar/config config && ln -sf trendradar/scripts scripts`。
+
+**"做干净" 含义扩展（2026-06-02 用户原话）**：用户说"做干净点"指**全部四项**，不是只 git history：
+1. **Git history 干净** — squash 错误中间态（如 P-01 改 10→20 又改回 10 的瞬态），force-push 抹除
+2. **测试通过 0 failed** — 修 stale 测试 + 跑回归 209 passed
+3. **生产 bug 修干净** — 借机扫一遍 production crash bug（如 `_get_item_priority` return `{}`）
+4. **Prod data 还原** — 测试期间修改的 `data/curated_*.json` 必须 md5 还原或 backup 备份
+
+修代码 + 文档 + README + git push 一包做全（用户偏好用语："全修"）。"一切从简"任务时仍保留运维工具和数据相关测试加 skip。
 
 ## 并发抓取参数
 
@@ -365,6 +447,7 @@ fetch 耗时约 12-14s/43 源（2026-05-31 实测）。源数增减时 `EXTERNAL
 | `../../references/REPO-SYNC.md` | Git 仓库同步（三处路径流程） |
 | `../../references/MAINTENANCE.md` | References 一致性维护 + Skill 审计清单 |
 | `references/fix-recipes.md` | 已验证质量修复脚本（短摘要扩写、tech上限、foreign_china扩充、tirith关闭） |
+| `references/pipeline-translation-bench.md` | **翻译效率基线 (2026-06-02)** — deepseek-v4-flash batch size 实测 6 次表 + 切模型重测命令 + max_tokens 雷区 + 已知未优化清单 |
 | `../../references/DELIVERY-WATERMARK.md` | 投递水印机制：MarkerDir + delivery_watchdog + 手动标记 |
 | `references/sanity-check-maintenance.md` | Sanity check 拦截器维护 |
 | `scripts/sanity_check.py` | 发布前拦截器 — 禁语/死链/敏感词扫描 + 输出格式验证 |
@@ -374,6 +457,7 @@ fetch 耗时约 12-14s/43 源（2026-05-31 实测）。源数增减时 `EXTERNAL
 | `references/deep-analysis-delivery-failure.md` | 深度分析未格式化 + 简报未送达排查手册 |
 | `scripts/archive_resend.py` | 安全补发：从 `archive/` 读纯 markdown 投递 |
 | `references/fragment-delivery-pitfall.md` | 简报分片投递陷阱：cron prompt 误用 briefing 字段致 WeCom 截断 |
+| `templates/deep-analysis-subagent-prompt.md` | 3 个 flash 深度分析 sub-agent prompt 模板（趋势/跨域/风险，含 ≤1600 字符约束 + 纯关键词无 emoji 约束 + flash 模型说明） |
 
 ## 兴趣偏好
 `config/ai_interests.yaml` — 正面+2分，排除=0分过滤。CLI: `python3 scripts/interest_cli.py {list,add,remove,exclude}`。
