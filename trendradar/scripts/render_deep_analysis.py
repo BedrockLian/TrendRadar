@@ -140,6 +140,11 @@ def clean(text: str) -> str:
     text = re.sub(r'\n\s*[-*_]{3,}\s*\n', '\n\n', text)
     text = re.sub(r'`([^`]+)`', r'\1', text)
     text = re.sub(r'<[^>]+>', '', text)
+    # Strip stray ** that flash sub-agents leave unclosed (WeCom 输出原字符)
+    # 1) 成对 **...** 完全删除（WeCom 不解析加粗）
+    text = re.sub(r'\*\*([^\n]*?)\*\*', r'\1', text)
+    # 2) 行内剩余的孤儿 **（开头/中间/末尾各一）单个剥掉
+    text = re.sub(r'\*\*', '', text)
     text = re.sub(r'\n{3,}', '\n\n', text)
     return text.strip()
 
