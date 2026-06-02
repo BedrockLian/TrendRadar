@@ -133,18 +133,67 @@ def format_historical_context(historical: list[dict]) -> str:
 
 
 def clean(text: str) -> str:
-    """Strip WeCom-unsupported markdown, keep natural structure."""
+    """Strip WeCom-unsupported markdown, keep natural structure.
+
+    WeCom 支持成对 **...** 渲染加粗（用户 2026-06-02 反馈修正）。
+    flash sub-agent 常写出未闭合的 **（末尾多写当加粗没闭合），
+    clean() 不剥，反而就地补齐成对 —— LLM 意图就是想加粗，
+    让 WeCom 渲染时真加粗。策略：
+      1) 先保护已配对的 **X**（X 内不出现 **）
+      2) 剩余 ** 收集位置，按出现顺序两两配对，奇数末尾补一个
+      3) 把占位还原成 **
+    """
     text = re.sub(r'```[\s\S]*?```', '', text)
     text = re.sub(r'^\|[^\n]+\|\s*$', '', text, flags=re.MULTILINE)
     text = re.sub(r'^\|[-:\s:|]+\|\s*$', '', text, flags=re.MULTILINE)
     text = re.sub(r'\n\s*[-*_]{3,}\s*\n', '\n\n', text)
     text = re.sub(r'`([^`]+)`', r'\1', text)
     text = re.sub(r'<[^>]+>', '', text)
-    # Strip stray ** that flash sub-agents leave unclosed (WeCom 输出原字符)
-    # 1) 成对 **...** 完全删除（WeCom 不解析加粗）
-    text = re.sub(r'\*\*([^\n]*?)\*\*', r'\1', text)
-    # 2) 行内剩余的孤儿 **（开头/中间/末尾各一）单个剥掉
-    text = re.sub(r'\*\*', '', text)
+
+    # ── 把残留 ** 全部配对（LLM 末尾多写的 ** 就地闭合为成对加粗） ──
+    # 策略（用户 2026-06-02 23:15 方案"末尾残留加粗"）：
+    #   1) 保护已配对的 **X**（X 内不出现 **），把开闭标记换成 token
+    #   2) 剩余 ** 按"行尾"和"段中"两类处理：
+    #      - 行尾孤儿：把 ** 移到行尾文本前形成 **X**（X 被加粗）
+    #      - 段中孤儿：删除（避免乱加粗）
+    #      - 段中成对（开-闭-开-闭 ...）：保留原样
+    #   3) 还原 token
+
+    # 1) 保护已配对的 **X**
+    text = re.sub(r'\*\*([^*\n]{0,80}?)\*\*',
+                  lambda m: f'\x00OPEN\x00{m.group(1)}\x00CLOSE\x00', text)
+    # 2) 剩余 ** 处理（用户 2026-06-02 方案"末尾残留加粗"）
+    # 按行处理，每行的 ** 计数：
+    #   - 偶数：保留所有，按"开-闭-开-闭"配对
+    #   - 奇数 + 末尾是 **：把末尾 ** 移到行尾文本前形成 **X**
+    #   - 奇数 + 末尾不是 **（段中孤儿）：剥掉这个孤儿（避免乱加粗）
+    def _process_line(line: str) -> str:
+        if '**' not in line:
+            return line
+        parts = line.split('**')
+        n_stars = len(parts) - 1
+        if n_stars == 0:
+            return line
+        if n_stars % 2 == 0:
+            # 偶数：保留所有
+            out = parts[0]
+            for i in range(1, len(parts)):
+                out += '**' + parts[i]
+            return out
+        # 奇数：末位孤儿
+        out = parts[0]
+        for i in range(1, len(parts)):
+            out += '**' + parts[i]
+        if out.endswith('**'):
+            # 末尾孤儿 → 移到文本前形成 **X**
+            stripped = out[:-2]
+            return '**' + stripped + '**'
+        # 段中孤儿（如 "X** Y"）→ 剥掉这个孤儿
+        return out.replace('**', '', 1)
+    text = re.sub(r'^[^\n]*', lambda m: _process_line(m.group(0)), text, flags=re.MULTILINE)
+    # 3) 还原 token
+    text = text.replace('\x00CLOSE\x00', '**').replace('\x00OPEN\x00', '**')
+
     text = re.sub(r'\n{3,}', '\n\n', text)
     return text.strip()
 
@@ -164,6 +213,7 @@ def format_analysis(text: str, topic: str = "深度分析",
     If add_context=True, extracts entities, queries historical context,
     and appends '📌 相关回顾' section at the end.
     """
+    # 第一遍 clean：剥 LLM 自由文本中的残留 **（含 token 保护+还原）
     text = clean(text)
     parts = [f"🔬 **{topic}**"]
     paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
@@ -178,7 +228,9 @@ def format_analysis(text: str, topic: str = "深度分析",
                 continue
             line = re.sub(r'^[-*•]\s+', '', line)
             line = re.sub(r'^\d+[.、]\s+', '', line)
-            line = re.sub(r'^[#*]+\s*', '', line).strip()
+            # 注意：保留行首成对 **（WeCom 渲染加粗），
+            # 只剥 markdown 标题前缀 '#{1,6} '（如 '### 标题'）
+            line = re.sub(r'^#{1,6}\s+', '', line).strip()
             if line:
                 cleaned.append(line)
         if not cleaned:
@@ -194,6 +246,8 @@ def format_analysis(text: str, topic: str = "深度分析",
             parts.append('\n'.join(cleaned))
 
     result = '\n\n'.join(parts)
+    # 第二遍 clean：emoji 路径重新拼装后，残留的 ** 走一次 _process_line
+    # （拼装的 ** 已经是成对的，不会被改；但 LLM 残留如果漏到这一步再修一次）
 
     # ── Knowledge graph: historical context ─────────────────
     if add_context:
