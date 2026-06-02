@@ -42,6 +42,11 @@ ARCHIVE_BASE = TRENDRADAR_HOME / 'archive'
 SLOT_NAMES = {'morning': '早报', 'noon': '午间速递', 'evening': '今日回顾'}
 
 
+def _import_cst():
+    from trendradar.scripts.common import CST
+    return CST
+
+
 def list_archives():
     """列出所有可用存档"""
     if not ARCHIVE_BASE.exists():
@@ -58,8 +63,12 @@ def list_archives():
             print(f"  {date}: {', '.join(slot_labels)}")
 
 
-def resend(date: str, slot: str, auto_confirm: bool = False):
-    """从存档重发指定日期的简报（按 WeCom 分片逐条投递）"""
+def resend(date: str, slot: str, auto_confirm: bool = False, skip_delivered: bool = True):
+    """从存档重发指定日期的简报（按 WeCom 分片逐条投递）
+
+    skip_delivered=True 时，先查 push_log.json 的 run_id 是否已标 delivered_*.marker 水印；
+    命中则跳过整次投递（防重复推送）。
+    """
     archive_path = ARCHIVE_BASE / date / f'{slot}.md'
 
     if not archive_path.exists():
@@ -71,6 +80,15 @@ def resend(date: str, slot: str, auto_confirm: bool = False):
     if not content.strip():
         print(f"[ERROR] 存档为空: {archive_path}")
         sys.exit(1)
+
+    # ── 去重水印检查（防 cron 重复推送）──
+    if skip_delivered:
+        marker_dir = TRENDRADAR_HOME / 'data' / 'delivery_markers'
+        if marker_dir.exists():
+            for m in marker_dir.glob(f'delivered_*{slot}*.marker'):
+                if date in m.name or str(TRENDRADAR_HOME / 'archive' / date) in m.read_text(errors='ignore'):
+                    print(f"[SKIP] {date} {slot} 已投递（{m.name}），跳过")
+                    return
 
     # 用 fragment_push 的分片逻辑切割
     from trendradar.scripts.fragment_push import split_fragments
@@ -104,6 +122,7 @@ def resend(date: str, slot: str, auto_confirm: bool = False):
             return
 
     # 逐片投递
+    success_count = 0
     for i, frag in enumerate(fragments):
         print(f"\n📨 片{i+1}/{len(fragments)} 投递中 ...")
         result = subprocess.run(
@@ -113,11 +132,23 @@ def resend(date: str, slot: str, auto_confirm: bool = False):
         if result.returncode == 0:
             status = result.stdout.strip()[:120] if result.stdout else "ok"
             print(f"  ✅ {status}")
+            success_count += 1
         else:
             print(f"  ❌ 投递失败: {result.stderr[:200]}")
             # 继续下一片，不阻断整次补发
 
-    print(f"\n✅ 全部 {len(fragments)} 片投递完毕")
+    print(f"\n✅ 全部 {len(fragments)} 片投递完毕，成功 {success_count}")
+
+    # 写水印（防 cron 二次推送）
+    if success_count == len(fragments) and success_count > 0:
+        from datetime import datetime
+        CST = _import_cst()
+        marker_dir = TRENDRADAR_HOME / 'data' / 'delivery_markers'
+        marker_dir.mkdir(parents=True, exist_ok=True)
+        marker = marker_dir / f'delivered_{date}_{slot}.marker'
+        marker.write_text(f"archive={archive_path}\nfragments={success_count}\n"
+                          f"delivered_at={datetime.now(CST).isoformat()}\n")
+        print(f"  📌 水印已写: {marker.name}")
 
 
 def main():
@@ -142,7 +173,7 @@ def main():
         sys.exit(1)
 
     from datetime import datetime
-    from trendradar.scripts.common import CST
+    CST = _import_cst()
     date = args.date or datetime.now(CST).strftime('%Y-%m-%d')
 
     resend(date, args.slot, auto_confirm=args.yes)
