@@ -124,10 +124,16 @@ class TestCurateDomain:
         from trendradar.scripts.settings import MAX_PER_DOMAIN
         return MAX_PER_DOMAIN
 
-    def test_filters_empty_summary(self):
+    def test_allows_title_only_items(self):
+        """Title-only items (no summary) are allowed through curated_domain.
+
+        Reason: RSS feeds like Nikkei Asia only provide titles — filtering them out
+        would silently drop entire media sources. Rendering layer (render_markdown)
+        handles missing summary with P2 priority (emoji + title + link, no summary).
+        """
         items = [
-            {'title': '无摘要条目应被过滤掉', 'summary': '',
-             'source_platform': '新华网', 'url': 'https://xinhua.com/1',
+            {'title': '无摘要条目标题足够长可通过评分', 'summary': '',
+             'source_platform': 'Nikkei Asia', 'url': 'https://asia.nikkei.com/1',
              'timestamp': _RECENT_TS,
              '_likely_domain': 'tech', '_drop': False},
             {'title': '合格条目标题足够长通过评分', 'summary': '这是一条有摘要的新闻内容',
@@ -137,7 +143,7 @@ class TestCurateDomain:
         ]
         result = self._curate_domain(items, 'tech')
         titles = [i['title'] for i in result]
-        assert '无摘要条目应被过滤掉' not in titles
+        assert '无摘要条目标题足够长可通过评分' in titles
         assert '合格条目标题足够长通过评分' in titles
 
     def test_respects_max_per_domain(self):

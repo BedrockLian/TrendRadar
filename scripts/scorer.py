@@ -188,15 +188,18 @@ def score_item(item: dict, domain: str = 'tech') -> dict:
 
 
 def curate_domain(items: list, domain: str) -> list:
-    """单 domain 精选排序（过滤空摘要条目，博客除外）。
-    
-    多样性惩罚：同一来源在最终结果中超过 3 条后，后续条目权重减半，
+    """单 domain 精选排序。
+
+    多样性惩罚：同一来源在最终结果中超过 MAX_SAME_SOURCE 条后，后续条目权重减半，
     防止单一来源霸榜。
+
+    注：早期版本过滤空摘要条目（Nikkei 等 RSS-only-title 源被完全排除）。
+    现在改为：domain_items 不过滤空摘要；渲染层 (render_markdown) 已有 P2 fallback
+    处理无摘要条目 (emoji + title + link)。
     """
     domain_items = [i for i in items
                     if i.get('_likely_domain') == domain
-                    and not i.get('_drop')
-                    and i.get('summary', '').strip()]
+                    and not i.get('_drop')]
     curated = []
     for item in domain_items:
         s = score_item(item, domain)

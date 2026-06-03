@@ -7,13 +7,12 @@ def classify_items(raw: list) -> tuple[list, list, list]:
     """分类：头条 / 外媒看华 / 其余 domain / 垃圾丢弃。"""
     # Lazy imports to avoid circular dependency with curate_and_push
     from trendradar.scripts.domain_metadata import (
-        _foreign_sources, _china_kw, _game_sources,
+        _foreign_sources, _game_sources,
         _source_domain, _all_source_category
     )
 
     KW = ALL_KEYWORDS
     FOREIGN = _foreign_sources()
-    CHINA = _china_kw()
     GAME_SRC = _game_sources()
     SRC_DOMAIN = _source_domain()
     ALL_SRC_CAT = _all_source_category()
@@ -26,9 +25,8 @@ def classify_items(raw: list) -> tuple[list, list, list]:
         text = f"{item.get('title', '')} {item.get('summary', '')}"
         plat = (item.get('source_platform', '') or '').lower()
         src_is_foreign = any(fs in plat for fs in FOREIGN)
-        china_hit = any(k in text for k in CHINA)
 
-        if src_is_foreign and china_hit and not any(sp in plat for sp in GAME_SRC):
+        if src_is_foreign and not any(sp in plat for sp in GAME_SRC):
             item['_likely_domain'] = 'foreign_china'
             foreign_china.append(item)
         elif any(sp in plat for sp in GAME_SRC) or (
