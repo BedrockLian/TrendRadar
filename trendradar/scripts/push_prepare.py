@@ -41,7 +41,13 @@ def ensure_raw_exists(push_id: str):
     
     if cache_valid:
         return
-        
+
+    # Before fetching, pre-select the best mihomo node for foreign RSS.
+    # Reads mihomo's own history (no extra network probes) and switches the
+    # 国外媒体 group to the lowest-latency node. ~100ms overhead.
+    from trendradar.scripts.settings import select_node_for_fetch
+    select_node_for_fetch(reason='pre-fetch')
+
     reason = "龄超4h需刷新" if raw_path.exists() else "首次fetch"
     log.info(f"{reason} — 触发 fetch（push-id={push_id}）")
     from trendradar.scripts.fetch_feeds import fetch_all

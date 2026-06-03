@@ -54,6 +54,8 @@ from trendradar.config.fetching import (
 # ── 代理配置 ─────────────────────────────────────────────
 from trendradar.config.proxy import (
     PROXY_URL, DOMESTIC_PROXY_PATTERNS, needs_proxy, check_proxy_alive,
+    MIHOMO_API, MIHOMO_GROUP, REAL_PROXY_TYPES,
+    pick_best_node, select_node_for_fetch, current_node,
 )
 
 # ── 热度追踪 ─────────────────────────────────────────────
