@@ -209,6 +209,13 @@ class TestBatchTranslateBoundary:
 class TestBatchTranslateAllBatching:
     """Test _batch_translate_all batch splitting with language grouping."""
 
+    def setup_method(self, method):
+        """Wipe translate cache so batch_func is actually called."""
+        from ai_translate import _get_cache_path
+        p = _get_cache_path()
+        if p.exists():
+            p.unlink()
+
     def _make_translate_item(self, title, summary, source_lang='English', domain='tech', idx=0):
         """Create a translate item tuple matching _batch_translate_all format."""
         return (domain, idx, {}, title, summary, True, True, source_lang)
@@ -365,6 +372,13 @@ class TestBatchTranslateAllBatching:
 
 class TestCircuitBreakerBoundary:
     """Circuit breaker boundary tests with batch_translate_all."""
+
+    def setup_method(self, method):
+        """Wipe translate cache so batch_func is actually called."""
+        from ai_translate import _get_cache_path
+        p = _get_cache_path()
+        if p.exists():
+            p.unlink()
 
     def _make_translate_item(self, title, summary, source_lang='English', domain='tech', idx=0):
         return (domain, idx, {}, title, summary, True, True, source_lang)

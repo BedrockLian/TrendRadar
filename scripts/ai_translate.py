@@ -132,6 +132,45 @@ from trendradar.config.translation import (
 
 _translate_failures = 0        # 模块级熔断计数器
 
+# ── Translation cache: title/summary hash → (title_cn, summary_cn) ──────────
+# Cross-slot dedup: same BBC article appearing in morning + noon + evening
+# hits cache instead of DeepSeek API. Saves ~3-5s per repeat item.
+import hashlib as _hashlib
+_CACHE_PATH = None  # lazy-initialized on first use
+
+def _get_cache_path():
+    global _CACHE_PATH
+    if _CACHE_PATH is None:
+        from trendradar.scripts.settings import get_cache_dir
+        _CACHE_PATH = get_cache_dir() / 'translate_cache.json'
+    return _CACHE_PATH
+
+def _load_cache() -> dict:
+    p = _get_cache_path()
+    if not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text(encoding='utf-8'))
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+def _save_cache(cache: dict):
+    p = _get_cache_path()
+    p.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        # Atomic write via temp + replace
+        import os as _os, tempfile as _tf
+        fd, tmp = _tf.mkstemp(dir=p.parent, prefix='.tc_')
+        with _os.fdopen(fd, 'w', encoding='utf-8') as f:
+            json.dump(cache, f, ensure_ascii=False)
+        _os.replace(tmp, p)
+    except OSError as e:
+        log.warning(f"translation cache write failed: {e}")
+
+def _content_hash(text: str) -> str:
+    """SHA1 of normalized text — stable across whitespace/case differences."""
+    return _hashlib.sha1(text.strip().lower().encode('utf-8')).hexdigest()[:16]
+
 _EXPAND_TEMPLATE = Template("""You are a professional news editor. The following Chinese news items have very short summaries (often just a tagline or metaphor).
 
 Rewrite each item's TITLE into a complete, informative Chinese sentence of 90-110 characters. Separately, rewrite the SUMMARY into another complete, informative Chinese sentence of 90-110 characters. Do NOT combine them into one sentence.
@@ -270,16 +309,63 @@ async def process_batches(
                 log.error(f"熔断触发 — 跳过剩余批次")
                 return (batch, None, RuntimeError("Circuit breaker open"))
 
-            kwargs = {'session': session, 'items': pairs, 'api_key': api_key}
+            # ── Cache short-circuit: skip API if all pairs hit translate_cache ──
+            cache = _load_cache()
+            cached_results = []
+            uncached_indices = []
+            for i, (t, s) in enumerate(pairs):
+                key = f"{_content_hash(t)}|{_content_hash(s)}|{source_lang or 'auto'}"
+                hit = cache.get(key)
+                if hit:
+                    cached_results.append((i, hit))
+                else:
+                    uncached_indices.append(i)
+
+            if not uncached_indices:
+                # Full cache hit — return cached results in order
+                results = [cache[f"{_content_hash(t)}|{_content_hash(s)}|{source_lang or 'auto'}"]
+                           for t, s in pairs]
+                log.info(f"{log_prefix} {batch_start+1}-{batch_start+len(batch)}/{len(items_to_process)}: "
+                         f"cache hit {len(pairs)}/{len(pairs)} (skipped API)")
+                return (batch, results, None)
+
+            # Partial hit: only send uncached pairs to API
+            if cached_results:
+                log.info(f"{log_prefix} {batch_start+1}: "
+                         f"cache hit {len(cached_results)}/{len(pairs)}, "
+                         f"calling API for {len(uncached_indices)}")
+                uncached_pairs = [pairs[i] for i in uncached_indices]
+            else:
+                uncached_pairs = pairs
+
+            kwargs = {'session': session, 'items': uncached_pairs, 'api_key': api_key}
             if source_lang and group_by_lang:
                 kwargs['source_lang'] = source_lang
-            results = await batch_func(**kwargs)
+            api_results = await batch_func(**kwargs)
+
+            # Write API results back to cache
+            if uncached_indices:
+                for (t, s), res in zip(uncached_pairs, api_results):
+                    key = f"{_content_hash(t)}|{_content_hash(s)}|{source_lang or 'auto'}"
+                    cache[key] = res
+                try:
+                    _save_cache(cache)
+                    log.info(f"translation cache: +{len(uncached_pairs)} entries (total {len(cache)})")
+                except Exception as e:
+                    log.error(f"translation cache save FAILED: {type(e).__name__}: {e}")
+
+            # Reassemble full results list (cached + api) in original order
+            results = [None] * len(pairs)
+            for orig_i, res in cached_results:
+                results[orig_i] = res
+            for uncached_i, res in zip(uncached_indices, api_results):
+                results[uncached_i] = res
 
             batch_end = batch_start + len(batch)
             total = len(items_to_process)
             log.info(
                 f"{log_prefix} {batch_start+1}-{batch_end}/{total}: "
-                f"processed {len(batch)} items")
+                f"processed {len(uncached_pairs)} items (cache {len(cached_results)})")
             circuit_reset()
             return (batch, results, None)
         except Exception as e:
