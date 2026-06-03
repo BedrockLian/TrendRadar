@@ -127,7 +127,7 @@ async def _fetch_one(session: aiohttp.ClientSession, name: str, url: str,
         return name, []
     max_items = 25
     loop = asyncio.get_running_loop()
-    items = await loop.run_in_executor(_get_parse_pool(), _parse_rss, data, name, max_items, freshness_days)
+    items = await loop.run_in_executor(_PARSE_POOL.get(), _parse_rss, data, name, max_items, freshness_days)
     return name, items
 
 

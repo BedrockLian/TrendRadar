@@ -7,7 +7,6 @@ log = get_logger('push-prepare')
 import json, sys, asyncio
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
-from concurrent.futures import ThreadPoolExecutor
 
 from trendradar.scripts.settings import get_data_dir, get_cache_dir, TRENDRADAR_HOME, DOMAINS
 SCRIPTS_DIR = TRENDRADAR_HOME / 'scripts'
@@ -46,9 +45,9 @@ def ensure_raw_exists(push_id: str):
     reason = "龄超4h需刷新" if raw_path.exists() else "首次fetch"
     log.info(f"{reason} — 触发 fetch（push-id={push_id}）")
     from trendradar.scripts.fetch_feeds import fetch_all
+    from trendradar.scripts.settings import atomic_write_json
     start = datetime.now(CST)
     result = asyncio.run(fetch_all(push_id))
-    from trendradar.scripts.settings import atomic_write_json
     atomic_write_json(raw_path, {'items': result['items'],
         'saved_at': datetime.now(CST).isoformat()})
     elapsed = (datetime.now(CST) - start).total_seconds()
@@ -104,30 +103,15 @@ def run_curation(push_id: str) -> dict:
     if health_path.exists():
         curate.load_source_health(str(health_path))
     
-    # RSS fetch 和 blog scan 并行执行
-    def _do_fetch():
+    # RSS fetch 和 blog scan 顺序执行（之前用 ThreadPoolExecutor 包 fetch+blog
+    # 并行，但 fetch 内部嵌套 asyncio.run() 会与子线程的 event loop 死锁——
+    # 表现：fetch 返回 0 items；改为顺序执行，节省 ~1s 换稳定）。
+    try:
         ensure_raw_exists(push_id)
-    
-    def _do_blog():
-        return load_blog_articles()
-    
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        f1 = executor.submit(_do_fetch)
-        f2 = executor.submit(_do_blog)
-        
-        # Collect results — blog can succeed even if fetch fails
+        blog_items_result = load_blog_articles() or []
+    except Exception as e:
+        log.warning(f"fetch/blog 失败: {e}")
         blog_items_result = []
-        fetch_err = None
-        try:
-            f1.result()
-        except Exception as e:
-            fetch_err = e
-            log.warning(f"fetch 失败: {e}")
-        
-        try:
-            blog_items_result = f2.result() or []
-        except Exception as e:
-            log.info(f"blog 失败: {e}")
     
     today = datetime.now(CST).strftime('%Y%m%d')
     try:
