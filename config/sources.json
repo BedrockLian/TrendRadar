@@ -429,10 +429,11 @@
       "type": "rss",
       "category": "news",
       "enabled": true,
-      "feed_url": "https://www.aljazeera.com/xml/rss/all.xml",
+      "feed_url": "https://news.google.com/rss/search?q=site:aljazeera.com&hl=en-US&gl=US&ceid=US:en",
       "authority": 3,
       "language": "en",
-      "priority": 1
+      "priority": 1,
+      "desc": "卡塔尔半岛电视台（Google News 聚合）"
     },
     {
       "id": "the_decoder",
