@@ -7,7 +7,7 @@ log = get_logger('push-prepare')
 import json, sys, asyncio
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor  # noqa: F401
 
 from trendradar.scripts.settings import get_data_dir, get_cache_dir, TRENDRADAR_HOME, DOMAINS
 SCRIPTS_DIR = TRENDRADAR_HOME / 'scripts'
@@ -45,9 +45,15 @@ def ensure_raw_exists(push_id: str):
         
     reason = "龄超4h需刷新" if raw_path.exists() else "首次fetch"
     log.info(f"{reason} — 触发 fetch（push-id={push_id}）")
+    import sys as _sys
+    print(f'[TRACE] ensure_raw_exists cwd={__import__("os").getcwd()}, fetch_feeds loaded: {__import__("trendradar.scripts.fetch_feeds", fromlist=["_make_parse_pool"]).__file__}', file=_sys.stderr, flush=True)
     from trendradar.scripts.fetch_feeds import fetch_all
-    start = datetime.now(CST)
+    import os as _os, sys as _sys
+    _t0 = datetime.now(CST)
     result = asyncio.run(fetch_all(push_id))
+    _t1 = datetime.now(CST)
+    print(f'[DEBUG] fetch_all returned {len(result["items"])} items in {(_t1-_t0).total_seconds():.1f}s, pid={_os.getpid()}, fetch_feeds_mod_id={id(_sys.modules.get("trendradar.scripts.fetch_feeds"))}', file=_sys.stderr, flush=True)
+    start = _t0
     from trendradar.scripts.settings import atomic_write_json
     atomic_write_json(raw_path, {'items': result['items'],
         'saved_at': datetime.now(CST).isoformat()})
@@ -104,30 +110,15 @@ def run_curation(push_id: str) -> dict:
     if health_path.exists():
         curate.load_source_health(str(health_path))
     
-    # RSS fetch 和 blog scan 并行执行
-    def _do_fetch():
+    # RSS fetch 和 blog scan 顺序执行（之前用 ThreadPoolExecutor 包 fetch+blog
+    # 并行，但 fetch 内部嵌套 asyncio.run() 会与子线程的 event loop 死锁——
+    # 表现：fetch 返回 0 items；改为顺序执行，节省 ~1s 换稳定）。
+    try:
         ensure_raw_exists(push_id)
-    
-    def _do_blog():
-        return load_blog_articles()
-    
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        f1 = executor.submit(_do_fetch)
-        f2 = executor.submit(_do_blog)
-        
-        # Collect results — blog can succeed even if fetch fails
+        blog_items_result = load_blog_articles() or []
+    except Exception as e:
+        log.warning(f"fetch/blog 失败: {e}")
         blog_items_result = []
-        fetch_err = None
-        try:
-            f1.result()
-        except Exception as e:
-            fetch_err = e
-            log.warning(f"fetch 失败: {e}")
-        
-        try:
-            blog_items_result = f2.result() or []
-        except Exception as e:
-            log.info(f"blog 失败: {e}")
     
     today = datetime.now(CST).strftime('%Y%m%d')
     try:

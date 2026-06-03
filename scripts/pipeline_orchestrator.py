@@ -277,6 +277,10 @@ def main():
     stats["push_id"] = push_id
 
     # ── Stage 1: push_prepare (fetch + curate) ─────────────────
+    import sys as _sys
+    import importlib.util as _ilu
+    _spec = _ilu.find_spec('trendradar.scripts.push_prepare')
+    print(f'[TRACE-ORCH] push_prepare spec: {_spec.origin if _spec else None}, fetch_feeds: {_ilu.find_spec("trendradar.scripts.fetch_feeds").origin}', file=_sys.stderr, flush=True)
     from trendradar.scripts.push_prepare import run_curation
     skip_fetch = args.skip_fetch
     prep = run_stage(f"push_prepare ({push_id})", run_curation, push_id)

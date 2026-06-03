@@ -14,11 +14,10 @@ import concurrent.futures
 from trendradar.scripts.common import Lazy
 
 def _make_parse_pool():
-    try:
-        return concurrent.futures.InterpreterPoolExecutor(max_workers=24)
-    except (ImportError, AttributeError):
-        log.warning('InterpreterPoolExecutor 不可用，降级为 ThreadPoolExecutor')
-        return concurrent.futures.ThreadPoolExecutor(max_workers=24)
+    # InterpreterPoolExecutor (3.14) can't pickle args in free-threaded mode
+    # (NotShareableError under PYTHON_GIL=0). ThreadPoolExecutor is portable
+    # and parse_rss is mostly I/O-bound, so the worker count is the limiter.
+    return concurrent.futures.ThreadPoolExecutor(max_workers=24)
 
 _PARSE_POOL = Lazy(_make_parse_pool)
 
