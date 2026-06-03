@@ -7,7 +7,6 @@ log = get_logger('push-prepare')
 import json, sys, asyncio
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
-from concurrent.futures import ThreadPoolExecutor  # noqa: F401
 
 from trendradar.scripts.settings import get_data_dir, get_cache_dir, TRENDRADAR_HOME, DOMAINS
 SCRIPTS_DIR = TRENDRADAR_HOME / 'scripts'
@@ -45,16 +44,10 @@ def ensure_raw_exists(push_id: str):
         
     reason = "龄超4h需刷新" if raw_path.exists() else "首次fetch"
     log.info(f"{reason} — 触发 fetch（push-id={push_id}）")
-    import sys as _sys
-    print(f'[TRACE] ensure_raw_exists cwd={__import__("os").getcwd()}, fetch_feeds loaded: {__import__("trendradar.scripts.fetch_feeds", fromlist=["_make_parse_pool"]).__file__}', file=_sys.stderr, flush=True)
     from trendradar.scripts.fetch_feeds import fetch_all
-    import os as _os, sys as _sys
-    _t0 = datetime.now(CST)
-    result = asyncio.run(fetch_all(push_id))
-    _t1 = datetime.now(CST)
-    print(f'[DEBUG] fetch_all returned {len(result["items"])} items in {(_t1-_t0).total_seconds():.1f}s, pid={_os.getpid()}, fetch_feeds_mod_id={id(_sys.modules.get("trendradar.scripts.fetch_feeds"))}', file=_sys.stderr, flush=True)
-    start = _t0
     from trendradar.scripts.settings import atomic_write_json
+    start = datetime.now(CST)
+    result = asyncio.run(fetch_all(push_id))
     atomic_write_json(raw_path, {'items': result['items'],
         'saved_at': datetime.now(CST).isoformat()})
     elapsed = (datetime.now(CST) - start).total_seconds()

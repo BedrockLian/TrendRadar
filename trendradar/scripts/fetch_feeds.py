@@ -98,8 +98,16 @@ def _parse_rss(data: str, platform: str, max_items: int, freshness_days: int = R
 
 async def _fetch_one(session: aiohttp.ClientSession, name: str, url: str,
                      sem: asyncio.Semaphore, freshness_days: int = 1) -> tuple[str, list]:
-    """抓取+解析单个 RSS 源，错误内部消化（带重试）"""
-    max_retries = 2
+    """抓取+解析单个 RSS 源，错误内部消化（带重试）
+
+    Retry policy: 1 retry (2 attempts total). 3 attempts × 8s timeout +
+    exponential backoff adds 30+ seconds per failed source. With 43
+    concurrent sources hitting proxies, 2 retries dominated by 5
+    consistently-failing sources (澎湃/Al Jazeera etc.) — they eat
+    30s of critical path budget for zero gain. 1 retry catches
+    transient blips but bails on persistent failures.
+    """
+    max_retries = 1
     data = ""
     for attempt in range(max_retries + 1):
         async with sem:
@@ -111,14 +119,14 @@ async def _fetch_one(session: aiohttp.ClientSession, name: str, url: str,
                             break
                         elif attempt < max_retries:
                             log.warning(f'{name}: HTTP {resp.status} (重试 {attempt+1}/{max_retries})')
-                            await asyncio.sleep(1 * (2 ** attempt))
+                            await asyncio.sleep(0.5 * (2 ** attempt))
                             continue
                         else:
                             return name, []
             except (asyncio.TimeoutError, aiohttp.ClientError) as e:
                 if attempt < max_retries:
                     log.warning(f'{name}: {type(e).__name__} (重试 {attempt+1}/{max_retries})')
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(0.5)
                     continue
                 log.warning(f'{name}: {type(e).__name__}')
                 return name, []
