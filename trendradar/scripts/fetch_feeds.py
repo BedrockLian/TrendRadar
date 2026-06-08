@@ -29,7 +29,7 @@ from trendradar.scripts.settings import PROXY_URL, needs_proxy, check_proxy_aliv
 DATA_DIR = get_data_dir()
 CACHE_DIR = get_cache_dir()
 
-USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+USER_AGENT = 'Reeder/5.2 MacOSX'
 RSS_FRESHNESS_MAX_AGE_DAYS = 1  # 全局默认，单源可在 sources.json 中覆盖 freshness_days
 
 
@@ -107,7 +107,10 @@ async def _fetch_one(session: aiohttp.ClientSession, name: str, url: str,
     30s of critical path budget for zero gain. 1 retry catches
     transient blips but bails on persistent failures.
     """
-    max_retries = 1
+    # Batch 内只跑 1 次（FETCH_RETRIES=0）。失败由 _fetch_batch 末尾的降级重试处理。
+    # 历史上 max_retries=2 在慢源（如南华早报 8s timeout × 2 + backoff）下拖到 23s；
+    # 砍到 0 后单源失败上限 5s，整体 batch ≤5s 等待最慢源 + 1-2s 等待其余。
+    max_retries = 0
     data = ""
     for attempt in range(max_retries + 1):
         async with sem:
@@ -118,7 +121,6 @@ async def _fetch_one(session: aiohttp.ClientSession, name: str, url: str,
                             data = await resp.text()
                             break
                         elif attempt < max_retries:
-                            log.warning(f'{name}: HTTP {resp.status} (重试 {attempt+1}/{max_retries})')
                             await asyncio.sleep(0.5 * (2 ** attempt))
                             continue
                         else:
@@ -126,7 +128,8 @@ async def _fetch_one(session: aiohttp.ClientSession, name: str, url: str,
             except (asyncio.TimeoutError, aiohttp.ClientError) as e:
                 if attempt < max_retries:
                     log.warning(f'{name}: {type(e).__name__} (重试 {attempt+1}/{max_retries})')
-                    await asyncio.sleep(0.5)
+                    # 第二次重试前长一点 — 给 mihomo 切节点 + 连接池回收留时间
+                    await asyncio.sleep(1.0 * (2 ** attempt))
                     continue
                 log.warning(f'{name}: {type(e).__name__}')
                 return name, []
@@ -154,6 +157,17 @@ async def fetch_all(push_id: str = '') -> dict:
         direct_sources.extend(proxy_sources)
         proxy_sources = []
 
+    # 主动切到 mihomo 历史延迟最低的节点（避免 url-test 测 gstatic 慢
+    # 但 RSS 实际很快的节点被选中；也避免正在用的节点瞬时抽风）
+    if proxy_ok and proxy_sources:
+        from trendradar.config.proxy import select_node_for_fetch, current_node
+        before = current_node() or '(unknown)'
+        after = select_node_for_fetch(reason=f'pre-fetch {push_id or "manual"}')
+        if after and after != before:
+            log.info(f'mihomo 节点: {before} → {after}')
+        elif before and before != '(unknown)':
+            log.info(f'mihomo 节点: 保持 {before}（{after or "无可用历史"}）')
+
     print(f'[FETCH] {len(sources)}源（直连 {len(direct_sources)} + 代理 {len(proxy_sources)}）')
 
     sem = asyncio.Semaphore(EXTERNAL_CONCURRENT)
@@ -166,14 +180,46 @@ async def fetch_all(push_id: str = '') -> dict:
             names.append(n)
         raw_results = await asyncio.gather(*tasks, return_exceptions=True)
         result: dict[str, list] = {}
+        # 收集失败的 (name, url, freshness_days) 用于降级单源重试
+        retry_targets = []
+        name_to_src = {(n, u, fd) for n, u, fd in source_group}
+        # 重建 name→(url,fd) map
+        n2src = {n: (u, fd) for n, u, fd in source_group}
         for name, outcome in zip(names, raw_results):
             if isinstance(outcome, Exception):
                 log.error(f'{name}: {outcome.__class__.__name__}: {outcome}')
                 result[name] = []
+                if name in n2src:
+                    retry_targets.append((name, n2src[name][0], n2src[name][1]))
             elif isinstance(outcome, tuple) and len(outcome) == 2:
                 result[outcome[0]] = outcome[1]
+                if not outcome[1] and name in n2src:
+                    retry_targets.append((name, n2src[name][0], n2src[name][1]))
             else:
                 result[name] = outcome if isinstance(outcome, list) else []
+
+        # 降级：失败源用独立 session 串行重试（不复用 connector 资源）
+        if retry_targets:
+            log.info(f'降级重试 {len(retry_targets)} 个失败源（独立 session）')
+            for name, url, fd in retry_targets:
+                # 复用代理设置（session 是从 fetch_all 传入的）
+                try:
+                    data = ""
+                    async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                        if resp.status == 200:
+                            data = await resp.text()
+                        else:
+                            log.info(f'  降级 {name}: HTTP {resp.status}')
+                    if data:
+                        import trendradar.scripts.fetch_feeds as fmod
+                        items = fmod._parse_rss(data, name, 25, fd)
+                        if items:
+                            result[name] = items
+                            log.info(f'  降级 {name}: 成功 ({len(items)} 条)')
+                        else:
+                            log.info(f'  降级 {name}: 解析得 0 条（feed 空或全过老）')
+                except Exception as e:
+                    log.info(f'  降级 {name}: 失败 {type(e).__name__}: {str(e)[:80]}')
         return result
 
     # 直连 + 代理并行两批
