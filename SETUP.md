@@ -152,15 +152,21 @@
 152|# 预期: HTTP 200/302（Google 可访问）
 153|```
 154|
-155|#### 1.5.4 TrendRadar 自动分流
-156|
-157|TrendRadar 的 `scripts/settings.py` 内置 `needs_proxy()` 函数：
-158|
-159|- **直连**：`plink.anyfeeder.com`（国内中转）、`.cn` 域名
-160|- **代理**：外媒直连 RSS（BBC/NYT/Guardian/SCMP 等）、RSSHub 路由（`localhost:1200`）
-161|- **特殊**：BBC 被代理节点屏蔽，自动降级为直连
-162|
-163|无需额外配置，代理地址默认为 `http://127.0.0.1:7890`，可通过环境变量 `TRENDRADAR_PROXY` 覆盖。
+#### 1.5.4 TrendRadar 自动分流
+
+TrendRadar 的 `trendradar/config/proxy.py` 内置 `needs_proxy()` 函数：
+
+- **直连**：`plink.anyfeeder.com`（国内中转）、`.cn` / `.com.cn` 域名、机器之心 / 36氪 / 少数派（被代理后反而变慢/被墙）
+- **代理**：外媒直连 RSS（BBC/NYT/Guardian/SCMP/CNBC 等）、Google News 聚合源
+- **per-source 覆盖**：`sources.json` 中可显式声明 `"needs_proxy": true/false`，优先于 URL 模式（用于 `cnbc_finance` 这类国内 IP 被拒必须走代理的源）
+
+无需额外配置，代理地址默认为 `http://127.0.0.1:7890`，可通过环境变量 `TRENDRADAR_PROXY` 覆盖。
+
+#### 1.5.4.1 Mihomo 节点预选（v5.7+）
+
+外媒抓取前会调用 mihomo external-controller API（`http://127.0.0.1:9090`），从 `🌍 国外媒体` 策略组的历史延迟中挑最低的节点切过去。动机：mihomo 自带 `url-test` 用 `gstatic.com` 探活，但该域延迟不能代表 RSS 服务器的实际延迟；用历史延迟更准。冷启动抓取可从 ~17s 降到 ~2.5s。
+
+无 mihomo / 控制端口不通时自动降级，不影响抓取。
 164|
 165|#### 1.5.5 RSSHub 容器代理（可选）
 166|
@@ -211,7 +217,7 @@
 211|
 212|# 5. 抓取时查看分流日志（fetch_feeds 输出）
 213|python3 -m scripts.fetch_feeds --push-id morning | grep 'FETCH'
-214|# 输出示例: [FETCH] 41源（直连 9 + 代理 32）
+214|# 输出示例: [FETCH] 43源（直连 7 + 代理 36）
 215|```
 216|
 217|---
