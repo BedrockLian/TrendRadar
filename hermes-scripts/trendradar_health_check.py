@@ -10,6 +10,13 @@
 Cron 每日 15:00 (c987a2883174) no_agent=true 静默运行。
 健康→stdout 空→不推送；异常→Markdown→推送 WeCom。
 """
+# 防御性：strip session 里污染的 PYTHON_GIL/PYTHONNOUSERSITE
+# (hermes-agent 自己的 venv 启用了 free-threaded 后，env 会被持久化到 session
+#  - 用 system python3 跑本脚本时会 crash "config_read_gil: GIL not supported")
+# 同样问题在 slot_direct_push.py 已有 patch
+import os as _os_init
+for _k in ('PYTHON_GIL', 'PYTHONNOUSERSITE'):
+    _os_init.environ.pop(_k, None)
 import json, subprocess, sys, os, time, logging
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
@@ -206,24 +213,32 @@ def check_ollama():
     """本地 Ollama 健康 — 晚间 flash 深度分析依赖
 
     Ollama 挂了 deep analysis 会降级到 DeepSeek，但应告警以便排查。
+    优先查 user systemd（`hermes-scripts` 默认在 user mode 跑），
+    fallback 到系统 systemd（Ollama 装在 /etc/systemd/system 常见）。
     """
-    # 1. systemd 状态
-    try:
-        r = subprocess.run(
-            ['systemctl', '--user', 'is-active', 'ollama.service'],
-            capture_output=True, text=True, timeout=5,
-        )
-        status = r.stdout.strip()
-        if status != 'active':
-            fail('ollama', 'WARN', f'ollama.service 未运行 ({status})')
+    active = False
+    for cmd in (
+        ['systemctl', '--user', 'is-active', 'ollama.service'],
+        ['systemctl', 'is-active', 'ollama.service'],
+    ):
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+            status = r.stdout.strip()
+            if status == 'active':
+                active = True
+                break
+            elif status in ('inactive', 'dead', 'failed'):
+                # 记下供 hint，但不立即 fail（继续查下一级）
+                continue
+        except FileNotFoundError:
+            continue
+        except Exception as e:
+            fail('ollama', 'WARN', f'ollama systemd 检查异常 ({cmd[1]}): {e}')
             return
-    except FileNotFoundError:
-        # 无 systemd — 跳过 systemctl 检查
-        pass
-    except Exception as e:
-        fail('ollama', 'WARN', f'ollama systemd 检查异常: {e}')
+    if not active:
+        fail('ollama', 'WARN', 'ollama.service 未运行（尝试 user + system systemd 均非 active；sudo systemctl start ollama）')
         return
-    # 2. HTTP 探活（systemd active 也要确认端口真的在听）
+    # HTTP 探活（systemd active 也要确认端口真的在听）
     try:
         r = subprocess.run(
             ['curl', '-s', '-o', '/dev/null', '-w', '%{http_code}',
