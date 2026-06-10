@@ -4,7 +4,7 @@ from trendradar.scripts.settings import get_logger
 log = get_logger('push-prepare')
 """TrendRadar 推送准备脚本 — Fetch + Curation + 精简输出 + 指纹查询 一键完成。
 自动 fetch 兜底：raw JSON 不存在时自动调用 fetch_feeds.py，不再依赖外部 prefetch cron jobs。"""
-import json, sys, asyncio
+import json, sys
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
@@ -77,7 +77,7 @@ def ensure_raw_exists(push_id: str):
     from trendradar.scripts.fetch_feeds import fetch_all
     from trendradar.scripts.settings import atomic_write_json
     start = datetime.now(CST)
-    result = asyncio.run(fetch_all(push_id))
+    result = fetch_all(push_id)
     atomic_write_json(raw_path, {'items': result['items'],
         'failed_sources': result.get('failed_sources', []),
         'proxy_url': result.get('proxy_url', ''),

@@ -1,27 +1,24 @@
 #!/usr/bin/env python3
-"""TrendRadar 采集员 — 35个RSS源异步并行抓取（统一 TaskGroup + 3.14 异步优化版）"""
+"""TrendRadar 采集员 — 46个RSS源多线程并行抓取（ThreadPoolExecutor + urllib 同步版）
+
+针对 Python 3.14t free-threading 优化：移除 aiohttp/asyncio，改用 ThreadPoolExecutor
+实现真正的多线程并行 I/O。free-threading（GIL 关闭）下各线程可真正并发执行，
+消除 asyncio 单线程事件循环的隐式串行化开销。
+"""
 from trendradar.scripts.settings import get_logger
 log = get_logger('fetch-feeds')
-import json, re, sys, asyncio
+import json, re, sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from urllib.parse import urlparse
+import urllib.request
+import urllib.error
+import concurrent.futures
 import threading
 from trendradar.config.keywords import has_keyword_match_ci
 import feedparser
-import aiohttp
-import concurrent.futures
-from trendradar.scripts.common import Lazy
 
-def _make_parse_pool():
-    # InterpreterPoolExecutor (3.14) can't pickle args in free-threaded mode
-    # (NotShareableError under PYTHON_GIL=0). ThreadPoolExecutor is portable
-    # and parse_rss is mostly I/O-bound, so the worker count is the limiter.
-    return concurrent.futures.ThreadPoolExecutor(max_workers=24)
-
-_PARSE_POOL = Lazy(_make_parse_pool)
-
-from trendradar.scripts.common import CST
+from trendradar.scripts.common import CST, Lazy
 
 from trendradar.scripts.settings import get_data_dir, get_cache_dir, get_config_dir, write_compressed
 from trendradar.scripts.settings import EXTERNAL_CONCURRENT, TIMEOUT_SEC
@@ -31,6 +28,23 @@ CACHE_DIR = get_cache_dir()
 
 USER_AGENT = 'Reeder/5.2 MacOSX'
 RSS_FRESHNESS_MAX_AGE_DAYS = 1  # 全局默认，单源可在 sources.json 中覆盖 freshness_days
+
+# ── proxy opener 缓存（线程安全：每个线程创建自己的 opener） ──
+_proxy_opener_lock = threading.Lock()
+_proxy_opener = None
+
+def _get_proxy_opener():
+    """获取带代理的 urllib opener（懒初始化，线程安全）"""
+    global _proxy_opener
+    if _proxy_opener is None:
+        with _proxy_opener_lock:
+            if _proxy_opener is None:
+                proxy_handler = urllib.request.ProxyHandler({
+                    'http': PROXY_URL,
+                    'https': PROXY_URL,
+                })
+                _proxy_opener = urllib.request.build_opener(proxy_handler)
+    return _proxy_opener
 
 
 _CONFIG = Lazy(lambda: json.loads((get_config_dir() / 'sources.json').read_text()))
@@ -50,7 +64,7 @@ def _get_sources() -> list[tuple[str, str, int]]:
 
 
 def _parse_rss(data: str, platform: str, max_items: int, freshness_days: int = RSS_FRESHNESS_MAX_AGE_DAYS) -> list:
-    """解析 RSS/Atom/RDF — feedparser 统一处理（CPU密集型，线程池中运行）"""
+    """解析 RSS/Atom/RDF — feedparser 统一处理"""
     items = []
     try:
         parsed = feedparser.parse(data)
@@ -62,10 +76,10 @@ def _parse_rss(data: str, platform: str, max_items: int, freshness_days: int = R
             # URL 编码：某些 RSS 的路径含空格（如 Sixth Tone）
             if link and ' ' in link:
                 from urllib.parse import urlparse, urlunparse, quote
-                parsed = urlparse(link)
-                safe_path = quote(parsed.path, safe='/:@!$&\'()*+,;=-._~')
-                if safe_path != parsed.path:
-                    link = urlunparse(parsed._replace(path=safe_path))
+                parsed_u = urlparse(link)
+                safe_path = quote(parsed_u.path, safe='/:@!$&\'()*+,;=-._~')
+                if safe_path != parsed_u.path:
+                    link = urlunparse(parsed_u._replace(path=safe_path))
             if not title and not link:
                 continue
 
@@ -81,7 +95,6 @@ def _parse_rss(data: str, platform: str, max_items: int, freshness_days: int = R
             if ts_struct:
                 ts_dt = datetime(*ts_struct[:6], tzinfo=timezone.utc)
                 ts = ts_dt.isoformat()
-                # 新鲜度过滤
                 if ts_dt < cutoff:
                     continue
             else:
@@ -96,158 +109,129 @@ def _parse_rss(data: str, platform: str, max_items: int, freshness_days: int = R
     return items
 
 
-async def _fetch_one(session: aiohttp.ClientSession, name: str, url: str,
-                     sem: asyncio.Semaphore, freshness_days: int = 1) -> tuple[str, list]:
-    """抓取+解析单个 RSS 源，错误内部消化（带重试）
+def _fetch_one(name: str, url: str, freshness_days: int = 1, use_proxy: bool = False) -> tuple[str, list]:
+    """同步抓取+解析单个 RSS 源（在线程池中并行运行）
 
-    Retry policy: 1 retry (2 attempts total). 3 attempts × 8s timeout +
-    exponential backoff adds 30+ seconds per failed source. With 43
-    concurrent sources hitting proxies, 2 retries dominated by 5
-    consistently-failing sources (澎湃/Al Jazeera etc.) — they eat
-    30s of critical path budget for zero gain. 1 retry catches
-    transient blips but bails on persistent failures.
+    Returns: (name, items_list)
     """
-    # Batch 内只跑 1 次（FETCH_RETRIES=0）。失败由 _fetch_batch 末尾的降级重试处理。
-    # 历史上 max_retries=2 在慢源（如南华早报 8s timeout × 2 + backoff）下拖到 23s；
-    # 砍到 0 后单源失败上限 5s，整体 batch ≤5s 等待最慢源 + 1-2s 等待其余。
-    max_retries = 0
     data = ""
-    for attempt in range(max_retries + 1):
-        async with sem:
-            try:
-                async with asyncio.timeout(TIMEOUT_SEC):
-                    async with session.get(url) as resp:
-                        if resp.status == 200:
-                            data = await resp.text()
-                            break
-                        elif attempt < max_retries:
-                            await asyncio.sleep(0.5 * (2 ** attempt))
-                            continue
-                        else:
-                            return name, []
-            except (asyncio.TimeoutError, aiohttp.ClientError) as e:
-                if attempt < max_retries:
-                    log.warning(f'{name}: {type(e).__name__} (重试 {attempt+1}/{max_retries})')
-                    # 第二次重试前长一点 — 给 mihomo 切节点 + 连接池回收留时间
-                    await asyncio.sleep(1.0 * (2 ** attempt))
-                    continue
-                log.warning(f'{name}: {type(e).__name__}')
-                return name, []
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': USER_AGENT})
+        if use_proxy:
+            opener = _get_proxy_opener()
+            resp = opener.open(req, timeout=TIMEOUT_SEC)
+        else:
+            resp = urllib.request.urlopen(req, timeout=TIMEOUT_SEC)
+        data = resp.read().decode('utf-8', errors='replace')
+    except Exception as e:
+        log.warning(f'{name}: {type(e).__name__}: {str(e)[:80]}')
+        return name, []
+
     if not data:
         return name, []
-    max_items = 25
-    loop = asyncio.get_running_loop()
-    items = await loop.run_in_executor(_PARSE_POOL.get(), _parse_rss, data, name, max_items, freshness_days)
+
+    items = _parse_rss(data, name, 25, freshness_days)
     return name, items
 
 
-async def fetch_all(push_id: str = '') -> dict:
-    """统一 TaskGroup 并行抓取 + 热度追踪"""
+def _fetch_one_with_retry(name: str, url: str, freshness_days: int = 1,
+                          use_proxy: bool = False) -> tuple[str, list]:
+    """带降级重试的抓取（type annot 兼容旧接口）"""
+    name_result, items = _fetch_one(name, url, freshness_days, use_proxy)
+    return name_result, items
+
+
+def fetch_all(push_id: str = '') -> dict:
+    """多线程并行抓取所有 RSS 源 + 热度追踪
+
+    使用 ThreadPoolExecutor 实现真正的多线程并发。
+    在 Python 3.14t free-threading (GIL=OFF) 下各线程可真正并行执行 HTTP I/O。
+    """
     sources = _get_sources()
 
-    # 分流：国内源直连，外媒源走米霍姆代理
+    # 分流：国内源直连，外媒源走代理
     direct_sources = [(n, u, fd) for n, u, fd in sources if not needs_proxy(u)]
     proxy_sources = [(n, u, fd) for n, u, fd in sources if needs_proxy(u)]
 
     # 代理健康检查
     proxy_ok = check_proxy_alive()
     if not proxy_ok and proxy_sources:
-        log.warning(f'代理 {PROXY_URL} 不可用！{len(proxy_sources)} 个外媒源将全部失败（WSL 直连互联网不可用）')
-        # 降级：把 proxy_sources 也走直连尝试（虽然会失败，但至少明确记录原因）
+        log.warning(f'代理 {PROXY_URL} 不可用！{len(proxy_sources)} 个外媒源将全部失败')
         direct_sources.extend(proxy_sources)
         proxy_sources = []
 
-    # 主动切到 mihomo 历史延迟最低的节点（避免 url-test 测 gstatic 慢
-    # 但 RSS 实际很快的节点被选中；也避免正在用的节点瞬时抽风）
+    # 主动切到延迟最低的节点
     if proxy_ok and proxy_sources:
         from trendradar.config.proxy import select_node_for_fetch, current_node
         before = current_node() or '(unknown)'
         after = select_node_for_fetch(reason=f'pre-fetch {push_id or "manual"}')
         if after and after != before:
-            log.info(f'mihomo 节点: {before} → {after}')
+            log.info(f'节点: {before} → {after}')
         elif before and before != '(unknown)':
-            log.info(f'mihomo 节点: 保持 {before}（{after or "无可用历史"}）')
+            log.info(f'节点: 保持 {before}（{after or "无可用历史"}）')
 
     print(f'[FETCH] {len(sources)}源（直连 {len(direct_sources)} + 代理 {len(proxy_sources)}）')
 
-    sem = asyncio.Semaphore(EXTERNAL_CONCURRENT)
+    all_results: dict[str, list] = {}
+    failed: list[tuple[str, str, int, bool]] = []  # (name, url, fd, use_proxy)
 
-    async def _fetch_batch(source_group: list, session):
-        tasks = []
-        names = []
-        for n, u, fd in source_group:
-            tasks.append(_fetch_one(session, n, u, sem, fd))
-            names.append(n)
-        raw_results = await asyncio.gather(*tasks, return_exceptions=True)
-        result: dict[str, list] = {}
-        # 收集失败的 (name, url, freshness_days) 用于降级单源重试
-        retry_targets = []
-        name_to_src = {(n, u, fd) for n, u, fd in source_group}
-        # 重建 name→(url,fd) map
-        n2src = {n: (u, fd) for n, u, fd in source_group}
-        for name, outcome in zip(names, raw_results):
-            if isinstance(outcome, Exception):
-                log.error(f'{name}: {outcome.__class__.__name__}: {outcome}')
-                result[name] = []
-                if name in n2src:
-                    retry_targets.append((name, n2src[name][0], n2src[name][1]))
-            elif isinstance(outcome, tuple) and len(outcome) == 2:
-                result[outcome[0]] = outcome[1]
-                if not outcome[1] and name in n2src:
-                    retry_targets.append((name, n2src[name][0], n2src[name][1]))
-            else:
-                result[name] = outcome if isinstance(outcome, list) else []
+    # Phase 1: 主批次并行抓取
+    with concurrent.futures.ThreadPoolExecutor(max_workers=EXTERNAL_CONCURRENT) as executor:
+        futures: dict[concurrent.futures.Future, str] = {}
 
-        # 降级：失败源用独立 session 串行重试（不复用 connector 资源）
-        if retry_targets:
-            log.info(f'降级重试 {len(retry_targets)} 个失败源（独立 session）')
-            for name, url, fd in retry_targets:
-                # 复用代理设置（session 是从 fetch_all 传入的）
+        for name, url, fd in direct_sources:
+            f = executor.submit(_fetch_one, name, url, fd, False)
+            futures[f] = name
+        for name, url, fd in proxy_sources:
+            f = executor.submit(_fetch_one, name, url, fd, True)
+            futures[f] = name
+
+        for future in concurrent.futures.as_completed(futures):
+            name = futures[future]
+            try:
+                result_name, items = future.result()
+                all_results[result_name] = items
+                if not items:
+                    # 标记失败源用于降级重试
+                    src = next((s for s in sources if s[0] == result_name), None)
+                    if src:
+                        failed.append((src[0], src[1], src[2], needs_proxy(src[1])))
+            except Exception as e:
+                log.error(f'{name}: {type(e).__name__}: {e}')
+                all_results[name] = []
+                src = next((s for s in sources if s[0] == name), None)
+                if src:
+                    failed.append((src[0], src[1], src[2], needs_proxy(src[1])))
+
+    # Phase 2: 降级重试失败源（独立线程池，小批次）
+    if failed:
+        log.info(f'降级重试 {len(failed)} 个失败源')
+        with concurrent.futures.ThreadPoolExecutor(max_workers=min(8, len(failed))) as executor:
+            retry_futures = {}
+            for name, url, fd, use_proxy in failed:
+                f = executor.submit(_fetch_one, name, url, fd, use_proxy)
+                retry_futures[f] = name
+
+            for future in concurrent.futures.as_completed(retry_futures):
+                name = retry_futures[future]
                 try:
-                    data = ""
-                    async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
-                        if resp.status == 200:
-                            data = await resp.text()
-                        else:
-                            log.info(f'  降级 {name}: HTTP {resp.status}')
-                    if data:
-                        import trendradar.scripts.fetch_feeds as fmod
-                        items = fmod._parse_rss(data, name, 25, fd)
-                        if items:
-                            result[name] = items
-                            log.info(f'  降级 {name}: 成功 ({len(items)} 条)')
-                        else:
-                            log.info(f'  降级 {name}: 解析得 0 条（feed 空或全过老）')
+                    result_name, items = future.result()
+                    if items:
+                        all_results[result_name] = items
+                        log.info(f'  降级 {result_name}: 成功 ({len(items)} 条)')
+                    else:
+                        log.info(f'  降级 {result_name}: 解析得 0 条（feed 空或全过老）')
                 except Exception as e:
                     log.info(f'  降级 {name}: 失败 {type(e).__name__}: {str(e)[:80]}')
-        return result
 
-    # 直连 + 代理并行两批
-    tout = aiohttp.ClientTimeout(total=30)
-    direct_conn = aiohttp.TCPConnector(limit=43, limit_per_host=0, force_close=True)
-    proxy_conn = aiohttp.TCPConnector(limit=43, limit_per_host=0, force_close=True)
-    async with (
-        aiohttp.ClientSession(connector=direct_conn,
-                              headers={'User-Agent': USER_AGENT},
-                              timeout=tout) as direct_session,
-        aiohttp.ClientSession(connector=proxy_conn,
-                              headers={'User-Agent': USER_AGENT},
-                              proxy=PROXY_URL,
-                              timeout=tout) as proxy_session,
-    ):
-        direct_task = _fetch_batch(direct_sources, direct_session)
-        proxy_task = _fetch_batch(proxy_sources, proxy_session)
-        direct_results, proxy_results = await asyncio.gather(direct_task, proxy_task)
-
-    all_results = {**direct_results, **proxy_results}
     failures = sum(1 for v in all_results.values() if not v)
     if failures:
         log.info(f'{failures}源失败')
 
-    # 收集失败源清单（用于 _proxy_health 上报）
+    # 收集失败源清单
     failed_sources = sorted([name for name, items in all_results.items() if not items])
 
-    # 去重 + 预分类 (Sprint 3: _dedup 直接接受 all_results, 消 listcomp 拷贝)
+    # 去重 + 预分类
     merged = _dedup(all_results)
     merged = _preclassify(merged)
 
@@ -273,14 +257,10 @@ def _dedup(all_results: dict[str, list]) -> list:
     """跨平台去重合并（按标题前 40 字符，保留序）。
 
     Sprint 3 perf: 直接接受 all_results dict (platform→items), 避免调用侧 listcomp 全量拷贝。
-    之前 [{**item, 'source_platform': p} for ...] 对 800 items 分配 ~400KB → 现在原地注入。
-
-    Returns: 去重后列表，含 _coverage_count 和 _coverage_platforms。
     """
     seen: dict[str, dict] = {}
     for platform, items in all_results.items():
         for item in items:
-            # 原地注入 source_platform (避免调用侧全量拷贝)
             item['source_platform'] = platform
             domain = urlparse(item.get('url', '')).netloc
             key = f"{item['title'][:40].lower()}||{domain}"
@@ -302,7 +282,7 @@ def _dedup(all_results: dict[str, list]) -> list:
 
 
 def _load_kw_sets():
-    """内部: 实际加载逻辑 (Sprint 2 P1-15)。"""
+    """内部: 实际加载逻辑"""
     from trendradar.config.keywords import GAME_KW, TECH_KW, ECONOMY_KW
     return (GAME_KW, TECH_KW, ECONOMY_KW)
 
@@ -310,15 +290,10 @@ _KW_SETS = Lazy(_load_kw_sets)
 
 
 def _kw_sets():
-    """Returns (GAME_KW, TECH_KW, ECONOMY_KW) from trendradar.config.keywords.
-
-    Sprint 2 P1-15: 替代手写 lazy-lock (12 行 → 3 行)。
-    """
     return _KW_SETS.get()
 
 
 def _load_source_category_map() -> dict:
-    """内部: 实际加载逻辑 (Sprint 2 P1-15)。"""
     cfg = _load_config()
     return {s.get('name', ''): s.get('category', '')
             for s in cfg.get('data_sources', []) if s.get('name')}
@@ -327,10 +302,6 @@ _SRC_CAT_MAP = Lazy(_load_source_category_map)
 
 
 def _source_category_map() -> dict[str, str]:
-    """所有源 → category 映射。用于预分类兜底。
-
-    Sprint 2 P1-15: 替代手写 lazy-lock (12 行 → 3 行)。
-    """
     return _SRC_CAT_MAP.get()
 
 
@@ -339,25 +310,21 @@ def _preclassify(items: list) -> list:
     G, T, E = _kw_sets()
     src_cat = _source_category_map()
     domains = [(G, 'gaming'), (T, 'tech'), (E, 'economy')]
-    
-    # 源级域覆盖 — 特定源固定分配到某个域（不参与关键词匹配）
+
     SOURCE_DOMAIN_OVERRIDE = {}
-    
+
     for item in items:
         platform = item.get('source_platform', '')
-        
-        # 源级覆盖优先
+
         override = SOURCE_DOMAIN_OVERRIDE.get(platform)
         if override:
             item['_likely_domain'] = override
             continue
-        
+
         text = f"{item.get('title', '')} {item.get('summary', '')}"
-        
-        # 游戏关键词假阳性过滤
+
         _game_false_positives = frozenset({'改变游戏规则', 'ゲームチェンジ'})
         if has_keyword_match_ci(text, 'game', _game_false_positives):
-            # 假阳性命中 → 跳过 gaming 关键词匹配，走兜底
             pass
         else:
             domain = next((d for kw, d in domains
@@ -365,8 +332,7 @@ def _preclassify(items: list) -> list:
             if domain:
                 item['_likely_domain'] = domain
                 continue
-        
-        # 关键词未命中或假阳性 → 按源 category 兜底
+
         cat = src_cat.get(platform, '')
         if cat == 'game':
             item['_likely_domain'] = 'gaming'
@@ -386,16 +352,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     start = datetime.now(CST)
-    print(f'[{start:%H:%M:%S}] 开始异步抓取...')
-    result = asyncio.run(fetch_all(args.push_id))
-    # write raw cache with date key (matches push_prepare.py ensure_raw_exists expectation)
-    from datetime import datetime
-    from trendradar.scripts.common import CST
+    print(f'[{start:%H:%M:%S}] 开始多线程抓取...')
+    result = fetch_all(args.push_id)
+
     today = datetime.now(CST).strftime('%Y%m%d')
     write_compressed(CACHE_DIR / f'raw_{today}', result)
 
     items = result['items']
-    d = {dom: sum(1 for i in items if i.get('_likely_domain') == dom) for dom in ('gaming', 'tech', 'economy', 'top_headlines', 'other')}
+    d = {dom: sum(1 for i in items if i.get('_likely_domain') == dom)
+         for dom in ('gaming', 'tech', 'economy', 'top_headlines', 'other')}
     elapsed = (datetime.now(CST) - start).total_seconds()
     print(f'[{datetime.now(CST):%H:%M:%S}] 完成: {len(items)}条 '
-           f'(g:{d["gaming"]} t:{d["tech"]} e:{d["economy"]} h:{d["top_headlines"]} o:{d["other"]}) {elapsed:.1f}s')
+          f'(g:{d["gaming"]} t:{d["tech"]} e:{d["economy"]} h:{d["top_headlines"]} o:{d["other"]}) {elapsed:.1f}s')
