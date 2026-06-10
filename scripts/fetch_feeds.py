@@ -296,39 +296,37 @@ def _dedup(items: list) -> list:
     return list(seen.values())
 
 
-_KW_SETS_LOCK = threading.Lock()
-_KW_SETS_VAL = None
-_KW_SETS_SENTINEL = object()
+def _load_kw_sets():
+    """内部: 实际加载逻辑 (Sprint 2 P1-15)。"""
+    from trendradar.config.keywords import GAME_KW, TECH_KW, ECONOMY_KW
+    return (GAME_KW, TECH_KW, ECONOMY_KW)
+
+_KW_SETS = Lazy(_load_kw_sets)
+
 
 def _kw_sets():
-    """Returns (GAME_KW, TECH_KW, ECONOMY_KW) from trendradar.config.keywords."""
-    global _KW_SETS_VAL
-    if _KW_SETS_VAL is not None:
-        return _KW_SETS_VAL
-    with _KW_SETS_LOCK:
-        if _KW_SETS_VAL is not None:
-            return _KW_SETS_VAL
-        from trendradar.config.keywords import GAME_KW, TECH_KW, ECONOMY_KW
-        _KW_SETS_VAL = (GAME_KW, TECH_KW, ECONOMY_KW)
-        return _KW_SETS_VAL
+    """Returns (GAME_KW, TECH_KW, ECONOMY_KW) from trendradar.config.keywords.
+
+    Sprint 2 P1-15: 替代手写 lazy-lock (12 行 → 3 行)。
+    """
+    return _KW_SETS.get()
 
 
-_SRC_CAT_MAP_LOCK = threading.Lock()
-_SRC_CAT_MAP_VAL = None
-_SRC_CAT_MAP_SENTINEL = object()
+def _load_source_category_map() -> dict:
+    """内部: 实际加载逻辑 (Sprint 2 P1-15)。"""
+    cfg = _load_config()
+    return {s.get('name', ''): s.get('category', '')
+            for s in cfg.get('data_sources', []) if s.get('name')}
+
+_SRC_CAT_MAP = Lazy(_load_source_category_map)
+
 
 def _source_category_map() -> dict[str, str]:
-    """所有源 → category 映射。用于预分类兜底。"""
-    global _SRC_CAT_MAP_VAL
-    if _SRC_CAT_MAP_VAL is not None:
-        return _SRC_CAT_MAP_VAL
-    with _SRC_CAT_MAP_LOCK:
-        if _SRC_CAT_MAP_VAL is not None:
-            return _SRC_CAT_MAP_VAL
-        cfg = _load_config()
-        _SRC_CAT_MAP_VAL = {s.get('name', ''): s.get('category', '')
-                            for s in cfg.get('data_sources', []) if s.get('name')}
-        return _SRC_CAT_MAP_VAL
+    """所有源 → category 映射。用于预分类兜底。
+
+    Sprint 2 P1-15: 替代手写 lazy-lock (12 行 → 3 行)。
+    """
+    return _SRC_CAT_MAP.get()
 
 
 def _preclassify(items: list) -> list:

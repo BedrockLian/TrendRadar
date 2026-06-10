@@ -69,15 +69,14 @@ def _cleanup_silent(push_id: str):
 
 def _write_push_log(push_id: str, result: dict, errors: list):
     """Write push outcome to push_log.json for delivery failure tracking.
-    
+
     Records: push_id, timestamp, status, fragment_count, error_count.
     Used by delivery_watchdog to detect partial-delivery failures.
-    
-    Uses atomic write (temp + os.replace) to prevent corruption from
+
+    Uses atomic_write_json (P1-16) to prevent corruption from
     concurrent multi-cron writes.
     """
-    import os as _os
-    import tempfile as _tempfile
+    from trendradar.scripts.file_utils import atomic_write_json
     log_path = DATA_DIR / "push_log.json"
     try:
         if log_path.exists():
@@ -104,19 +103,10 @@ def _write_push_log(push_id: str, result: dict, errors: list):
         if len(entries) > 100:
             entries = entries[-100:]
 
-        log_path.parent.mkdir(parents=True, exist_ok=True)
-        fd, tmp = _tempfile.mkstemp(dir=log_path.parent, prefix='.tmp_push_log_')
-        fu = _os.fdopen(fd, 'w', encoding='utf-8')
-        try:
-            with fu:
-                json.dump(entries, fu, ensure_ascii=False, indent=2)
-            _os.replace(tmp, log_path)
-        except Exception as e:
-            log.warning(f"push_log write failed: {e}")
-            _os.unlink(tmp)
-            raise
+        # P1-16: 用 atomic_write_json 替代手写 mkstemp + os.replace
+        atomic_write_json(log_path, entries, indent=2)
     except Exception as e:
-        log.exception(f"push_log write failed: {e}")
+        log.warning(f"push_log write 失败: {e}")
 
 
 def list_pipeline_steps() -> dict:

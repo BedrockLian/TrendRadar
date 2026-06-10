@@ -7,59 +7,47 @@ from pathlib import Path
 import threading
 from typing import Optional
 
+from trendradar.scripts.lazy import Lazy  # Sprint 2 P1-15
+
 
 TRENDRADAR_HOME: Path = Path(os.environ.get(
     'TRENDRADAR_HOME', Path.home() / '.hermes' / 'trendradar'
 ))
 
 
-_DATA_DIR_LOCK = threading.Lock()
-_DATA_DIR_VAL: Optional[Path] = None
-_DATA_DIR_SENTINEL = object()
+def _load_data_dir() -> Path:
+    """内部: data 目录加载逻辑 (Sprint 2 P1-15)。"""
+    d = TRENDRADAR_HOME / 'data'
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+_DATA_DIR = Lazy(_load_data_dir)
 
 def get_data_dir() -> Path:
-    global _DATA_DIR_VAL
-    if _DATA_DIR_VAL is not None:
-        return _DATA_DIR_VAL
-    with _DATA_DIR_LOCK:
-        if _DATA_DIR_VAL is not None:
-            return _DATA_DIR_VAL
-        d = TRENDRADAR_HOME / 'data'
-        d.mkdir(parents=True, exist_ok=True)
-        _DATA_DIR_VAL = d
-        return d
+    return _DATA_DIR.get()
 
 
-_CACHE_DIR_LOCK = threading.Lock()
-_CACHE_DIR_VAL: Optional[Path] = None
-_CACHE_DIR_SENTINEL = object()
+def _load_cache_dir() -> Path:
+    """内部: cache 目录加载逻辑 (Sprint 2 P1-15)。"""
+    d = TRENDRADAR_HOME / 'cache'
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+_CACHE_DIR = Lazy(_load_cache_dir)
 
 def get_cache_dir() -> Path:
-    global _CACHE_DIR_VAL
-    if _CACHE_DIR_VAL is not None:
-        return _CACHE_DIR_VAL
-    with _CACHE_DIR_LOCK:
-        if _CACHE_DIR_VAL is not None:
-            return _CACHE_DIR_VAL
-        d = TRENDRADAR_HOME / 'cache'
-        d.mkdir(parents=True, exist_ok=True)
-        _CACHE_DIR_VAL = d
-        return d
+    return _CACHE_DIR.get()
 
-_CONFIG_DIR_LOCK = threading.Lock()
-_CONFIG_DIR_VAL: Optional[Path] = None
-_CONFIG_DIR_SENTINEL = object()
+
+def _load_config_dir() -> Path:
+    """内部: config 目录加载逻辑 (Sprint 2 P1-15)。"""
+    return TRENDRADAR_HOME / 'config'
+
+_CONFIG_DIR = Lazy(_load_config_dir)
 
 def get_config_dir() -> Path:
     """返回 config/ 目录（sources.json, ai_interests.yaml 等）。"""
-    global _CONFIG_DIR_VAL
-    if _CONFIG_DIR_VAL is not None:
-        return _CONFIG_DIR_VAL
-    with _CONFIG_DIR_LOCK:
-        if _CONFIG_DIR_VAL is not None:
-            return _CONFIG_DIR_VAL
-        _CONFIG_DIR_VAL = TRENDRADAR_HOME / 'config'
-        return _CONFIG_DIR_VAL
+    return _CONFIG_DIR.get()
 
 
 def raw_path(date_str: str) -> Path:
@@ -105,22 +93,26 @@ def write_compressed(path: Path, data: dict):
 
     修复 2026-06-10 (Agent B audit): 之前只写 .zst 时被 push_prepare.atomic_write_json 覆盖,
     导致 2.8MB raw cache 全部未压缩。现统一为同时写两份，read_compressed 优先读 .zst。
+
+    重要约定: path 应为"无后缀"基础名, 如 `cache/test_data`。
+    实际写入: <base>.json + <base>.json.zst。
     """
-    # 1) 总是写 .json（向后兼容 + 人工可读）
-    atomic_write_json(path, data)
-    # 2) 顺手写 .zst（zstd 可用时）
+    json_path = path.with_suffix('.json')
+    # 1) 总是写 .json (向后兼容 + 人工可读)
+    atomic_write_json(json_path, data)
+    # 2) 顺手写 .zst (zstd 可用时)
     zstd_impl = _get_zstd()
     if zstd_impl:
         zstd, _ = zstd_impl
-        raw = _json.dumps(data, ensure_ascii=False, indent=2).encode()
-        path.with_suffix('.json.zst').write_bytes(zstd.compress(raw, level=3))
+        raw = json_path.read_bytes()
+        zst_path = path.with_suffix('.json.zst')
+        zst_path.write_bytes(zstd.compress(raw, level=3))
 
 
 def read_compressed(path: Path) -> dict:
     """优先读 .zst（解压），fallback 到 .json。
 
-    修复 2026-06-10: 之前只检查 .zst 存在与否; 现如果 .zst 不存在或 zstd 不可用,
-    优雅降级到读 .json。
+    约定: path 应为"无后缀"基础名, 跟 write_compressed 对称。
     """
     zst_path = path.with_suffix('.json.zst')
     if zst_path.exists():
@@ -131,5 +123,6 @@ def read_compressed(path: Path) -> dict:
                 return _json.loads(zstd.decompress(zst_path.read_bytes()))
             except Exception:
                 pass  # zst 损坏, 降级读 .json
-    # 降级: 读 .json（必须有, write_compressed 双写保证）
-    return _json.loads(path.read_text())
+    # 降级: 读 .json (write_compressed 双写保证)
+    json_path = path.with_suffix('.json')
+    return _json.loads(json_path.read_text())

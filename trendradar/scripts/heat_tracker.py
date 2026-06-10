@@ -1,4 +1,4 @@
-from trendradar.scripts.common import CST
+from trendradar.scripts.common import CST, Lazy
 #!/usr/bin/env python3
 """
 TrendRadar 热度追踪器 - 跨周期持久化追踪新闻热度变化
@@ -58,18 +58,22 @@ def get_db() -> sqlite3.Connection:
 
 
 def init_db():
-    """初始化数据库 schema（懒加载 — 首次调用时执行，后续秒过）。"""
-    global _INITIALIZED
-    if _INITIALIZED:
-        return
-    with _INIT_LOCK:
-        if _INITIALIZED:
-            return
-        from trendradar.scripts.settings import ensure_db_migrated
-        ensure_db_migrated(DB_PATH)
-        conn = get_db()
-        conn.execute("PRAGMA journal_mode=WAL")
-        _INITIALIZED = True
+    """初始化数据库 schema（懒加载 — 首次调用时执行，后续秒过）。
+
+    Sprint 2 P1-15: 用 Lazy 替代手写 lock。函数体副作用保证原子性。
+    """
+    _init_db_done.get()
+
+
+def _init_db_impl():
+    """实际 init 逻辑 (Sprint 2 P1-15: 用 Lazy 替代手写 lock)。"""
+    from trendradar.scripts.settings import ensure_db_migrated
+    ensure_db_migrated(DB_PATH)
+    conn = get_db()
+    conn.execute("PRAGMA journal_mode=WAL")
+
+
+_init_db_done = Lazy(_init_db_impl)
 
 
 def _ensure_indexes(conn: sqlite3.Connection):
