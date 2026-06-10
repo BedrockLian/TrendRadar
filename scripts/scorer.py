@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 from trendradar.scripts.common import CST
+from trendradar.scripts.fetch_feeds import _load_config  # Sprint 3 perf
 from trendradar.scripts.settings import (
     get_logger, MIN_SCORE, MAX_PER_DOMAIN, SCORE_HEAT_WORDS,
     MAX_SAME_SOURCE, DIVERSITY_PENALTY_FACTOR,
@@ -97,10 +98,10 @@ def _get_health_penalty(platform: str) -> float:
 
 
 def _get_source_priority(platform: str, domain: str = '') -> int:
-    from trendradar.scripts.settings import get_config_dir
+    # Sprint 3 perf: 用 fetch_feeds._load_config() Lazy 缓存替代每 item 读盘
     import json
     try:
-        cfg = json.loads((get_config_dir() / 'sources.json').read_text())
+        cfg = _load_config()
         for s in cfg.get('data_sources', []):
             if s.get('name') == platform:
                 pri = s.get('priority', 1)

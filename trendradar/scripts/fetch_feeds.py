@@ -247,8 +247,8 @@ async def fetch_all(push_id: str = '') -> dict:
     # 收集失败源清单（用于 _proxy_health 上报）
     failed_sources = sorted([name for name, items in all_results.items() if not items])
 
-    # 去重 + 预分类
-    merged = _dedup([{**item, 'source_platform': p} for p, items in all_results.items() for item in items])
+    # 去重 + 预分类 (Sprint 3: _dedup 直接接受 all_results, 消 listcomp 拷贝)
+    merged = _dedup(all_results)
     merged = _preclassify(merged)
 
     # 热度追踪 + 预附 heat_info
@@ -269,27 +269,32 @@ async def fetch_all(push_id: str = '') -> dict:
             'fetch_time': datetime.now(CST).isoformat()}
 
 
-def _dedup(items: list) -> list:
+def _dedup(all_results: dict[str, list]) -> list:
     """跨平台去重合并（按标题前 40 字符，保留序）。
+
+    Sprint 3 perf: 直接接受 all_results dict (platform→items), 避免调用侧 listcomp 全量拷贝。
+    之前 [{**item, 'source_platform': p} for ...] 对 800 items 分配 ~400KB → 现在原地注入。
 
     Returns: 去重后列表，含 _coverage_count 和 _coverage_platforms。
     """
     seen: dict[str, dict] = {}
-    for item in items:
-        domain = urlparse(item.get('url', '')).netloc
-        key = f"{item['title'][:40].lower()}||{domain}"
-        if key not in seen:
-            item |= {'_coverage_count': 1, '_coverage_platforms': {item.get('source_platform', '')}}
-            seen[key] = item
-        else:
-            ex = seen[key]
-            p = item.get('source_platform', '')
-            if p and p not in ex.get('_coverage_platforms', set()):
-                ex['_coverage_count'] += 1
-                ex.setdefault('_coverage_platforms', set()).add(p)
-                ex['summary'] = f"[{ex['source_platform']}] {ex['summary']} // [{p}] {item['summary']}"
-                ex.setdefault('url', item['url'])
-                ex['source_platform'] = f"{ex['source_platform']}+{p}"
+    for platform, items in all_results.items():
+        for item in items:
+            # 原地注入 source_platform (避免调用侧全量拷贝)
+            item['source_platform'] = platform
+            domain = urlparse(item.get('url', '')).netloc
+            key = f"{item['title'][:40].lower()}||{domain}"
+            if key not in seen:
+                item |= {'_coverage_count': 1, '_coverage_platforms': {platform}}
+                seen[key] = item
+            else:
+                ex = seen[key]
+                if platform and platform not in ex.get('_coverage_platforms', set()):
+                    ex['_coverage_count'] += 1
+                    ex.setdefault('_coverage_platforms', set()).add(platform)
+                    ex['summary'] = f"[{ex['source_platform']}] {ex['summary']} // [{platform}] {item['summary']}"
+                    ex.setdefault('url', item['url'])
+                    ex['source_platform'] = f"{ex['source_platform']}+{platform}"
     for item in seen.values():
         if '_coverage_platforms' in item:
             item['_coverage_platforms'] = list(item['_coverage_platforms'])

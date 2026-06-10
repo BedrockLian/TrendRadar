@@ -1,7 +1,7 @@
 """TrendRadar 代理配置。"""
 import os
 
-PROXY_URL = os.environ.get('TRENDRADAR_PROXY', 'http://127.0.0.1:7890')
+PROXY_URL = os.environ.get('TRENDRADAR_PROXY', 'http://127.0.0.1:7897')
 
 DOMESTIC_PROXY_PATTERNS = (
     'plink.anyfeeder.com',
@@ -45,7 +45,7 @@ def check_proxy_alive(timeout: float = 2.0) -> bool:
     from urllib.parse import urlparse
     parsed = urlparse(PROXY_URL)
     host = parsed.hostname or '127.0.0.1'
-    port = parsed.port or 7890
+    port = parsed.port or 7897
     try:
         with socket.create_connection((host, port), timeout=timeout):
             return True

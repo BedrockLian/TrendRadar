@@ -79,17 +79,19 @@ def _shorten(text, max_len):
 
 
 def _get_item_priority(source_platform: str) -> int:
-    """Read source priority from sources.json (0=P0, 1=P1, 2=P2)."""
-    from trendradar.scripts.settings import get_config_dir
-    import json
+    """Read source priority from sources.json (0=P0, 1=P1, 2=P2).
+
+    Sprint 3 perf: 用 fetch_feeds._load_config() 的 Lazy 缓存替代每 item 读盘。
+    之前 60 items × 读 sources.json = 180 次磁盘 IO → 现在 1 次。
+    """
+    from trendradar.scripts.fetch_feeds import _load_config
     try:
-        cfg = json.loads((get_config_dir() / 'sources.json').read_text())
-        for s in cfg.get('data_sources', []):
+        for s in _load_config().get('data_sources', []):
             if s.get('name') == source_platform:
                 return s.get('priority', 1)
     except Exception as e:
         log.warning(f"render_markdown load sources failed: {e}")
-        return 1  # 降级：默认 P1（次位/精简摘要）
+        return 1  # 降级：默认 P1
     return 1
 
 

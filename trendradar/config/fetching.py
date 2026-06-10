@@ -5,7 +5,7 @@ v2 (2026-06-05)：TIMEOUT 8→5s, FETCH_RETRIES 1→0
 - 失败走 _fetch_batch 末尾的"降级重试"通道（独立 15s 超时，独立尝试）
 - 实测 41 源 23.9s → 预期 8-12s，南华早报等慢源拖整体时长被根治
 """
-EXTERNAL_CONCURRENT = 41   # 41 源，全部并发（=源数）
+EXTERNAL_CONCURRENT = 60   # 动态：应 ≥ sources.json 源数（当前 46）；2026-06-10 改为 60
 TIMEOUT_SEC = 6            # 单次尝试超时（含 DNS+TLS+首字节+body）
 FETCH_RETRIES = 0          # batch 内不重试；失败走降级重试通道
 

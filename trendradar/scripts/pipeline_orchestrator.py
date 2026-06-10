@@ -273,21 +273,19 @@ def main():
     prep = run_stage(f"push_prepare ({push_id})", run_curation, push_id)
     stats["stages"]["push_prepare"] = prep["elapsed"]
 
-    # ── _proxy_health: 从 raw json 提取 fetch 失败源 + 代理 URL ─
-    # （用户可从 stats 字段一眼看出"是不是全 0"）
+    # ── _proxy_health: 从共享 raw 缓存提取 fetch 失败源 + 代理 URL ─
     try:
-        _raw_today = CACHE_DIR / f"raw_{datetime.now(CST).strftime('%Y%m%d')}.json"
-        if _raw_today.exists():
-            _raw = json.loads(_raw_today.read_text())
-            _failed = _raw.get("failed_sources", [])
-            stats["proxy_health"] = {
-                "proxy_url": _raw.get("proxy_url", ""),
-                "failed_sources": _failed,
-                "failed_count": len(_failed),
-                "fetched_items": len(_raw.get("items", [])),
-            }
-            if _failed:
-                log.warning(f"⚠️ {len(_failed)} 源 fetch 失败: {_failed[:5]}{'...' if len(_failed) > 5 else ''}")
+        from trendradar.scripts.push_prepare import get_raw_today  # Sprint 3: 共享内存缓存
+        _raw = get_raw_today()
+        _failed = _raw.get("failed_sources", [])
+        stats["proxy_health"] = {
+            "proxy_url": _raw.get("proxy_url", ""),
+            "failed_sources": _failed,
+            "failed_count": len(_failed),
+            "fetched_items": len(_raw.get("items", [])),
+        }
+        if _failed:
+            log.warning(f"⚠️ {len(_failed)} 源 fetch 失败: {_failed[:5]}{'...' if len(_failed) > 5 else ''}")
     except Exception as _e:
         log.debug(f"proxy_health 提取失败（非阻塞）: {_e}")
 

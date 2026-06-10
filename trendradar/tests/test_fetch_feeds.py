@@ -18,22 +18,26 @@ class TestDedup:
     @pytest.mark.smoke
     def test_dedup_empty(self):
         from fetch_feeds import _dedup
-        assert _dedup([]) == []
+        assert _dedup({}) == []
 
     def test_dedup_single(self):
         from fetch_feeds import _dedup
-        items = [{'title': 'Test title here', 'source_platform': 'BBC'}]
+        items = {'BBC': [{'title': 'Test title here'}]}
         result = _dedup(items)
         assert len(result) == 1
         assert result[0]['_coverage_count'] == 1
 
     def test_dedup_duplicate_titles(self):
         from fetch_feeds import _dedup
-        items = [
-            {'title': 'Same title repeated many times here', 'source_platform': 'BBC', 'summary': 'Test A', 'url': 'https://bbc.com/1'},
-            {'title': 'Same title repeated many times here', 'source_platform': 'Reuters', 'summary': 'Test B', 'url': 'https://reuters.com/2'},
-            {'title': 'Different title entirely different', 'source_platform': 'NYT', 'summary': 'Test C', 'url': 'https://nyt.com/3'},
-        ]
+        items = {
+            'BBC': [
+                {'title': 'Same title repeated many times here', 'summary': 'Test A', 'url': 'https://bbc.com/1'},
+                {'title': 'Same title repeated many times here', 'summary': 'Test B', 'url': 'https://reuters.com/2'},
+            ],
+            'NYT': [
+                {'title': 'Different title entirely different', 'summary': 'Test C', 'url': 'https://nyt.com/3'},
+            ],
+        }
         result = _dedup(items)
         # Step 8: dedup key now includes URL domain (bbc.com vs reuters.com),
         # so same-title-different-domain items are no longer merged.

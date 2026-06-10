@@ -16,15 +16,39 @@ CACHE_DIR = get_cache_dir()
 from trendradar.scripts.common import gen_run_id, run_id_marker, set_run_id_ctx
 from trendradar.scripts.settings import write_compressed
 
+# Sprint 3 perf: raw JSON 进程内共享缓存 (pipeline_orchestrator 和 push_prepare 各读一次 → 共享)
+from trendradar.scripts.lazy import Lazy as _Lazy
+_raw_today_cache = None  # type: ignore
+
+def get_raw_today(force_reload: bool = False) -> dict:
+    """返回今天 raw JSON 的内存缓存。首次调用自动加载，后续返回缓存。
+
+    push_prepare 和 pipeline_orchestrator 共用此函数，避免同一次 pipeline 内两次 json.load。
+    """
+    global _raw_today_cache
+    if _raw_today_cache is None or force_reload:
+        from datetime import datetime as _dt
+        today = _dt.now(CST).strftime('%Y%m%d')
+        raw_path = CACHE_DIR / f'raw_{today}.json'
+        if raw_path.exists():
+            try:
+                _raw_today_cache = json.loads(raw_path.read_text())
+            except Exception:
+                _raw_today_cache = {'items': []}
+        else:
+            _raw_today_cache = {'items': []}
+    return _raw_today_cache
+
 
 def ensure_raw_exists(push_id: str):
     """按日期缓存 raw JSON。缓存有效时跳过，否则触发 fetch。"""
-    today = datetime.now(CST).strftime('%Y%m%d')
+    now = datetime.now(CST)  # Sprint 3: 单次快照，避免重复取系统时间
+    today = now.strftime('%Y%m%d')
     raw_path = CACHE_DIR / f'raw_{today}.json'
     
     cache_valid = False
     if raw_path.exists():
-        age_hours = (datetime.now(CST) - datetime.fromtimestamp(raw_path.stat().st_mtime, tz=CST)).total_seconds() / 3600
+        age_hours = (now - datetime.fromtimestamp(raw_path.stat().st_mtime, tz=CST)).total_seconds() / 3600
         if age_hours < 4:
             # Quality gate: if previous fetch was degraded, force refresh
             try:
