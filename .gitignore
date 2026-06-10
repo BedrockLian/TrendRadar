@@ -30,16 +30,21 @@ mail_queue/
 *.json.zst
 *.marker
 
-# ── 配置文件 / Secrets（本地）────────────────────────────
+# ──配置文件 / Secrets（本地）────────────────────────────
 .env
 .env.local
 trendradar/.env
 trendradar/config/ai_interests.txt.bak
 
-# ── IDE / OS 临时文件 ─────────────────────────────────────
+# ── IDE / OS临时文件 ─────────────────────────────────────
 *.swp
 .DS_Store
 Thumbs.db
+
+# ── 本地 sync机制产物(不入 GitHub) ────────────────────
+sync_repo.sh
+sync_files.py
+.sync_state/
 
 # ── 注意 ───────────────────────────────────────────────────
 # 必要配置文件（必同步）：
