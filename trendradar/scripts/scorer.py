@@ -114,7 +114,7 @@ def _get_source_priority(platform: str, domain: str = '') -> int:
                 return pri
     except Exception as e:
         log.warning(f"scorer load sources failed: {e}")
-        return {}  # 降级：无惩罚
+        return 1  # 降级：默认 P1 优先级（与正常路径末尾返回一致）
     return 1
 
 

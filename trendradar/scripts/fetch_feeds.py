@@ -244,6 +244,9 @@ async def fetch_all(push_id: str = '') -> dict:
     if failures:
         log.info(f'{failures}源失败')
 
+    # 收集失败源清单（用于 _proxy_health 上报）
+    failed_sources = sorted([name for name, items in all_results.items() if not items])
+
     # 去重 + 预分类
     merged = _dedup([{**item, 'source_platform': p} for p, items in all_results.items() for item in items])
     merged = _preclassify(merged)
@@ -261,6 +264,8 @@ async def fetch_all(push_id: str = '') -> dict:
         log.warning(f'热度追踪失败: {e}')
 
     return {'items': merged, 'platform_stats': {p: len(it) for p, it in all_results.items()},
+            'failed_sources': failed_sources,
+            'proxy_url': PROXY_URL,
             'fetch_time': datetime.now(CST).isoformat()}
 
 

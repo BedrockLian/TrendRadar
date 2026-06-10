@@ -55,9 +55,24 @@ def ensure_raw_exists(push_id: str):
     start = datetime.now(CST)
     result = asyncio.run(fetch_all(push_id))
     atomic_write_json(raw_path, {'items': result['items'],
+        'failed_sources': result.get('failed_sources', []),
+        'proxy_url': result.get('proxy_url', ''),
         'saved_at': datetime.now(CST).isoformat()})
+    # 顺手写 zst 压缩版本（如 zstd 可用）— Agent B audit P1-11
+    # write_compressed 期望 path 无后缀（它会同时写 .json 和 .json.zst），
+    # 而 raw_path 已经有 .json 后缀, 剥掉
+    try:
+        from trendradar.scripts.file_utils import _get_zstd
+        if _get_zstd():
+            import zstandard as zstd_lib
+            raw = raw_path.read_bytes()
+            zst_path = raw_path.with_suffix('.json.zst')
+            zst_path.write_bytes(zstd_lib.ZstdCompressor(level=3).compress(raw))
+            log.debug(f"zst 写入: {zst_path.name} ({zst_path.stat().st_size}B)")
+    except Exception as _e:
+        log.debug(f"zst 写入失败（非阻塞）: {_e}")
     elapsed = (datetime.now(CST) - start).total_seconds()
-    log.info(f"fetch 完成 {len(result['items'])}条, 耗时{elapsed:.1f}s, 写入 raw_{today}.json")
+    log.info(f"fetch 完成 {len(result['items'])}条, 耗时{elapsed:.1f}s, 写入 raw_{today}.json (失败源 {len(result.get('failed_sources', []))} 个)")
 
 
 def load_blog_articles() -> list:

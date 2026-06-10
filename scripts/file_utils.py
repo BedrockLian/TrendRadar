@@ -101,21 +101,35 @@ def _get_zstd():
 
 
 def write_compressed(path: Path, data: dict):
+    """双写策略: 总是写可读 .json, 顺手写压缩 .zst（如 zstd 可用）。
+
+    修复 2026-06-10 (Agent B audit): 之前只写 .zst 时被 push_prepare.atomic_write_json 覆盖,
+    导致 2.8MB raw cache 全部未压缩。现统一为同时写两份，read_compressed 优先读 .zst。
+    """
+    # 1) 总是写 .json（向后兼容 + 人工可读）
+    atomic_write_json(path, data)
+    # 2) 顺手写 .zst（zstd 可用时）
     zstd_impl = _get_zstd()
     if zstd_impl:
-        zstd, name = zstd_impl
+        zstd, _ = zstd_impl
         raw = _json.dumps(data, ensure_ascii=False, indent=2).encode()
         path.with_suffix('.json.zst').write_bytes(zstd.compress(raw, level=3))
-    else:
-        atomic_write_json(path, data)
 
 
 def read_compressed(path: Path) -> dict:
+    """优先读 .zst（解压），fallback 到 .json。
+
+    修复 2026-06-10: 之前只检查 .zst 存在与否; 现如果 .zst 不存在或 zstd 不可用,
+    优雅降级到读 .json。
+    """
     zst_path = path.with_suffix('.json.zst')
-    if not zst_path.exists():
-        return _json.loads(path.read_text())
-    zstd_impl = _get_zstd()
-    if zstd_impl:
-        zstd, name = zstd_impl
-        return _json.loads(zstd.decompress(zst_path.read_bytes()))
+    if zst_path.exists():
+        zstd_impl = _get_zstd()
+        if zstd_impl:
+            zstd, _ = zstd_impl
+            try:
+                return _json.loads(zstd.decompress(zst_path.read_bytes()))
+            except Exception:
+                pass  # zst 损坏, 降级读 .json
+    # 降级: 读 .json（必须有, write_compressed 双写保证）
     return _json.loads(path.read_text())

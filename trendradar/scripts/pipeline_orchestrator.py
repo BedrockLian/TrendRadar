@@ -38,6 +38,7 @@ PYTHON = os.environ.get("PYTHON", sys.executable)
 SCRIPTS_DIR = Path(__file__).resolve().parent
 TREND_DIR = SCRIPTS_DIR.parent
 DATA_DIR = TREND_DIR / "data"
+CACHE_DIR = TREND_DIR / "cache"
 
 # Pipeline version — must stay in sync with corresponding SKILL.md version
 __version__ = "2.9.0"  # v2.9: subprocess → direct function calls
@@ -282,6 +283,24 @@ def main():
     prep = run_stage(f"push_prepare ({push_id})", run_curation, push_id)
     stats["stages"]["push_prepare"] = prep["elapsed"]
 
+    # ── _proxy_health: 从 raw json 提取 fetch 失败源 + 代理 URL ─
+    # （用户可从 stats 字段一眼看出"是不是全 0"）
+    try:
+        _raw_today = CACHE_DIR / f"raw_{datetime.now(CST).strftime('%Y%m%d')}.json"
+        if _raw_today.exists():
+            _raw = json.loads(_raw_today.read_text())
+            _failed = _raw.get("failed_sources", [])
+            stats["proxy_health"] = {
+                "proxy_url": _raw.get("proxy_url", ""),
+                "failed_sources": _failed,
+                "failed_count": len(_failed),
+                "fetched_items": len(_raw.get("items", [])),
+            }
+            if _failed:
+                log.warning(f"⚠️ {len(_failed)} 源 fetch 失败: {_failed[:5]}{'...' if len(_failed) > 5 else ''}")
+    except Exception as _e:
+        log.debug(f"proxy_health 提取失败（非阻塞）: {_e}")
+
     if not prep["ok"]:
         errors.append(f"push_prepare: {prep['error']}")
         log.error(json.dumps({"status": "error", "errors": errors, "push_id": push_id}, ensure_ascii=False))
@@ -315,6 +334,17 @@ def main():
 
     translate_result = run_stage(f"ai_translate ({push_id})", _run_translate)
     stats["stages"]["ai_translate"] = translate_result["elapsed"]
+
+    # P1-13: 把 LLM 统计透传到 stats
+    if translate_result.get("ok") and isinstance(translate_result.get("result"), dict):
+        llm_stats = translate_result["result"].get("_llm_stats")
+        if llm_stats:
+            stats["llm_stats"] = llm_stats
+            log.info(
+                f"📊 LLM 统计: {llm_stats['api_call_count']} API calls, "
+                f"~{llm_stats['estimated_tokens']} tokens, "
+                f"{llm_stats['translated_count']} items translated"
+            )
 
     if not translate_result["ok"]:
         err = translate_result.get("error", "")

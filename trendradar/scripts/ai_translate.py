@@ -591,6 +591,8 @@ async def process_curated(push_id: str) -> dict:
 
     total_chars = 0
     translated_count = 0
+    api_call_count = 0  # P1-13: 统计 LLM 调用次数
+    estimated_tokens = 0  # P1-13: 估算 token 数 (len(text)//4 对中英混合都合理)
 
     async with aiohttp.ClientSession() as session:
         # Step 1: Translate foreign items
@@ -601,6 +603,7 @@ async def process_curated(push_id: str) -> dict:
             batch_results = await _batch_translate_all(
                 session, items_to_translate, api_key
             )
+            api_call_count += len(batch_results)  # 每个 batch 一次 API 调用
 
             for batch, translations, error in batch_results:
                 if error:
@@ -627,6 +630,9 @@ async def process_curated(push_id: str) -> dict:
                     if title_cn or summary_cn:
                         translated_count += 1
                     total_chars += len(title) + len(summary)
+                    # 估算 prompt+completion tokens (粗估: 1 token ≈ 4 字符, 双向)
+                    batch_text = " ".join(str(e) for e in batch)
+                    estimated_tokens += len(batch_text) // 4 + len(" ".join(t for t in translations if t)) // 4
 
         # Step 2: Expand short Chinese summaries
         if items_to_expand:
@@ -636,6 +642,7 @@ async def process_curated(push_id: str) -> dict:
             expand_results = await _batch_expand_all(
                 session, items_to_expand, api_key
             )
+            api_call_count += len(expand_results)
 
             for batch, translations, error in expand_results:
                 if error:
@@ -648,12 +655,23 @@ async def process_curated(push_id: str) -> dict:
                         item['summary_cn'] = summary_cn
                     translated_count += 1
                     total_chars += len(title) + len(summary)
+                    batch_text = " ".join(str(e) for e in batch)
+                    estimated_tokens += len(batch_text) // 4 + len(" ".join(t for t in translations if t)) // 4
 
     _write_back(data, curated_path, push_id)
 
     log.info(
         f"Done: {translated_count} items processed, "
-        f"{total_chars} chars total")
+        f"{total_chars} chars total, {api_call_count} API calls, ~{estimated_tokens} tokens")
+
+    # P1-13: 把统计信息写进 data 字典返回，orchestrator 透传到 push_log
+    if isinstance(data, dict):
+        data['_llm_stats'] = {
+            'api_call_count': api_call_count,
+            'estimated_tokens': estimated_tokens,
+            'translated_count': translated_count,
+            'total_chars': total_chars,
+        }
 
     return data
 
