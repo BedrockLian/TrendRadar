@@ -630,9 +630,13 @@ async def process_curated(push_id: str) -> dict:
                     if title_cn or summary_cn:
                         translated_count += 1
                     total_chars += len(title) + len(summary)
-                    # 估算 prompt+completion tokens (粗估: 1 token ≈ 4 字符, 双向)
-                    batch_text = " ".join(str(e) for e in batch)
-                    estimated_tokens += len(batch_text) // 4 + len(" ".join(t for t in translations if t)) // 4
+                    # 估算 tokens (P1-13, 非阻塞 — 失败时不崩溃)
+                    try:
+                        batch_text = " ".join(str(e) for e in batch)
+                        trans_text = " ".join(str(t) for t in translations if t)
+                        estimated_tokens += len(batch_text) // 4 + len(trans_text) // 4
+                    except Exception:
+                        pass  # 粗估失败不影响管线
 
         # Step 2: Expand short Chinese summaries
         if items_to_expand:
@@ -655,8 +659,13 @@ async def process_curated(push_id: str) -> dict:
                         item['summary_cn'] = summary_cn
                     translated_count += 1
                     total_chars += len(title) + len(summary)
-                    batch_text = " ".join(str(e) for e in batch)
-                    estimated_tokens += len(batch_text) // 4 + len(" ".join(t for t in translations if t)) // 4
+                    # 估算 tokens (P1-13, 非阻塞)
+                    try:
+                        batch_text = " ".join(str(e) for e in batch)
+                        trans_text = " ".join(str(t) for t in translations if t)
+                        estimated_tokens += len(batch_text) // 4 + len(trans_text) // 4
+                    except Exception:
+                        pass
 
     _write_back(data, curated_path, push_id)
 
