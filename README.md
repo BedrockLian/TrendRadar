@@ -120,7 +120,7 @@ TrendRadar/
 │   │   ├── storage.py                   # SQLite 存储抽象层
 │   │   └── exitcodes.py                 # 退出码协议定义
 │   ├── config/                #   关键词/时段/翻译/兴趣配置
-│   │   ├── sources.json              # 43 RSS 源列表（含 needs_proxy 显式覆盖）
+│   │   ├── sources.json              # 39+ RSS 源列表
 │   │   ├── keywords.py               # AC 自动机关键词分类（505 词 × 6 域）
 │   │   ├── ai_interests.yaml         # 兴趣偏好评分配置
 │   │   └── timeline.yaml             # 推送时段配置

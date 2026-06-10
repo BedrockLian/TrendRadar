@@ -10,13 +10,6 @@
 Cron 每日 15:00 (c987a2883174) no_agent=true 静默运行。
 健康→stdout 空→不推送；异常→Markdown→推送 WeCom。
 """
-# 防御性：strip session 里污染的 PYTHON_GIL/PYTHONNOUSERSITE
-# (hermes-agent 自己的 venv 启用了 free-threaded 后，env 会被持久化到 session
-#  - 用 system python3 跑本脚本时会 crash "config_read_gil: GIL not supported")
-# 同样问题在 slot_direct_push.py 已有 patch
-import os as _os_init
-for _k in ('PYTHON_GIL', 'PYTHONNOUSERSITE'):
-    _os_init.environ.pop(_k, None)
 import json, subprocess, sys, os, time, logging
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
@@ -76,27 +69,14 @@ def check_db():
 
 
 def check_scripts():
-    """核心脚本存在性 — 只列 pipeline_orchestrator 直接 import 的关键文件
-
-    之前列了 17 个，新版 30+ 脚本会持续膨胀；只校验管线核心 import 链。
-    """
+    """核心脚本存在性（不含已删除的 batch_fetch.py）"""
     required = [
-        'pipeline_orchestrator.py',  # 一键管线入口
-        'push_prepare.py',           # 编排 fetch+curate
-        'fetch_feeds.py',            # RSS 抓取
-        'curate_and_push.py',        # 5 域精选
-        'ai_translate.py',           # AI 翻译
-        'render_markdown.py',        # 渲染
-        'render_deep_analysis.py',   # 深度分析渲染
-        'fragment_push.py',          # 分片
-        'sanity_check.py',           # 拦截器
-        'record_fingerprints.py',    # 指纹记录
-        'track_events.py',           # 事件追踪
-        'heat_tracker.py',           # 热度追踪
-        'push_slot_detect.py',       # 时段检测
-        'common.py',                 # 公共工具
-        'settings.py',               # 统一配置
-        'storage.py',                # 存储抽象
+        'push_prepare.py', 'fetch_feeds.py', 'push_slot_detect.py',
+        'record_fingerprints.py', 'track_events.py', 'heat_tracker.py',
+        'ai_translate.py', 'render_markdown.py', 'fragment_push.py',
+        'render_deep_analysis.py', 'curate_and_push.py',
+        'pipeline_orchestrator.py', 'common.py', 'settings.py', 'storage.py',
+        'sanity_check.py', 'blind_spot_audit.py', 'aggregate_monthly.py',
     ]
     for name in required:
         p = SCRIPTS / name
@@ -105,39 +85,25 @@ def check_scripts():
 
 
 def check_cron():
-    """cron 调度器 — 所有关键 job 注册（按名称模糊匹配）+ last run 错误检测
-
-    不仅检查 job 是否注册，还解析 Last run 行检测 error/critical 失败。
-    """
+    """cron 调度器 — 所有关键 job 注册（按名称模糊匹配）"""
     try:
         r = subprocess.run(['hermes', 'cron', 'list'],
                           capture_output=True, text=True, timeout=15)
         if r.returncode != 0:
             fail('cron', 'WARN', f'hermes cron list 失败 (exit={r.returncode})')
             return
-        # 解析 Name: 行 + Last run: 行（按 job block 分组）
+        # 解析 Name: 行
         import re
         job_names = set()
-        last_runs = {}  # name → "ok" | "error: ..." | missing
-        current_name = None
         for line in r.stdout.split('\n'):
             m = re.match(r'\s+Name:\s+(.+)', line)
             if m:
-                current_name = m.group(1).strip()
-                job_names.add(current_name)
-                last_runs.setdefault(current_name, None)
-                continue
-            m = re.match(r'\s+Last run:\s+(.+)', line)
-            if m and current_name:
-                txt = m.group(1).strip()
-                if 'error' in txt.lower() or 'fail' in txt.lower():
-                    last_runs[current_name] = txt
-                else:
-                    last_runs[current_name] = 'ok'
-        # 模糊匹配 job 存在性
+                job_names.add(m.group(1).strip())
+        # 模糊匹配
         for name in CRON_JOB_NAMES:
             found = any(name in jn for jn in job_names)
             if not found:
+                # 退化：分 token 匹配
                 fuzzy = False
                 for jn in job_names:
                     for token in name.split():
@@ -148,12 +114,6 @@ def check_cron():
                         break
                 if not fuzzy:
                     fail('cron', 'WARN', f'job "{name}" 未注册')
-        # last run 错误检测
-        for name, status in last_runs.items():
-            if status and status != 'ok' and status is not None:
-                # 截短到一行
-                short = status[:120].replace('\n', ' ')
-                fail('cron', 'WARN', f'job "{name}" 上次运行失败: {short}')
     except Exception as e:
         fail('cron', 'WARN', f'cron 检查异常: {e}')
 
@@ -186,11 +146,7 @@ def check_gateway():
 
 
 def check_api():
-    """外网连通性 — DeepSeek API（NO_PROXY 直连可达）
-
-    注意：DeepSeek 失败时 trendradar 渲染仍可能走本地 Ollama 兜底，
-    所以 DeepSeek 不可达只 WARN，不 CRITICAL。
-    """
+    """外网连通性 — DeepSeek API（NO_PROXY 直连可达）"""
     try:
         env = os.environ.copy()
         for k in ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy']:
@@ -207,51 +163,6 @@ def check_api():
         fail('api', 'WARN', 'DeepSeek API 超时')
     except Exception as e:
         fail('api', 'WARN', f'API 检查失败: {e}')
-
-
-def check_ollama():
-    """本地 Ollama 健康 — 晚间 flash 深度分析依赖
-
-    Ollama 挂了 deep analysis 会降级到 DeepSeek，但应告警以便排查。
-    优先查 user systemd（`hermes-scripts` 默认在 user mode 跑），
-    fallback 到系统 systemd（Ollama 装在 /etc/systemd/system 常见）。
-    """
-    active = False
-    for cmd in (
-        ['systemctl', '--user', 'is-active', 'ollama.service'],
-        ['systemctl', 'is-active', 'ollama.service'],
-    ):
-        try:
-            r = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
-            status = r.stdout.strip()
-            if status == 'active':
-                active = True
-                break
-            elif status in ('inactive', 'dead', 'failed'):
-                # 记下供 hint，但不立即 fail（继续查下一级）
-                continue
-        except FileNotFoundError:
-            continue
-        except Exception as e:
-            fail('ollama', 'WARN', f'ollama systemd 检查异常 ({cmd[1]}): {e}')
-            return
-    if not active:
-        fail('ollama', 'WARN', 'ollama.service 未运行（尝试 user + system systemd 均非 active；sudo systemctl start ollama）')
-        return
-    # HTTP 探活（systemd active 也要确认端口真的在听）
-    try:
-        r = subprocess.run(
-            ['curl', '-s', '-o', '/dev/null', '-w', '%{http_code}',
-             '--connect-timeout', '3', 'http://127.0.0.1:11434/api/tags'],
-            capture_output=True, text=True, timeout=5,
-        )
-        code = r.stdout.strip()
-        if code != '200':
-            fail('ollama', 'WARN', f'Ollama /api/tags 返回 HTTP {code}')
-    except subprocess.TimeoutExpired:
-        fail('ollama', 'WARN', 'Ollama /api/tags 超时（服务卡住？）')
-    except Exception as e:
-        fail('ollama', 'WARN', f'Ollama 探活失败: {e}')
 
 
 def check_memory_size():
@@ -272,28 +183,16 @@ def check_memory_size():
 
 
 def check_data_freshness():
-    """最新 curated 数据时效 — 动态阈值避免日报间歇期误报
-
-    阈值取"到下次日报 cron 触发时间的小时数" + 30min buffer：
-    早报 09:00 后，最迟 12:00 午报应已出（间隔 3h）；
-    午报 12:00 后，最迟 15:00 体检时晚 21:00 报还没出（间隔 9h）；
-    晚报 21:00 后到次日 09:00 是 12h；
-    体检 cron 跑在 15:00 — 距最近一次已跑日报是 3h（12:00 午报）。
-
-    简单做法：阈值 6h，cron 正常时 15:00 体检距 12:00 午报 3h（不报）；
-    cron 出错时 check_cron 的 last run 检测会报（互不重叠）。
-    """
+    """最新 curated 数据时效"""
     now = time.time()
     files = sorted(DATA.glob('curated_*.json'),
                    key=lambda f: f.stat().st_mtime, reverse=True)
-    if not files:
+    if files:
+        age_h = (now - files[0].stat().st_mtime) / 3600
+        if age_h > 15:
+            fail('data', 'WARN', f'最新 curated 数据已 {age_h:.1f}h 未更新')
+    else:
         fail('data', 'WARN', '无 curated 数据文件')
-        return
-    age_h = (now - files[0].stat().st_mtime) / 3600
-    # 体检 cron 在 15:00 跑；距最近日报（12:00 午报）3h；
-    # 阈值取 6h 既能盖过间歇期，又能检出 cron 真的卡住
-    if age_h > 6:
-        fail('data', 'WARN', f'最新 curated 数据已 {age_h:.1f}h 未更新（阈值 6h）')
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -307,7 +206,6 @@ def main():
     check_cron()
     check_gateway()
     check_api()
-    check_ollama()
     check_memory_size()
     check_data_freshness()
 

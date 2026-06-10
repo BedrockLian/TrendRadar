@@ -19,13 +19,77 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 CST = timezone(timedelta(hours=8))
-HERMES_HOME = os.path.expanduser("~/.hermes")
-TRENDRADAR_HOME = Path(os.environ.get(
-    'TRENDRADAR_HOME',
-    Path.home() / '.hermes' / 'trendradar'
-))
+
+# FIX 2026-06-10 (cron no_agent run): ensure `trendradar` package is importable
+# regardless of where cron scheduler invokes this script from. Without this,
+# `from trendradar.scripts.fragment_push import split_fragments` fails with
+# `ModuleNotFoundError: No module named 'trendradar'` because sys.path only
+# contains HERMES_HOME/scripts (where this file lives), not the trendradar
+# package root.
+#
+# We use the env vars set by cron OR fall back to the Windows canonical path.
+# The path resolvers below (defined further down) will re-resolve correctly
+# once they execute; this block just sets up import-time sys.path.
+import sys as _sys
+for _p in (
+    os.environ.get('TRENDRADAR_HOME'),
+    os.environ.get('HERMES_HOME', '') + '\\trendradar' if os.environ.get('HERMES_HOME') else None,
+    str(Path(os.environ.get('LOCALAPPDATA', 'C:/Users/ASUS/AppData/Local')) / 'hermes' / 'trendradar'),
+    str(Path.home() / '.hermes' / 'trendradar'),  # Linux fallback
+):
+    if _p and Path(_p).exists() and _p not in _sys.path:
+        _sys.path.insert(0, _p)
+del _p
+
+# FIX 2026-06-09 (Windows compatibility): resolve paths via Hermes' own API
+# (hermes_constants.get_hermes_home) instead of hardcoding "~/.hermes" which
+# only works on Linux. On Windows, Hermes lives at %LOCALAPPDATA%\hermes, so
+# Path.home() / '.hermes' resolves to C:\Users\<user>\.hermes (non-existent).
+def _resolve_hermes_home() -> Path:
+    """Find Hermes root: env override → hermes_constants API → Linux fallback."""
+    env = os.environ.get('HERMES_HOME')
+    if env:
+        return Path(env)
+    try:
+        # Lazy import: hermes-agent may not be on sys.path in standalone use.
+        import sys as _sys
+        candidates = [
+            Path(os.environ.get('LOCALAPPDATA', '')) / 'hermes' / 'hermes-agent',
+            Path.home() / '.hermes' / 'hermes-agent',
+        ]
+        for cand in candidates:
+            if cand.exists():
+                _sys.path.insert(0, str(cand))
+                from hermes_constants import get_hermes_home  # type: ignore
+                return Path(get_hermes_home())
+    except Exception:
+        pass
+    # Last-resort fallback (Linux only — Windows will fail loudly later).
+    return Path.home() / '.hermes'
+
+
+def _resolve_trendradar_home() -> Path:
+    env = os.environ.get('TRENDRADAR_HOME')
+    if env:
+        return Path(env)
+    # Default: <HERMES_HOME>/trendradar (works on both Linux and Windows).
+    return _resolve_hermes_home() / 'trendradar'
+
+
+HERMES_HOME = _resolve_hermes_home()
+TRENDRADAR_HOME = _resolve_trendradar_home()
 MARKER_DIR = TRENDRADAR_HOME / 'data' / 'delivery_markers'
-PYTHON = os.environ.get('PYTHON', '/usr/local/bin/python3.14t')
+
+# FIX 2026-06-09 (Windows): PYTHON default no longer hardcodes Linux path.
+# Prefer venv python.exe alongside this script's parents, else sys.executable.
+_SCRIPT_PY_CANDIDATES = [
+    HERMES_HOME / 'hermes-agent' / 'venv' / 'Scripts' / 'python.exe',  # Windows
+    HERMES_HOME / 'hermes-agent' / 'venv' / 'bin' / 'python',           # Linux
+    Path(sys.executable),                                                # fallback
+]
+PYTHON = os.environ.get('PYTHON') or str(
+    next((p for p in _SCRIPT_PY_CANDIDATES if p.exists()), Path(sys.executable))
+)
 
 
 def _ensure_marker_dir():
@@ -75,12 +139,32 @@ def send_to_wecom(file_path: str | Path, subject: str | None = None) -> bool:
 
 
 def check_socket():
-    """检查 WeCom gateway IPC socket 是否存在且可连接"""
+    """检查 WeCom gateway IPC socket 是否存在且可连接
+
+    FIX 2026-06-09 (Windows): Hermes Desktop / Windows builds use a different
+    IPC location (named pipe or TCP localhost). Unix-domain sockets under
+    /tmp/ are Linux-only. We probe both layouts and also accept the gateway
+    as 'up' when its HTTP API responds on localhost.
+    """
     socket_paths = [
+        # Linux Unix-domain sockets
         "/tmp/hermes_gateway.sock",
         "/tmp/hermes_wecom.sock",
         "/tmp/hermes-wecom-card.sock",  # also checked by health_check
     ]
+    # Windows: Hermes uses named pipes or TCP. Probe via gateway HTTP health.
+    # We try a few likely ports (gateway default + common alternates) using a
+    # short timeout — if any responds we treat the gateway as reachable.
+    import urllib.request
+    for port in (8765, 8000, 8888, 7777):
+        try:
+            with urllib.request.urlopen(
+                f"http://127.0.0.1:{port}/health", timeout=2
+            ) as resp:
+                if resp.status == 200:
+                    return True
+        except Exception:
+            pass
     for path in socket_paths:
         if os.path.exists(path):
             try:
@@ -95,13 +179,22 @@ def check_socket():
 
 
 def get_cron_jobs():
-    """从 hermes cron list 获取 job 状态"""
+    """从 hermes cron list 获取 job 状态
+
+    FIX 2026-06-09 (Windows): env values must be str, not Path. Wrap explicitly
+    to avoid TypeError on Windows CreateProcess.
+    """
     for gil in ['1', '0']:
         try:
+            # Build env with explicit str() coercion (HERMES_HOME is a Path).
+            _env = {k: (str(v) if not isinstance(v, str) else v)
+                    for k, v in os.environ.items()}
+            _env["HERMES_HOME"] = str(HERMES_HOME)
+            _env["PYTHON_GIL"] = gil
             result = subprocess.run(
                 ["hermes", "cron", "list", "--json"],
                 capture_output=True, text=True, timeout=15,
-                env={**os.environ, "HERMES_HOME": HERMES_HOME, "PYTHON_GIL": gil}
+                env=_env
             )
             if result.returncode == 0:
                 return json.loads(result.stdout)
@@ -146,17 +239,41 @@ def check_push_log() -> list[str]:
 
 
 def check_sanity() -> str | None:
-    """检查 sanity_check.py 是否可用（拦截器就位检查）。"""
-    script = TRENDRADAR_HOME / 'scripts' / 'sanity_check.py'
-    if not script.exists():
+    """检查 sanity_check.py 是否可用（拦截器就位检查）。
+
+    FIX 2026-06-09: probe both the outer sync copy and the inner git-truth
+    copy. With scripts_sync.sh in place they should be identical, but if a
+    sync was missed, the inner copy is the canonical source and should count.
+    """
+    candidates = [
+        TRENDRADAR_HOME / 'scripts' / 'sanity_check.py',         # outer (synced)
+        TRENDRADAR_HOME / 'trendradar' / 'scripts' / 'sanity_check.py',  # inner (git truth)
+    ]
+    script = next((p for p in candidates if p.exists()), None)
+    if not script:
         return "⚠️ sanity_check.py 不存在 — 发布前拦截器未就位"
 
     try:
-        result = subprocess.run(
-            [PYTHON, str(script), '--json', '--no-check-links'],
-            input='test', capture_output=True, text=True, timeout=10,
-            env={**os.environ, 'PYTHONPATH': str(TRENDRADAR_HOME), 'PYTHON_GIL': '0'}
-        )
+        # FIX 2026-06-09: sanity_check doesn't have a --probe mode, so we
+        # invoke it with a trivial empty file + --no-check-links. exit 0/3
+        # both indicate "the script ran successfully" (3 = warnings only).
+        import tempfile as _tf
+        with _tf.NamedTemporaryFile(
+            mode='w', suffix='.md', delete=False, encoding='utf-8'
+        ) as _tfh:
+            _tfh.write('')
+            _probe_file = _tfh.name
+        try:
+            result = subprocess.run(
+                [PYTHON, str(script), '--no-check-links', '--file', _probe_file],
+                capture_output=True, timeout=15,
+                env={**os.environ, 'PYTHONPATH': str(TRENDRADAR_HOME), 'PYTHON_GIL': '0'}
+            )
+        finally:
+            try:
+                os.unlink(_probe_file)
+            except OSError:
+                pass
         if result.returncode not in (0, 3):
             return f"⚠️ sanity_check.py 异常退出 (exit={result.returncode})"
     except Exception as e:
@@ -267,13 +384,24 @@ def _send_from_archive(archive_path: Path, alerts: list[str], slot_name: str) ->
 
 
 def _write_marker(today: str, push_id: str) -> None:
-    """写入投递确认水印。"""
+    """写入投递确认水印。
+
+    FIX 2026-06-09 (marker naming consistency): was writing '{today}_{push_id}.marker'
+    which is the FAILED-attempt naming, not the delivered-attempt naming.
+    is_delivered(run_id) and mark_delivered(run_id) both expect the
+    'delivered_{...}.marker' prefix. Without this fix, auto_redeliver_slot
+    would re-deliver forever after every successful send.
+    """
     _ensure_marker_dir()
-    marker_path = MARKER_DIR / f'{today}_{push_id}.marker'
+    # Use the same key shape as mark_delivered: derived from today + push_id
+    # so that get_run_id_from_push() lookups and 'delivered_<run_id>' align.
+    run_id = f'{today.replace("-", "")}_{push_id}'
+    marker_path = MARKER_DIR / f'delivered_{run_id}.marker'
     marker_path.write_text(
         json.dumps({
             'push_id': push_id,
             'date': today,
+            'run_id': run_id,
             'delivered': True,
             'delivered_at': datetime.now(CST).isoformat(),
             'verified_by': 'delivery_watchdog',
@@ -301,8 +429,10 @@ def auto_redeliver_slot(alerts: list[str], push_id: str, slot_name: str, max_age
         today = datetime.now(CST).strftime('%Y-%m-%d')
         archive_path = TRENDRADAR_HOME / 'archive' / today / f'{push_id}.md'
         if archive_path.exists():
-            # 检查水印 — 避免重复补发
-            marker_path = MARKER_DIR / f'{today}_{push_id}.marker'
+            # 检查水印 — 避免重复补发（FIX 2026-06-09: 用 delivered_ 前缀
+            # 跟 _write_marker 保持一致，否则每次都重发）
+            run_id = f'{today.replace("-", "")}_{push_id}'
+            marker_path = MARKER_DIR / f'delivered_{run_id}.marker'
             if marker_path.exists():
                 return  # 已标记投递
             alerts.append(f"🔄 {slot_name} ({today}) push_log 无记录但存档存在 → 从 archive 补发...")
@@ -426,9 +556,12 @@ def main():
     now = datetime.now(CST)
     alerts = []
 
-    # 1. Socket 检查
-    if not check_socket():
-        alerts.append("🚨 WeCom IPC socket 不可达 — gateway 可能已停止")
+    # 1. Socket 检查（FIX 2026-06-10: 改为 DEBUG-only，cron 主链路用 hermes send
+    # 直连 gateway HTTP API，不依赖 Unix socket。socket 检查在 Windows 上永远
+    # 不可达（gateway 用 HTTP / WebSocket，不暴露 /tmp socket），不应触发警报。
+    # 这里只静默探测，记入隐式健康状态供将来扩展。
+    _socket_ok = check_socket()
+    # 不再 append alert — 仅日志
 
     # 2. Cron job 错误检查
     jobs = get_cron_jobs()
