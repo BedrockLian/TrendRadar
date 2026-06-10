@@ -591,23 +591,25 @@ async def process_curated(push_id: str) -> dict:
 
     total_chars = 0
     translated_count = 0
-    api_call_count = 0  # P1-13: 统计 LLM 调用次数
-    estimated_tokens = 0  # P1-13: 估算 token 数 (len(text)//4 对中英混合都合理)
+    api_call_count = 0
+    estimated_tokens = 0
 
     async with aiohttp.ClientSession() as session:
-        # Step 1: Translate foreign items
-        if items_to_translate:
-            log.info(
-                f"Found {len(items_to_translate)} items to translate "
-                f"for push-id '{push_id}'")
-            batch_results = await _batch_translate_all(
-                session, items_to_translate, api_key
-            )
-            api_call_count += len(batch_results)  # 每个 batch 一次 API 调用
+        # Sprint 3 perf: 翻译 + 扩写并发 (互不依赖)
+        import asyncio as _asyncio
+        translate_fut = _batch_translate_all(session, items_to_translate, api_key) if items_to_translate else None
+        expand_fut   = _batch_expand_all(session, items_to_expand, api_key) if items_to_expand else None
 
-            for batch, translations, error in batch_results:
+        futures = [f for f in (translate_fut, expand_fut) if f is not None]
+        gathered = await _asyncio.gather(*futures) if futures else []
+        translate_results = gathered[0] if len(gathered) > 0 and items_to_translate else None
+        expand_results    = gathered[-1] if len(gathered) > 0 and items_to_expand else None
+
+        # ── Step 1: Apply translate results ─────────────────
+        if translate_results:
+            api_call_count += len(translate_results)
+            for batch, translations, error in translate_results:
                 if error:
-                    # 降级：为失败批次的条目打上标记
                     for entry in batch:
                         domain, idx, item, title, summary, needs_title, needs_summary, _lang = entry
                         if needs_title:
@@ -618,7 +620,6 @@ async def process_curated(push_id: str) -> dict:
                     continue
                 for entry, (title_cn, summary_cn) in zip(batch, translations, strict=True):
                     domain, idx, item, title, summary, needs_title, needs_summary, _source_lang = entry
-                    # Skip bogus translations (model echoed original back)
                     if title_cn and title_cn.strip() == title.strip():
                         title_cn = ''
                     if summary_cn and summary_cn.strip() == summary.strip():
@@ -630,24 +631,16 @@ async def process_curated(push_id: str) -> dict:
                     if title_cn or summary_cn:
                         translated_count += 1
                     total_chars += len(title) + len(summary)
-                    # 估算 tokens (P1-13, 非阻塞 — 失败时不崩溃)
                     try:
                         batch_text = " ".join(str(e) for e in batch)
                         trans_text = " ".join(str(t) for t in translations if t)
                         estimated_tokens += len(batch_text) // 4 + len(trans_text) // 4
                     except Exception:
-                        pass  # 粗估失败不影响管线
+                        pass
 
-        # Step 2: Expand short Chinese summaries
-        if items_to_expand:
-            log.info(
-                f"Found {len(items_to_expand)} Chinese items with short summaries to expand "
-                f"for push-id '{push_id}'")
-            expand_results = await _batch_expand_all(
-                session, items_to_expand, api_key
-            )
+        # ── Step 2: Apply expand results ────────────────────
+        if expand_results:
             api_call_count += len(expand_results)
-
             for batch, translations, error in expand_results:
                 if error:
                     continue
@@ -659,7 +652,6 @@ async def process_curated(push_id: str) -> dict:
                         item['summary_cn'] = summary_cn
                     translated_count += 1
                     total_chars += len(title) + len(summary)
-                    # 估算 tokens (P1-13, 非阻塞)
                     try:
                         batch_text = " ".join(str(e) for e in batch)
                         trans_text = " ".join(str(t) for t in translations if t)

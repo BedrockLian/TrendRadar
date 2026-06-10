@@ -2,7 +2,8 @@
 import os
 
 TRANSLATE_BATCH_SIZE = int(os.environ.get('TRENDRADAR_TRANSLATE_BATCH_SIZE', 10))
-TRANSLATE_BATCH_MAX_CONCURRENT = int(os.environ.get('TRENDRADAR_TRANSLATE_CONCURRENT', 6))
+TRANSLATE_BATCH_MAX_CONCURRENT = int(os.environ.get('TRENDRADAR_TRANSLATE_CONCURRENT', 4))
+# Sprint 3: 6→4，因为翻译+扩写并发时 2×4=8 仍安全；单跑 4 也够快
 
 # ── Exponential Backoff 熔断配置 ────────────────────────────────────────────
 # 针对 Trap 28: DeepSeek openresty 流中断 (RemoteProtocolError)

@@ -169,9 +169,6 @@ def score_item(item: dict, domain: str = 'tech') -> dict:
     except (ValueError, TypeError):
         age = 24
     recency = 3 if age < 1 else 2 if age < 6 else 1 if age < RECENCY_HOURS_LOW else 0
-    # 博客内容即使内容较旧也给最低 recency（刚被 blogwatcher 发现）
-    if recency == 0 and item.get('_is_blog'):
-        recency = 1
     uniqueness = 3 if any(m in title for m in ['[续]', '[新]', '[更新]']) else 2 if url else 1
     cov, hits = item.get('_coverage_count', 1), sum(1 for w in SCORE_HEAT_WORDS if w in title)
     heat = 3 if cov >= 4 or (cov >= 2 and hits >= 2) else 2 if cov >= 3 or hits >= 2 else 1 if cov >= 2 or hits >= 1 else 0

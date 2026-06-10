@@ -99,42 +99,8 @@ def ensure_raw_exists(push_id: str):
     log.info(f"fetch 完成 {len(result['items'])}条, 耗时{elapsed:.1f}s, 写入 raw_{today}.json (失败源 {len(result.get('failed_sources', []))} 个)")
 
 
-def load_blog_articles() -> list:
-    """每 slot 触发一次 blog scan，获取最新未读博客文章。"""
-    _run_blog_bridge()
-    blog_cache = CACHE_DIR / 'raw_blogs.json'
-    if not blog_cache.exists():
-        return []
-    try:
-        data = json.loads(blog_cache.read_text())
-        items = data.get('items', [])
-        if items:
-            domains = {}
-            for i in items:
-                d = i.get('_likely_domain', 'unknown')
-                domains[d] = domains.get(d, 0) + 1
-            log.info(f"加载 {len(items)} 篇博客文章, 域分布: {domains}")
-        return items
-    except Exception as e:
-        log.info(f"加载 blog 缓存失败: {e}")
-        return []
-
-
-def _run_blog_bridge():
-    """Run the blogwatcher bridge script once."""
-    bridge = SCRIPTS_DIR / 'blog_watcher_bridge.py'
-    if not bridge.exists():
-        log.info(f"bridge 脚本不存在: {bridge}")
-        return
-    import subprocess
-    try:
-        subprocess.run([sys.executable, str(bridge)], capture_output=True, text=True, timeout=130)
-    except Exception as e:
-        log.info(f"bridge 执行失败: {e}")
-
-
 def run_curation(push_id: str) -> dict:
-    """编排 fetch + blog + curation 流程。并行抓取 RSS 和博客，合并后精选。
+    """编排 fetch + curation 流程。
 
     Returns: curated dict with domains
     """
@@ -148,15 +114,8 @@ def run_curation(push_id: str) -> dict:
     if health_path.exists():
         curate.load_source_health(str(health_path))
     
-    # RSS fetch 和 blog scan 顺序执行（之前用 ThreadPoolExecutor 包 fetch+blog
-    # 并行，但 fetch 内部嵌套 asyncio.run() 会与子线程的 event loop 死锁——
-    # 表现：fetch 返回 0 items；改为顺序执行，节省 ~1s 换稳定）。
-    try:
-        ensure_raw_exists(push_id)
-        blog_items_result = load_blog_articles() or []
-    except Exception as e:
-        log.warning(f"fetch/blog 失败: {e}")
-        blog_items_result = []
+    # RSS fetch
+    ensure_raw_exists(push_id)
     
     today = datetime.now(CST).strftime('%Y%m%d')
     try:
@@ -165,11 +124,6 @@ def run_curation(push_id: str) -> dict:
         log.info(f"读取 raw_{today}.json 失败: {e}")
         raw = []
     log.info(f"读取 {len(raw)} 条 raw")
-    
-    # 合并博客文章到 raw items
-    if blog_items_result:
-        raw.extend(blog_items_result)
-        log.info(f"合并 {len(blog_items_result)} 篇博客, raw 共计 {len(raw)} 条")
 
     result = curate.curate_all(raw, push_id)
     # 在脚本内部生成追溯号（不依赖 LLM prompt 执行）
