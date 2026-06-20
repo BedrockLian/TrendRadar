@@ -472,10 +472,11 @@
       "category": "tech",
       "enabled": true,
       "feed_url": "https://www.ifanr.com/feed",
-      "desc": "中国消费科技头部媒体 (439KB, 替代36氪)",
+      "desc": "中国消费科技头部媒体 (439KB, freshness=3d, 替代36氪)",
       "authority": 2,
       "language": "zh",
-      "priority": 1
+      "priority": 1,
+      "freshness_days": 3
     },
     {
       "id": "japan_times",
