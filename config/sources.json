@@ -662,12 +662,13 @@
       "type": "rss",
       "category": "news",
       "enabled": true,
-      "feed_url": "https://news.google.com/rss/search?q=source:AFP",
+      "feed_url": "https://news.google.com/rss/search?q=AFP",
       "desc": "法新社 (全球三大通讯社之一, 补 Reuters+AP)",
       "authority": 3,
       "language": "en",
       "priority": 0,
-      "freshness_days": 1
+      "freshness_days": 1,
+      "needs_proxy": true
     }
   ],
   "exploration_sources": [],
