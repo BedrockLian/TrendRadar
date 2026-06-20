@@ -466,13 +466,13 @@
     },
     {
       "id": "36kr",
-      "name": "36氪",
-      "platform": "36kr",
+      "name": "爱范儿",
+      "platform": "ifanr",
       "type": "rss",
       "category": "tech",
       "enabled": true,
-      "feed_url": "https://www.36kr.com/feed",
-      "desc": "中国科技创投一手资讯 (补中文科技)",
+      "feed_url": "https://www.ifanr.com/feed",
+      "desc": "中国消费科技头部媒体 (439KB, 替代36氪)",
       "authority": 2,
       "language": "zh",
       "priority": 1
@@ -627,6 +627,32 @@
       "language": "en",
       "priority": 2,
       "freshness_days": 3
+    },
+    {
+      "id": "cnbc_world",
+      "name": "CNBC World",
+      "platform": "cnbc",
+      "type": "rss",
+      "category": "economy",
+      "enabled": true,
+      "feed_url": "https://www.cnbc.com/id/100727362/device/rss/rss.html",
+      "desc": "CNBC 全球财经频道 (补充财经10000664)",
+      "authority": 3,
+      "language": "en",
+      "priority": 1
+    },
+    {
+      "id": "guardian_world",
+      "name": "Guardian World",
+      "platform": "guardian",
+      "type": "rss",
+      "category": "news",
+      "enabled": true,
+      "feed_url": "https://www.theguardian.com/world/rss",
+      "desc": "英国卫报国际版 (147KB, 补英美视角中英方深度)",
+      "authority": 3,
+      "language": "en",
+      "priority": 1
     }
   ],
   "exploration_sources": [],
