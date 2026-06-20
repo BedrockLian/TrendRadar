@@ -110,7 +110,6 @@ TrendRadar/
 │   │   ├── track_events.py              # 跨日事件追踪
 │   │   ├── heat_tracker.py              # 热度追踪引擎
 │   │   ├── push_slot_detect.py          # 推送时段检测（早/午/晚）
-│   │   ├── blog_watcher_bridge.py       # BlogWatcher 订阅源桥接
 │   │   ├── cleanup_fake_translations.py # 假翻译自动清理
 │   │   ├── interest_cli.py              # 兴趣偏好 CLI 管理
 │   │   ├── trace.py                     # 追踪/调试工具

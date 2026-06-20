@@ -25,7 +25,117 @@ RETENTION_FILE_DAYS = 7
 RETENTION_CACHE_HOURS = 48
 RETENTION_BACKUP_DAYS = 30
 
-STATS = {'backed_up': 0, 'cleaned_files': 0, 'cleaned_bytes': 0}
+STATS = {'backed_up': 0, 'cleaned_files': 0, 'cleaned_bytes': 0,
+          'archived_heat_rows': 0, 'cleaned_pycaches': 0,
+          'cleaned_markers': 0, 'cleaned_orphan_backups': 0}
+
+
+def archive_dormant_heat():
+    """把 heat_tracker 主表的 dormant+>7d 行搬到 heat_tracker_archive。
+
+    审计 P1-2：之前 002_heat_archive.sql 只跑过一次，6/4 之后产生的
+    zombie 行 (3,659 条 / ~6 MB) 没继续归档。主表 94% 是僵尸。
+
+    幂等: INSERT OR IGNORE + DELETE WHERE status='dormant' AND datetime(last_seen)<now-7d
+    """
+    import sqlite3
+    db_path = TRENDRADAR_HOME / 'data' / 'fingerprints.db'
+    if not db_path.exists():
+        return
+
+    try:
+        conn = sqlite3.connect(str(db_path))
+        moved = conn.execute("""
+            INSERT OR IGNORE INTO heat_tracker_archive
+                (fingerprint, title, first_seen, last_seen, appearance_count,
+                 fetch_cycles, platforms, platform_count, heat_signals,
+                 domain, status, rank_history)
+            SELECT fingerprint, title, first_seen, last_seen, appearance_count,
+                   fetch_cycles, platforms, platform_count, heat_signals,
+                   domain, status, rank_history
+            FROM heat_tracker
+            WHERE status='dormant'
+              AND datetime(last_seen) < datetime('now','-7 days')
+        """).rowcount
+        deleted = conn.execute("""
+            DELETE FROM heat_tracker
+            WHERE status='dormant'
+              AND datetime(last_seen) < datetime('now','-7 days')
+        """).rowcount
+        conn.commit()
+
+        # VACUUM 释放空间（必须连接关闭后单独跑）
+        if deleted > 0:
+            conn.execute('VACUUM')
+
+        conn.close()
+        if moved or deleted:
+            STATS['archived_heat_rows'] = deleted
+            print(f'[ARCHIVE] heat_tracker 搬 {moved} 行到 archive，删除主表 {deleted} 行')
+    except Exception as e:
+        print(f'[ARCHIVE ERROR] {e}')
+
+
+def cleanup_pycaches():
+    """清理 runtime 根散落的 __pycache__/ 目录（审计 P1-9）。"""
+    cleaned = 0
+    for pycache in TRENDRADAR_HOME.rglob('__pycache__'):
+        # 只清运行时散落的，不清 trendradar/tests/ 之类（git 包内由 .gitignore 兜底）
+        try:
+            shutil.rmtree(pycache, ignore_errors=True)
+            cleaned += 1
+        except OSError:
+            pass
+    if cleaned:
+        STATS['cleaned_pycaches'] = cleaned
+
+
+def cleanup_dead_backups():
+    """清理 data/fingerprints.db.backup / .pre002 之类的死重备份（审计 P0-3）。"""
+    patterns = ['fingerprints.db.backup', 'fingerprints.db.backup.pre002',
+                'fingerprints.db.pre002']
+    cleaned = 0
+    for name in patterns:
+        p = TRENDRADAR_HOME / 'data' / name
+        if p.exists():
+            try:
+                p.unlink()
+                cleaned += 1
+            except OSError:
+                pass
+    if cleaned:
+        STATS['cleaned_orphan_backups'] = cleaned
+
+
+def cleanup_old_marker_format():
+    """归档老式命名格式的 marker 到 .archive/（审计 P1-8）。
+
+    当前 3 种命名混用：
+      - YYYY-MM-DD_slot.marker (旧式，最老)
+      - delivered_YYYY-MM-DD_slot.marker (旧式)
+      - delivered_YYYYMMDD_slot_runid.marker (新式，标准)
+    新格式不删，老格式移到 .archive/ 保留历史但不污染主目录。
+    """
+    import re
+    markers_dir = TRENDRADAR_HOME / 'data' / 'delivery_markers'
+    if not markers_dir.exists():
+        return
+    archive_dir = markers_dir / '.archive'
+    archive_dir.mkdir(exist_ok=True)
+
+    old_pat_1 = re.compile(r'^\d{4}-\d{2}-\d{2}_(morning|noon|evening)\.marker$')
+    old_pat_2 = re.compile(r'^delivered_\d{4}-\d{2}-\d{2}_(morning|noon|evening)\.marker$')
+
+    moved = 0
+    for m in markers_dir.glob('*.marker'):
+        if old_pat_1.match(m.name) or old_pat_2.match(m.name):
+            try:
+                m.rename(archive_dir / m.name)
+                moved += 1
+            except OSError:
+                pass
+    if moved:
+        STATS['cleaned_markers'] = moved
 
 
 def backup():
@@ -215,8 +325,12 @@ def summary():
 
 
 if __name__ == '__main__':
+    cleanup_dead_backups()
+    archive_dormant_heat()
     backup()
     cleanup()
+    cleanup_pycaches()
+    cleanup_old_marker_format()
     vacuum_db()
     summary()
     if not runtests():

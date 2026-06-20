@@ -67,7 +67,6 @@ cd ~/.hermes/trendradar
 `fragment_push.py` | UTF-8 字节计数分片（3800B/片），三级递降拆分
 `track_events.py` | 跨日事件追踪
 `record_fingerprints.py` | 指纹记录（Storage 统一接入）
-`blog_watcher_bridge.py` | blogwatcher 集成
 `pipeline_orchestrator.py` | 一键编排器 v2.9.0
 `blind_spot_audit.py` | 盲点审计 + --json 机器可读模式
 `aggregate_monthly.py` | 月度统计 + --suggest-interests 兴趣漂移

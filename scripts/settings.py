@@ -15,7 +15,12 @@
 """
 from pathlib import Path
 import os
+import sys
 
+# TRENDRADAR_HOME SSOT (审计 P1-5, 2026-06-20):
+# settings.py 是向后兼容 re-export shim，本身被大量 caller import。
+# 这里保留 ENV-based fallback 默认值（运行时由 cron / gen_cron_prompt 注入）。
+# 实际运行时根应通过 from trendradar.scripts.paths import TRENDRADAR_HOME 获取。
 TRENDRADAR_HOME = Path(os.environ.get('TRENDRADAR_HOME', Path.home() / '.hermes' / 'trendradar'))
 
 # ── 领域常量 ─────────────────────────────────────────────

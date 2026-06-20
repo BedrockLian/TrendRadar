@@ -269,8 +269,7 @@ def main():
 
     # ── Stage 1: push_prepare (fetch + curate) ─────────────────
     from trendradar.scripts.push_prepare import run_curation
-    skip_fetch = args.skip_fetch
-    prep = run_stage(f"push_prepare ({push_id})", run_curation, push_id)
+    prep = run_stage(f"push_prepare ({push_id})", run_curation, push_id, args.skip_fetch)
     stats["stages"]["push_prepare"] = prep["elapsed"]
 
     # ── _proxy_health: 从共享 raw 缓存提取 fetch 失败源 + 代理 URL ─

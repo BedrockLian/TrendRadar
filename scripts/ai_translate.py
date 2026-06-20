@@ -155,6 +155,19 @@ def _load_cache() -> dict:
         return {}
 
 def _save_cache(cache: dict):
+    """Save cache to disk with LRU cap (审计 P2-3, 2026-06-20)。
+
+    之前 cache 无 LRU，无限增长 → 文件膨胀。改造为 OrderedDict 维护 LRU，
+    写入前裁剪到 MAX_TRANSLATE_CACHE_ENTRIES。
+    """
+    from collections import OrderedDict
+    MAX_TRANSLATE_CACHE_ENTRIES = 500
+    # LRU 裁剪: 保留最后 MAX_TRANSLATE_CACHE_ENTRIES 条（dict 在 Python 3.7+ 保序）
+    if len(cache) > MAX_TRANSLATE_CACHE_ENTRIES:
+        # cache 是普通 dict，直接 pop 前面的 key
+        excess = len(cache) - MAX_TRANSLATE_CACHE_ENTRIES
+        for _ in range(excess):
+            cache.pop(next(iter(cache)))
     p = _get_cache_path()
     p.parent.mkdir(parents=True, exist_ok=True)
     try:

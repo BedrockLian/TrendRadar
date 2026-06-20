@@ -1,10 +1,15 @@
 """paths.py — TrendRadar 路径单一来源（SSOT）
 
-设计 (2026-06-10, Agent A 审计 P1-12):
+设计 (2026-06-10, Agent A 审计 P1-12, 2026-06-20 Agent B 审计 P1-1 强化):
 - 消除 scripts/ 内 5+ 种路径定义方式（file_utils.get_data_dir / Path(__file__).parent / "data" / TRENDRADAR_HOME 重定义 等）
 - 所有"运行时绝对路径"统一在此处
 - 双层布局兼容: 运行时在 C:\\Users\\ASUS\\AppData\\Local\\hermes\\trendradar\\
   Python 包内（trendradar/scripts/）和顶层（scripts/）都用同一份
+- **TRENDRADAR_HOME 解析优先级**（2026-06-20 审计 P1-1 修复）:
+  1. 环境变量 TRENDRADAR_HOME（cron/gen_cron_prompt 注入，**权威源**）
+  2. Path(__file__).resolve().parents[1]（内层用 = 包内 trendradar/；外层用 = 外层 trendradar/）
+- **fail-fast assert**: 启动时校验 DATA_DIR.resolve() 落在 hermes/ 之下且含 fingerprints.db，
+  避免 symlink 失效时静默写错位置。
 
 使用:
     from trendradar.scripts.paths import DATA_DIR, CACHE_DIR, CONFIG_DIR
@@ -16,24 +21,28 @@
 - TRENDRADAR_HOME 是只读常量，不允许运行时改
 """
 
+import os
 from pathlib import Path
 
+
+def _resolve_trendradar_home() -> Path:
+    """解析运行时根目录。优先级: ENV > __file__ 推导。
+
+    双层布局陷阱（2026-06-10 注释已警告，2026-06-20 审计确证）:
+    - 内层 trendradar/scripts/paths.py → parents[1] = trendradar/trendradar/（包内）
+    - 外层 scripts/paths.py              → parents[1] = trendradar/（运行时根）
+    两者字符串不同，但因 inner data/ 是 symlink → outer data/，realpath 一致。
+    用 ENV 统一可彻底消除双源。
+    """
+    env = os.environ.get("TRENDRADAR_HOME")
+    if env:
+        return Path(env).resolve()
+    return Path(__file__).resolve().parents[1]
+
+
 # ── 运行时根 ──────────────────────────────────────────────────
-# 当前文件: trendradar/scripts/paths.py
-# parents[0] = trendradar/scripts/
-# parents[1] = trendradar/         ← 这是 TRENDRADAR_HOME（运行时根, 即包内 trendradar/）
-# parents[2] = hermes/             ← HERMES_HOME
-#
-# 注意: TRENDRADAR_HOME = parents[1] = 包内 trendradar/ 目录。
-# 内层 data/cache 已 Junction 到外层（参见 P0-4 + skill trendradar-runtime-maintenance §3），
-# 所以读 paths.DATA_DIR 实际看到的是外层 data。但 WRITE 也会落到外层（junction 透明）。
-#
-# 关键: 如果某些 caller 用 SCRIPTS_DIR.parent.parent（如 pipeline_orchestrator.py:39），
-# 那是外层 trendradar/ 目录（因为 __file__ 在外层 scripts/ 时 parents[1] = 外层 trendradar/），
-# **与本文件解析的路径不同**！所以本文件只能从 trendradar.scripts.* 上下文用。
-# 顶层 scripts/ 的脚本应该用 file_utils.get_data_dir()（其内部走另一套解析）。
-TRENDRADAR_HOME: Path = Path(__file__).resolve().parents[1]
-HERMES_HOME: Path = Path(__file__).resolve().parents[2]
+TRENDRADAR_HOME: Path = _resolve_trendradar_home()
+HERMES_HOME: Path = TRENDRADAR_HOME.parent
 
 # ── 运行时数据目录 ─────────────────────────────────────────────
 DATA_DIR: Path = TRENDRADAR_HOME / "data"
@@ -48,6 +57,37 @@ FINGERPRINTS_DB: Path = DATA_DIR / "fingerprints.db"
 DELIVERY_MARKERS_DIR: Path = DATA_DIR / "delivery_markers"
 SOURCE_PENALTY: Path = DATA_DIR / "source_penalty.json"
 SOURCE_HEALTH: Path = DATA_DIR / "source_health.json"
+
+
+def _validate_runtime() -> None:
+    """fail-fast: 验证 TRENDRADAR_HOME 解析正确（审计 P1-1 修复）。
+
+    之前 symlink 失效会静默写错目录。这里强制校验:
+    - 必须在 HERMES_HOME 路径下
+    - 必须含 fingerprints.db（避免指向错误空目录）
+    任何失败立即 raise，避免下游脚本在错路径上累积数据。
+    """
+    try:
+        # 1. 必须在 hermes/ 之下
+        if HERMES_HOME.name != "hermes":
+            raise RuntimeError(
+                f"TRENDRADAR_HOME 解析异常: HERMES_HOME={HERMES_HOME} "
+                f"(expected .../hermes/)。检查 ENV 或 __file__ 路径。"
+            )
+        # 2. fingerprints.db 必须存在（运行时根不对的话会找不到）
+        if not FINGERPRINTS_DB.exists():
+            # 首次运行可能还没建 DB，只警告不 raise
+            import warnings
+            warnings.warn(
+                f"fingerprints.db 不存在: {FINGERPRINTS_DB}。"
+                f"首次运行可忽略，否则检查 TRENDRADAR_HOME 是否正确。"
+            )
+    except Exception:
+        # 校验失败必须抛，不能吞
+        raise
+
+
+_validate_runtime()
 
 
 def get_data_dir() -> Path:

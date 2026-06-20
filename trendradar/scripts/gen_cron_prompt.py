@@ -25,18 +25,13 @@ SCRIPTS_DIR = Path(__file__).resolve().parent
 # Dynamic PYTHON path — matches pipeline_orchestrator.py behavior
 PYTHON = os.environ.get("PYTHON", sys.executable)
 
-# Resolve paths dynamically
-TRENDRADAR_HOME = Path(os.environ.get(
-    'TRENDRADAR_HOME',
-    Path.home() / '.hermes' / 'trendradar'
-))
+# TRENDRADAR_HOME SSOT (审计 P1-5, 2026-06-20):
+# 统一从 paths.py 取，但保留 ENV 注入路径能力（gen_cron_prompt 自己负责注入）
+import os as _os
+if not _os.environ.get('TRENDRADAR_HOME'):
+    _os.environ['TRENDRADAR_HOME'] = str(Path.home() / '.hermes' / 'trendradar')
+from trendradar.scripts.paths import TRENDRADAR_HOME, HERMES_HOME
 
-HERMES_HOME = TRENDRADAR_HOME.parent  # ~/.hermes
-# FIX 2026-06-09: PYTHONPATH must be TRENDRADAR_HOME itself (where `trendradar/`
-# Python package lives), NOT its parent. Using .parent would only work on Linux
-# where ~/.hermes/trendradar/<pkg> is visible; on Windows the package is at
-# %LOCALAPPDATA%\hermes\trendradar\trendradar\ — parent has no package.
-# Matches the trap documented in self-healing/pitfalls.md #20.
 PYTHONPATH = str(TRENDRADAR_HOME)
 
 

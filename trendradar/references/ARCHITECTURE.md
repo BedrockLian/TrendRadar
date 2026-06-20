@@ -48,7 +48,7 @@ grep -rn "^from \(settings\|heat_tracker\|fetch_feeds\) \|^import \(heat_tracker
 cd ~/.hermes/trendradar
 for mod in push_prepare ai_translate render_markdown fragment_push \
   curate_and_push track_events record_fingerprints heat_tracker fetch_feeds \
-  push_slot_detect blog_watcher_bridge render_deep_analysis pipeline_orchestrator; do
+  push_slot_detect render_deep_analysis pipeline_orchestrator; do
   PYTHONPATH=/home/asus/.hermes PYTHON_GIL=0 /usr/local/bin/python3.14t \
     -c "import trendradar.scripts.$mod" && echo "✅ $mod" || echo "❌ $mod"
 done

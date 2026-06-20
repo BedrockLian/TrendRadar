@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "last_updated": "2026-05-31T16:10:00+08:00",
+  "last_updated": "2026-06-20",
   "data_sources": [
     {
       "id": "jiemian",
@@ -73,7 +73,8 @@
       "feed_url": "https://www.theverge.com/rss/games/index.xml",
       "authority": 2,
       "language": "en",
-      "priority": 2
+      "priority": 2,
+      "freshness_days": 7
     },
     {
       "id": "gamesindustry",
@@ -362,7 +363,8 @@
       "feed_url": "https://www.technologyreview.com/feed/",
       "authority": 3,
       "language": "en",
-      "priority": 0
+      "priority": 0,
+      "freshness_days": 7
     },
     {
       "id": "wired",
@@ -398,7 +400,8 @@
       "feed_url": "http://feeds.nature.com/nature/rss/current",
       "authority": 3,
       "language": "en",
-      "priority": 0
+      "priority": 0,
+      "freshness_days": 7
     },
     {
       "id": "science_news",
@@ -534,6 +537,62 @@
       "authority": 2,
       "language": "en",
       "priority": 0
+    },
+    {
+      "id": "foreign_affairs",
+      "name": "Foreign Affairs",
+      "platform": "foreignaffairs",
+      "type": "rss",
+      "category": "foreign_china",
+      "enabled": true,
+      "feed_url": "https://www.foreignaffairs.com/rss.xml",
+      "desc": "Foreign Affairs (CFR 旗下, FP 姊妹刊)",
+      "authority": 3,
+      "language": "en",
+      "priority": 0,
+      "freshness_days": 7
+    },
+    {
+      "id": "atlantic_council",
+      "name": "Atlantic Council",
+      "platform": "atlanticcouncil",
+      "type": "rss",
+      "category": "foreign_china",
+      "enabled": true,
+      "feed_url": "https://www.atlanticcouncil.org/feed/",
+      "desc": "Atlantic Council 智库",
+      "authority": 2,
+      "language": "en",
+      "priority": 1,
+      "freshness_days": 7
+    },
+    {
+      "id": "bloomberg_markets",
+      "name": "Bloomberg Markets",
+      "platform": "bloomberg",
+      "type": "rss",
+      "category": "economy",
+      "enabled": true,
+      "feed_url": "https://feeds.bloomberg.com/markets/news.rss",
+      "desc": "Bloomberg Markets (WSJ 同等级财经媒体替代)",
+      "authority": 3,
+      "language": "en",
+      "priority": 0,
+      "freshness_days": 1
+    },
+    {
+      "id": "marketwatch",
+      "name": "MarketWatch",
+      "platform": "marketwatch",
+      "type": "rss",
+      "category": "economy",
+      "enabled": true,
+      "feed_url": "https://www.marketwatch.com/rss/topstories",
+      "desc": "MarketWatch (道琼斯旗下, WSJ 姐妹站)",
+      "authority": 2,
+      "language": "en",
+      "priority": 1,
+      "freshness_days": 1
     }
   ],
   "exploration_sources": [],

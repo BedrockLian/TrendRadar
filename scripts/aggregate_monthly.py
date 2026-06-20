@@ -19,9 +19,9 @@ import argparse, json, os, sys, re
 from datetime import datetime, timezone, timedelta
 from collections import Counter, defaultdict
 
-SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(os.path.dirname(SCRIPTS_DIR), 'data')
-TRENDRADAR_HOME = os.path.dirname(SCRIPTS_DIR)
+# TRENDRADAR_HOME / DATA_DIR SSOT (审计 P1-5, 2026-06-20):
+# 不再本地计算，统一从 paths.py 取（fail-fast 校验已就位）
+from trendradar.scripts.paths import TRENDRADAR_HOME, DATA_DIR
 
 from trendradar.scripts.settings import DOMAINS, DOMAIN_LABELS
 

@@ -26,18 +26,9 @@ import subprocess
 import argparse
 from pathlib import Path
 
-# 路径解析：脚本在 trendradar/scripts/ 或 trendradar/trendradar/scripts/ 下均可
-import os as _os
-_TRENDRADAR_HOME_ENV = _os.environ.get('TRENDRADAR_HOME')
-if _TRENDRADAR_HOME_ENV:
-    _BASE = Path(_TRENDRADAR_HOME_ENV)
-else:
-    _BASE = Path(__file__).resolve().parent.parent
-    # If running from package (trendradar/ has __init__.py), go one level up
-    if (_BASE / '__init__.py').exists() and _BASE.name == 'trendradar':
-        _BASE = _BASE.parent
-TRENDRADAR_HOME = _BASE
-ARCHIVE_BASE = TRENDRADAR_HOME / 'archive'
+# TRENDRADAR_HOME / ARCHIVE_BASE SSOT (审计 P1-5, 2026-06-20):
+# 路径解析统一从 paths.py 取（ENV 优先 + fail-fast 校验）
+from trendradar.scripts.paths import TRENDRADAR_HOME, ARCHIVE_DIR as ARCHIVE_BASE
 
 SLOT_NAMES = {'morning': '早报', 'noon': '午间速递', 'evening': '今日回顾'}
 

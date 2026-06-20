@@ -40,12 +40,19 @@ def get_raw_today(force_reload: bool = False) -> dict:
     return _raw_today_cache
 
 
-def ensure_raw_exists(push_id: str):
-    """按日期缓存 raw JSON。缓存有效时跳过，否则触发 fetch。"""
+def ensure_raw_exists(push_id: str, skip_fetch: bool = False):
+    """按日期缓存 raw JSON。缓存有效时跳过，否则触发 fetch。
+
+    Args:
+        push_id: 推送时段（morning/noon/evening）
+        skip_fetch: 若 True，完全跳过 fetch 步骤（即使 cache 无效也不抓）。
+            默认 False（保持原有行为）。审计 P1-4 修复：之前 --skip-fetch
+            标志被忽略，强制触发 fetch。
+    """
     now = datetime.now(CST)  # Sprint 3: 单次快照，避免重复取系统时间
     today = now.strftime('%Y%m%d')
     raw_path = CACHE_DIR / f'raw_{today}.json'
-    
+
     cache_valid = False
     if raw_path.exists():
         age_hours = (now - datetime.fromtimestamp(raw_path.stat().st_mtime, tz=CST)).total_seconds() / 3600
@@ -62,8 +69,14 @@ def ensure_raw_exists(push_id: str):
             except Exception as e:
                 log.warning(f"raw_{today}.json 损坏（{e}），强制刷新")
                 cache_valid = False
-    
+
     if cache_valid:
+        return
+
+    # 审计 P1-4 修复: --skip-fetch 强制跳过 fetch 步骤
+    if skip_fetch:
+        log.warning(f"--skip-fetch 启用：raw_{today}.json 缓存无效但跳过 fetch。"
+                    f"curator 会拿到空列表，可能导致推送失败")
         return
 
     # Before fetching, pre-select the best mihomo node for foreign RSS.
@@ -99,12 +112,17 @@ def ensure_raw_exists(push_id: str):
     log.info(f"fetch 完成 {len(result['items'])}条, 耗时{elapsed:.1f}s, 写入 raw_{today}.json (失败源 {len(result.get('failed_sources', []))} 个)")
 
 
-def run_curation(push_id: str) -> dict:
+def run_curation(push_id: str, skip_fetch: bool = False) -> dict:
     """编排 fetch + curation 流程。
 
-    Returns: curated dict with domains
+    Args:
+        push_id: 推送时段（morning/noon/evening）
+        skip_fetch: 是否完全跳过 fetch（即使 cache 无效也不抓）。
+            审计 P1-4 修复：之前 --skip-fetch 标志被忽略。
     """
     import trendradar.scripts.curate_and_push as curate
+
+    ensure_raw_exists(push_id, skip_fetch=skip_fetch)
     
     # ── 加载来源惩罚与健康评分（盲点审计 → curator 权重反馈） ──
     penalty_path = DATA_DIR / 'source_penalty.json'
