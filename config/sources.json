@@ -654,6 +654,20 @@
       "authority": 3,
       "language": "en",
       "priority": 1
+    },
+    {
+      "id": "afp",
+      "name": "AFP",
+      "platform": "afp",
+      "type": "rss",
+      "category": "news",
+      "enabled": true,
+      "feed_url": "https://news.google.com/rss/search?q=source:AFP",
+      "desc": "法新社 (全球三大通讯社之一, 补 Reuters+AP)",
+      "authority": 3,
+      "language": "en",
+      "priority": 0,
+      "freshness_days": 1
     }
   ],
   "exploration_sources": [],
