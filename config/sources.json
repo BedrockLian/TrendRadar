@@ -622,12 +622,13 @@
       "platform": "economist",
       "type": "rss",
       "category": "economy",
-      "enabled": true,
+      "enabled": false,
       "feed_url": "https://www.economist.com/business/rss.xml",
       "desc": "经济学人商业版 (顶级财经分析)",
       "authority": 3,
       "language": "en",
-      "priority": 1
+      "priority": 1,
+      "needs_proxy": false
     },
     {
       "id": "nhk_world",
