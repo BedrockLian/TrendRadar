@@ -330,16 +330,17 @@
     },
     {
       "id": "wsj_world",
-      "name": "WSJ 世界新闻",
+      "name": "WSJ 世界新闻 (官方)",
       "platform": "wsj",
       "type": "rss",
       "category": "news",
       "enabled": true,
-      "feed_url": "https://news.google.com/rss/search?q=source:wsj.com+world",
+      "feed_url": "https://feeds.content.dowjones.io/public/rss/RSSWorldNews",
       "authority": 3,
       "language": "en",
       "priority": 0,
-      "freshness_days": 3
+      "freshness_days": 3,
+      "desc": "WSJ 世界新闻 (Dow Jones 官方 RSS, 替代之前的 news.google.com 代理)"
     },
     {
       "id": "game_developer",
