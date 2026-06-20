@@ -28,18 +28,6 @@
       "priority": 0
     },
     {
-      "id": "thepaper",
-      "name": "澎湃新闻",
-      "platform": "thepaper",
-      "type": "rss",
-      "category": "news",
-      "enabled": false,
-      "feed_url": "https://plink.anyfeeder.com/thepaper",
-      "authority": 2,
-      "language": "zh",
-      "priority": 2
-    },
-    {
       "id": "zaobao_china",
       "name": "联合早报·中国",
       "platform": "zaobao",
@@ -168,19 +156,6 @@
       "priority": 0
     },
     {
-      "id": "aftermath",
-      "name": "Aftermath",
-      "platform": "aftermath",
-      "type": "rss",
-      "category": "game",
-      "enabled": false,
-      "feed_url": "https://aftermath.site/rss",
-      "desc": "游戏文化深度媒体",
-      "authority": 2,
-      "language": "en",
-      "priority": 0
-    },
-    {
       "id": "nytimes_world",
       "name": "纽约时报·世界",
       "platform": "nytimes",
@@ -256,30 +231,6 @@
       "priority": 1
     },
     {
-      "id": "nytimes_science",
-      "name": "纽约时报·科学",
-      "platform": "nytimes",
-      "type": "rss",
-      "category": "tech",
-      "enabled": false,
-      "feed_url": "https://rss.nytimes.com/services/xml/rss/nyt/Science.xml",
-      "authority": 2,
-      "language": "en",
-      "priority": 2
-    },
-    {
-      "id": "npr_world",
-      "name": "NPR 国际",
-      "platform": "npr",
-      "type": "rss",
-      "category": "foreign_china",
-      "enabled": false,
-      "feed_url": "https://feeds.npr.org/1001/rss.xml",
-      "authority": 3,
-      "language": "en",
-      "priority": 1
-    },
-    {
       "id": "reuters",
       "name": "Reuters",
       "platform": "reuters",
@@ -332,18 +283,6 @@
       "priority": 0,
       "freshness_days": 3,
       "desc": "WSJ 世界新闻 (Dow Jones 官方 RSS, 替代之前的 news.google.com 代理)"
-    },
-    {
-      "id": "game_developer",
-      "name": "Game Developer",
-      "platform": "gamedeveloper",
-      "type": "rss",
-      "category": "game",
-      "enabled": false,
-      "feed_url": "https://www.gamedeveloper.com/rss.xml",
-      "authority": 3,
-      "language": "en",
-      "priority": 1
     },
     {
       "id": "mit_tech_review",
@@ -448,18 +387,6 @@
       "freshness_days": 7
     },
     {
-      "id": "venturebeat",
-      "name": "VentureBeat",
-      "platform": "venturebeat",
-      "type": "rss",
-      "category": "tech",
-      "enabled": false,
-      "feed_url": "https://venturebeat.com/feed/",
-      "authority": 2,
-      "language": "en",
-      "priority": 2
-    },
-    {
       "id": "qbitai",
       "name": "量子位",
       "platform": "qbitai",
@@ -470,19 +397,6 @@
       "authority": 2,
       "language": "zh",
       "priority": 1
-    },
-    {
-      "id": "infoq_cn",
-      "name": "AI 前线 (InfoQ)",
-      "platform": "infoq",
-      "type": "rss",
-      "category": "tech",
-      "enabled": false,
-      "feed_url": "https://www.infoq.cn/feed",
-      "authority": 2,
-      "language": "zh",
-      "priority": 1,
-      "_comment": "2026-06-05 新增：替代机器之心（jiqizhixin.com/rss 已改版关闭，返 HTML）。feedparser 验证 20 条/2026-06-05 18:xx 实时。InfoQ 中国 AI/技术深度报道。"
     },
     {
       "id": "nikkei_asia",
@@ -509,18 +423,6 @@
       "priority": 1
     },
     {
-      "id": "foreign_policy",
-      "name": "Foreign Policy",
-      "platform": "foreignpolicy",
-      "type": "rss",
-      "category": "foreign_china",
-      "enabled": false,
-      "feed_url": "https://foreignpolicy.com/feed/",
-      "authority": 2,
-      "language": "en",
-      "priority": 0
-    },
-    {
       "id": "foreign_affairs",
       "name": "Foreign Affairs",
       "platform": "foreignaffairs",
@@ -532,20 +434,6 @@
       "authority": 3,
       "language": "en",
       "priority": 0,
-      "freshness_days": 7
-    },
-    {
-      "id": "atlantic_council",
-      "name": "Atlantic Council",
-      "platform": "atlanticcouncil",
-      "type": "rss",
-      "category": "foreign_china",
-      "enabled": false,
-      "feed_url": "https://www.atlanticcouncil.org/feed/",
-      "desc": "Atlantic Council 智库",
-      "authority": 2,
-      "language": "en",
-      "priority": 1,
       "freshness_days": 7
     },
     {
@@ -563,20 +451,6 @@
       "freshness_days": 1
     },
     {
-      "id": "marketwatch",
-      "name": "MarketWatch",
-      "platform": "marketwatch",
-      "type": "rss",
-      "category": "economy",
-      "enabled": false,
-      "feed_url": "https://www.marketwatch.com/rss/topstories",
-      "desc": "MarketWatch (道琼斯旗下, WSJ 姐妹站)",
-      "authority": 2,
-      "language": "en",
-      "priority": 1,
-      "freshness_days": 1
-    },
-    {
       "id": "mit_ai",
       "name": "MIT AI",
       "platform": "mit",
@@ -591,19 +465,6 @@
       "freshness_days": 7
     },
     {
-      "id": "euronews",
-      "name": "Euronews",
-      "platform": "euronews",
-      "type": "rss",
-      "category": "news",
-      "enabled": false,
-      "feed_url": "https://www.euronews.com/rss",
-      "desc": "欧洲视角国际新闻 (填补欧洲区域空白)",
-      "authority": 2,
-      "language": "en",
-      "priority": 1
-    },
-    {
       "id": "36kr",
       "name": "36氪",
       "platform": "36kr",
@@ -615,34 +476,6 @@
       "authority": 2,
       "language": "zh",
       "priority": 1
-    },
-    {
-      "id": "economist",
-      "name": "The Economist",
-      "platform": "economist",
-      "type": "rss",
-      "category": "economy",
-      "enabled": false,
-      "feed_url": "https://www.economist.com/business/rss.xml",
-      "desc": "经济学人商业版 (顶级财经分析)",
-      "authority": 3,
-      "language": "en",
-      "priority": 1,
-      "needs_proxy": false
-    },
-    {
-      "id": "nhk_world",
-      "name": "NHK World",
-      "platform": "nhk",
-      "type": "rss",
-      "category": "news",
-      "enabled": false,
-      "feed_url": "https://www.nhk.or.jp/rss/news/cat0.xml",
-      "desc": "日本 NHK 官方 RSS (填补日韩区域空白)",
-      "authority": 3,
-      "language": "ja",
-      "priority": 2,
-      "freshness_days": 1
     },
     {
       "id": "japan_times",
@@ -782,20 +615,6 @@
       "freshness_days": 3
     },
     {
-      "id": "politico_eu",
-      "name": "Politico Europe",
-      "platform": "politico",
-      "type": "rss",
-      "category": "news",
-      "enabled": false,
-      "feed_url": "https://www.politico.eu/feed/",
-      "desc": "欧洲政治一手报道 (132KB, 补充DW/Euronews)",
-      "authority": 2,
-      "language": "en",
-      "priority": 1,
-      "needs_proxy": true
-    },
-    {
       "id": "al_monitor",
       "name": "Al-Monitor",
       "platform": "almonitor",
@@ -808,47 +627,6 @@
       "language": "en",
       "priority": 2,
       "freshness_days": 3
-    },
-    {
-      "id": "rest_of_world",
-      "name": "Rest of World",
-      "platform": "restofworld",
-      "type": "rss",
-      "category": "tech",
-      "enabled": false,
-      "feed_url": "https://restofworld.org/feed/",
-      "desc": "全球科技非西方视角 (14KB, 独特选题)",
-      "authority": 2,
-      "language": "en",
-      "priority": 1,
-      "freshness_days": 7
-    },
-    {
-      "id": "tmtpost",
-      "name": "钛媒体",
-      "platform": "tmtpost",
-      "type": "rss",
-      "category": "tech",
-      "enabled": false,
-      "feed_url": "https://www.tmtpost.com/rss.xml",
-      "desc": "中文科技产业深度分析 (192KB, 补36氪/量子位)",
-      "authority": 2,
-      "language": "zh",
-      "priority": 1,
-      "freshness_days": 3
-    },
-    {
-      "id": "hindustan_times",
-      "name": "Hindustan Times",
-      "platform": "hindustantimes",
-      "type": "rss",
-      "category": "news",
-      "enabled": false,
-      "feed_url": "https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml",
-      "desc": "印度第二大报 (97KB, 补充The Hindu)",
-      "authority": 2,
-      "language": "en",
-      "priority": 1
     }
   ],
   "exploration_sources": [],
