@@ -22,7 +22,7 @@
       "type": "rss",
       "category": "game",
       "enabled": true,
-      "feed_url": "https://plink.anyfeeder.com/gcores",
+      "feed_url": "https://www.gcores.com/rss",
       "authority": 2,
       "language": "zh",
       "priority": 0
@@ -95,7 +95,7 @@
       "type": "rss",
       "category": "tech",
       "enabled": true,
-      "feed_url": "https://plink.anyfeeder.com/arstechnica",
+      "feed_url": "https://feeds.arstechnica.com/arstechnica/index",
       "authority": 2,
       "language": "en",
       "priority": 1
@@ -107,7 +107,7 @@
       "type": "rss",
       "category": "tech",
       "enabled": true,
-      "feed_url": "https://plink.anyfeeder.com/techcrunch",
+      "feed_url": "https://techcrunch.com/feed/",
       "authority": 2,
       "language": "en",
       "priority": 2
@@ -160,7 +160,7 @@
       "type": "rss",
       "category": "game",
       "enabled": true,
-      "feed_url": "https://www.eurogamer.net/?format=rss",
+      "feed_url": "https://www.eurogamer.net/feed",
       "desc": "欧洲领先游戏媒体，深度评测",
       "disabled_reason": "GFW blocked, consistently times out",
       "authority": 3,
@@ -211,7 +211,7 @@
       "type": "rss",
       "category": "news",
       "enabled": true,
-      "feed_url": "https://www.scmp.com/rss/2/feed",
+      "feed_url": "https://www.scmp.com/rss/91/feed",
       "authority": 3,
       "language": "en",
       "priority": 0
@@ -223,10 +223,12 @@
       "type": "rss",
       "category": "foreign_china",
       "enabled": true,
-      "feed_url": "https://news.google.com/rss/search?q=site:bbc.com+china",
+      "feed_url": "https://feeds.bbci.co.uk/zhongwen/simp/rss.xml",
       "authority": 3,
       "language": "en",
-      "priority": 0
+      "priority": 0,
+      "needs_proxy": true,
+      "freshness_days": 3
     },
     {
       "id": "bbc_world",
@@ -235,10 +237,11 @@
       "type": "rss",
       "category": "foreign_china",
       "enabled": true,
-      "feed_url": "https://news.google.com/rss/search?q=site:bbc.com",
+      "feed_url": "https://feeds.bbci.co.uk/news/rss.xml",
       "authority": 3,
       "language": "en",
-      "priority": 1
+      "priority": 1,
+      "needs_proxy": true
     },
     {
       "id": "nytimes_business",
@@ -271,7 +274,7 @@
       "type": "rss",
       "category": "foreign_china",
       "enabled": true,
-      "feed_url": "https://feeds.npr.org/1004/rss.xml",
+      "feed_url": "https://feeds.npr.org/1001/rss.xml",
       "authority": 3,
       "language": "en",
       "priority": 1
@@ -283,7 +286,7 @@
       "type": "rss",
       "category": "economy",
       "enabled": true,
-      "feed_url": "https://news.google.com/rss/search?q=source:Reuters",
+      "feed_url": "https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx1YlY4U0FuSjFHZ0pTVlNnQVAB",
       "authority": 3,
       "language": "en",
       "priority": 1,
@@ -296,7 +299,7 @@
       "type": "rss",
       "category": "economy",
       "enabled": true,
-      "feed_url": "https://www.ft.com/?format=rss",
+      "feed_url": "https://www.ft.com/rss/home/uk",
       "authority": 3,
       "language": "en",
       "priority": 0
@@ -424,7 +427,7 @@
       "type": "rss",
       "category": "news",
       "enabled": true,
-      "feed_url": "https://news.google.com/rss/search?q=site:aljazeera.com&hl=en-US&gl=US&ceid=US:en",
+      "feed_url": "https://www.aljazeera.com/xml/rss/all.xml",
       "authority": 3,
       "language": "en",
       "priority": 1,
@@ -473,23 +476,11 @@
       "type": "rss",
       "category": "tech",
       "enabled": true,
-      "feed_url": "https://www.infoq.cn/feed.xml",
+      "feed_url": "https://www.infoq.cn/feed",
       "authority": 2,
       "language": "zh",
       "priority": 1,
       "_comment": "2026-06-05 新增：替代机器之心（jiqizhixin.com/rss 已改版关闭，返 HTML）。feedparser 验证 20 条/2026-06-05 18:xx 实时。InfoQ 中国 AI/技术深度报道。"
-    },
-    {
-      "id": "scmp_china",
-      "name": "SCMP 中国",
-      "platform": "scmp_china",
-      "type": "rss",
-      "category": "foreign_china",
-      "enabled": true,
-      "feed_url": "https://www.scmp.com/rss/2/feed",
-      "authority": 3,
-      "language": "en",
-      "priority": 0
     },
     {
       "id": "nikkei_asia",
