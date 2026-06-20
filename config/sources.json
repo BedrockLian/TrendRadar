@@ -353,7 +353,7 @@
       "type": "rss",
       "category": "news",
       "enabled": true,
-      "feed_url": "https://news.google.com/rss/search?q=source:Associated+Press",
+      "feed_url": "https://news.google.com/rss/search?q=Associated+Press&hl=en-US&gl=US&ceid=US:en",
       "authority": 3,
       "language": "en",
       "priority": 0,
