@@ -256,21 +256,6 @@
       "priority": 0
     },
     {
-      "id": "cnbc_finance",
-      "name": "CNBC 财经",
-      "platform": "cnbc",
-      "type": "rss",
-      "category": "economy",
-      "enabled": true,
-      "feed_url": "https://www.cnbc.com/id/10000664/device/rss/rss.html",
-      "authority": 2,
-      "language": "en",
-      "priority": 1,
-      "freshness_days": 2,
-      "needs_proxy": true,
-      "_comment": "2026-06-05 新增：替代 WSJ 商业（feeds.a.dj.com/rss/WSJcomUSBusiness.xml 自 2025-01-24 停更）。feedparser 验证 HTTP 200 30 条/2026-06-05 实时，但日更 1-2 条/天 → freshness_days=2。CNBC 拒绝中国 IP（直连 TimeoutError）→ needs_proxy=true 强制走 Mihomo 代理。"
-    },
-    {
       "id": "wsj_world",
       "name": "WSJ 世界新闻 (官方)",
       "platform": "wsj",
