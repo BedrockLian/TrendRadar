@@ -695,6 +695,20 @@
       "authority": 2,
       "language": "en",
       "priority": 1
+    },
+    {
+      "id": "gamedeveloper",
+      "name": "Game Developer",
+      "platform": "gamedeveloper",
+      "type": "rss",
+      "category": "game",
+      "enabled": true,
+      "feed_url": "https://www.gamedeveloper.com/rss.xml",
+      "desc": "游戏开发深度 (前Gamasutra, 75KB, GDC母公司旗下)",
+      "authority": 2,
+      "language": "en",
+      "priority": 1,
+      "freshness_days": 7
     }
   ],
   "exploration_sources": [],
