@@ -181,7 +181,7 @@ def send_to_wecom(file_path: str | Path, subject: str | None = None) -> bool:
         tmp_path = Path(tmp)
         try:
             tmp_path.write_text(chunk, encoding='utf-8')
-            ok = _send_raw(tmp_path, subject=f'{subject} ({i+1}/{len(chunks)})' if subject else f'({i+1}/{len(chunks)})')
+            ok = _send_raw(tmp_path, subject=None)
             if not ok:
                 success = False
         finally:
