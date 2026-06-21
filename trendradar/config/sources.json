@@ -654,6 +654,47 @@
       "priority": 0,
       "freshness_days": 1,
       "needs_proxy": true
+    },
+    {
+      "id": "ign",
+      "name": "IGN",
+      "platform": "ign",
+      "type": "rss",
+      "category": "game",
+      "enabled": true,
+      "feed_url": "https://feeds.feedburner.com/ign/all",
+      "desc": "全球最大游戏媒体 (覆盖全平台, 127KB/当日20条)",
+      "authority": 2,
+      "language": "en",
+      "priority": 1,
+      "freshness_days": 1
+    },
+    {
+      "id": "nintendo_life",
+      "name": "Nintendo Life",
+      "platform": "nintendolife",
+      "type": "rss",
+      "category": "game",
+      "enabled": true,
+      "feed_url": "https://www.nintendolife.com/feed/",
+      "desc": "任天堂专线新闻 (填补任天堂空白, 36KB)",
+      "authority": 2,
+      "language": "en",
+      "priority": 1,
+      "freshness_days": 1
+    },
+    {
+      "id": "pcgamesn",
+      "name": "PCGamesN",
+      "platform": "pcgamesn",
+      "type": "rss",
+      "category": "game",
+      "enabled": true,
+      "feed_url": "https://www.pcgamesn.com/feed",
+      "desc": "PC 游戏新闻专线 (168KB/75条, 补充PC Gamer)",
+      "authority": 2,
+      "language": "en",
+      "priority": 1
     }
   ],
   "exploration_sources": [],
