@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "last_updated": "2026-06-20",
+  "last_updated": "2026-06-21",
   "data_sources": [
     {
       "id": "jiemian",
@@ -72,7 +72,7 @@
       "category": "game",
       "enabled": true,
       "feed_url": "https://www.gamesindustry.biz/feed",
-      "authority": 3,
+      "authority": 2,
       "language": "en",
       "priority": 1
     },
@@ -109,7 +109,7 @@
       "enabled": true,
       "feed_url": "https://www.videogameschronicle.com/feed/",
       "desc": "专注业界新闻与报道",
-      "authority": 3,
+      "authority": 2,
       "language": "en",
       "priority": 0
     },
@@ -151,7 +151,7 @@
       "feed_url": "https://www.eurogamer.net/feed",
       "desc": "欧洲领先游戏媒体，深度评测",
       "disabled_reason": "GFW blocked, consistently times out",
-      "authority": 3,
+      "authority": 2,
       "language": "en",
       "priority": 0
     },
@@ -199,7 +199,7 @@
       "category": "foreign_china",
       "enabled": true,
       "feed_url": "https://feeds.bbci.co.uk/zhongwen/simp/rss.xml",
-      "authority": 3,
+      "authority": 2,
       "language": "en",
       "priority": 0,
       "needs_proxy": true,
@@ -263,7 +263,7 @@
       "category": "economy",
       "enabled": true,
       "feed_url": "https://www.cnbc.com/id/10000664/device/rss/rss.html",
-      "authority": 3,
+      "authority": 2,
       "language": "en",
       "priority": 1,
       "freshness_days": 2,
@@ -487,7 +487,7 @@
       "enabled": true,
       "feed_url": "https://www.japantimes.co.jp/feed/",
       "desc": "日本最大英文日报 (1897创刊, 填补日本区域空白)",
-      "authority": 3,
+      "authority": 2,
       "language": "en",
       "priority": 1
     },
@@ -500,7 +500,7 @@
       "enabled": true,
       "feed_url": "https://en.yna.co.kr/RSS/news.xml",
       "desc": "韩国国家通讯社英文版 (填补韩国区域空白)",
-      "authority": 3,
+      "authority": 2,
       "language": "en",
       "priority": 1
     },
@@ -624,7 +624,7 @@
       "enabled": true,
       "feed_url": "https://www.al-monitor.com/feed",
       "desc": "中东深度分析 (补充Al Jazeera, 17KB)",
-      "authority": 2,
+      "authority": 3,
       "language": "en",
       "priority": 2,
       "freshness_days": 3
@@ -651,7 +651,7 @@
       "enabled": true,
       "feed_url": "https://www.theguardian.com/world/rss",
       "desc": "英国卫报国际版 (147KB, 补英美视角中英方深度)",
-      "authority": 3,
+      "authority": 2,
       "language": "en",
       "priority": 1
     },
