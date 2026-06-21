@@ -187,7 +187,7 @@
       "category": "news",
       "enabled": true,
       "feed_url": "https://www.scmp.com/rss/91/feed",
-      "authority": 3,
+      "authority": 2,
       "language": "en",
       "priority": 0
     },
