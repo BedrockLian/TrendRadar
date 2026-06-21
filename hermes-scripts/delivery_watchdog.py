@@ -114,25 +114,101 @@ def is_delivered(run_id: str) -> bool:
 
 
 def send_to_wecom(file_path: str | Path, subject: str | None = None) -> bool:
-    """通过 hermes send 投递内容到 WeCom。返回 True 表示成功。"""
+    """通过 hermes send 投递内容到 WeCom，自动分片避免截断。
+
+    WeCom markdown 消息限制约 4096 字节。当前 archive 简报经常 8-10KB，
+    直接发送会被截断。修法：按 `### ` 节标题拆分，每片 ≤ 3200 字节，
+    逐片发送（审计 2026-06-21 修复）。
+
+    如果内容很干净（≤3200B），单次发送走快速路径。
+    """
+    content = Path(file_path).read_text(encoding='utf-8')
+    WECOM_CHUNK_LIMIT = 3200  # 安全余量，实际限制~4096
+
+    # 快速路径：内容足够短
+    if len(content.encode('utf-8')) <= WECOM_CHUNK_LIMIT:
+        return _send_raw(file_path, subject)
+
+    # 按 `### ` 节拆分（保留标题标记）
+    import re
+    sections = re.split(r'(?=^### )', content, flags=re.MULTILINE)
+    if len(sections) <= 1:
+        # 没有节标题，按段落拆分
+        sections = re.split(r'(?=^\*\*|^---)', content, flags=re.MULTILINE)
+
+    chunks = []
+    current = []
+    current_size = 0
+
+    for section in sections:
+        section_size = len(section.encode('utf-8'))
+        # 单节超过限制 → 按行拆
+        if section_size > WECOM_CHUNK_LIMIT:
+            if current:
+                chunks.append(''.join(current))
+                current = []
+                current_size = 0
+            lines = section.splitlines(keepends=True)
+            sub = []
+            sub_size = 0
+            for line in lines:
+                line_sz = len(line.encode('utf-8'))
+                if sub_size + line_sz > WECOM_CHUNK_LIMIT and sub:
+                    chunks.append(''.join(sub))
+                    sub = []
+                    sub_size = 0
+                sub.append(line)
+                sub_size += line_sz
+            if sub:
+                chunks.append(''.join(sub))
+        elif current_size + section_size > WECOM_CHUNK_LIMIT and current:
+            chunks.append(''.join(current))
+            current = [section]
+            current_size = section_size
+        else:
+            current.append(section)
+            current_size += section_size
+
+    if current:
+        chunks.append(''.join(current))
+
+    # 逐片发送
+    success = True
+    for i, chunk in enumerate(chunks):
+        import tempfile, os as _os
+        fd, tmp = tempfile.mkstemp(suffix='.md', prefix=f'fragment_{i}_')
+        _os.close(fd)
+        tmp_path = Path(tmp)
+        try:
+            tmp_path.write_text(chunk, encoding='utf-8')
+            ok = _send_raw(tmp_path, subject=f'{subject} ({i+1}/{len(chunks)})' if subject else f'({i+1}/{len(chunks)})')
+            if not ok:
+                success = False
+        finally:
+            try:
+                tmp_path.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+    return success
+
+
+def _send_raw(file_path: Path, subject: str | None = None) -> bool:
+    """单次 hermes send 调用（内部使用）。"""
     cmd = ['hermes', 'send', '--to', 'wecom:bl', '--file', str(file_path)]
     if subject:
         cmd.extend(['--subject', subject])
-    try:
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=30,
-            env={**os.environ, 'PYTHON_GIL': '1'}
-        )
-        if result.returncode == 0:
-            return True
-        # fallback: 部分系统 hermes 命令需要 GIL=0
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=30,
-            env={**os.environ, 'PYTHON_GIL': '0'}
-        )
-        return result.returncode == 0
-    except Exception:
-        return False
+    for gil in ('1', '0'):
+        try:
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, timeout=30,
+                env={**os.environ, 'PYTHON_GIL': gil}
+            )
+            if result.returncode == 0:
+                return True
+        except Exception:
+            pass
+    return False
 
 
 # ── 原有检查 ──────────────────────────────────────────
