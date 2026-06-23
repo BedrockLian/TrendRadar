@@ -79,12 +79,6 @@ def ensure_raw_exists(push_id: str, skip_fetch: bool = False):
                     f"curator 会拿到空列表，可能导致推送失败")
         return
 
-    # Before fetching, pre-select the best mihomo node for foreign RSS.
-    # Reads mihomo's own history (no extra network probes) and switches the
-    # 国外媒体 group to the lowest-latency node. ~100ms overhead.
-    from trendradar.scripts.settings import select_node_for_fetch
-    select_node_for_fetch(reason='pre-fetch')
-
     reason = "龄超4h需刷新" if raw_path.exists() else "首次fetch"
     log.info(f"{reason} — 触发 fetch（push-id={push_id}）")
     from trendradar.scripts.fetch_feeds import fetch_all
@@ -123,7 +117,7 @@ def run_curation(push_id: str, skip_fetch: bool = False) -> dict:
     import trendradar.scripts.curate_and_push as curate
 
     ensure_raw_exists(push_id, skip_fetch=skip_fetch)
-    
+
     # ── 加载来源惩罚与健康评分（盲点审计 → curator 权重反馈） ──
     penalty_path = DATA_DIR / 'source_penalty.json'
     if penalty_path.exists():
@@ -131,10 +125,7 @@ def run_curation(push_id: str, skip_fetch: bool = False) -> dict:
     health_path = DATA_DIR / 'source_health.json'
     if health_path.exists():
         curate.load_source_health(str(health_path))
-    
-    # RSS fetch
-    ensure_raw_exists(push_id)
-    
+
     today = datetime.now(CST).strftime('%Y%m%d')
     try:
         raw = json.loads((CACHE_DIR / f'raw_{today}.json').read_text()).get('items', [])
