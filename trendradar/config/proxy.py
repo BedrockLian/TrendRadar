@@ -7,14 +7,13 @@ DOMESTIC_PROXY_PATTERNS = (
     'plink.anyfeeder.com',
     '.cn',
     '.com.cn',
-    'bbc.co.uk',
-    'bbci.co.uk',
     # 国内站点（被代理后反而变慢/被墙）
     'jiqizhixin.com',   # 机器之心
     '36kr.com',         # 36氪
     'sspai.com',        # 少数派
 )
 
+_sources_cache: dict | None = None
 
 def needs_proxy(feed_url: str) -> bool:
     """判断 RSS 源是否需要走代理。
@@ -22,15 +21,22 @@ def needs_proxy(feed_url: str) -> bool:
     支持 per-source 覆盖：sources.json 中 `needs_proxy: true/false` 显式标记优先于 URL 模式。
     """
     # 先看 sources 显式标记（最高优先级）
-    try:
-        cfg_path = os.environ.get('TRENDRADAR_CONFIG_DIR', '/home/asus/.hermes/trendradar/config')
-        import json as _json
-        sources = _json.loads(open(f'{cfg_path}/sources.json').read()).get('data_sources', [])
-        for s in sources:
-            if s.get('feed_url', '').lower() == feed_url.lower() and 'needs_proxy' in s:
-                return bool(s['needs_proxy'])
-    except Exception:
-        pass
+    global _sources_cache
+    if _sources_cache is None:
+        try:
+            # 从 TRENDRADAR_HOME 或本文件位置推导 config 目录
+            tr_home = os.environ.get('TRENDRADAR_HOME')
+            if tr_home:
+                cfg_dir = os.path.join(tr_home, 'config')
+            else:
+                cfg_dir = os.path.dirname(os.path.abspath(__file__))
+            import json as _json
+            _sources_cache = _json.loads(open(f'{cfg_dir}/sources.json', encoding='utf-8').read()).get('data_sources', [])
+        except Exception:
+            _sources_cache = []
+    for s in _sources_cache:
+        if s.get('feed_url', '').lower() == feed_url.lower() and 'needs_proxy' in s:
+            return bool(s['needs_proxy'])
     # URL 模式匹配
     url_lower = feed_url.lower()
     for pattern in DOMESTIC_PROXY_PATTERNS:
