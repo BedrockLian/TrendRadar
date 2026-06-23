@@ -70,7 +70,6 @@ def generate_cron_prompt(steps: dict) -> str:
     lines.append(f'export PYTHON="{PYTHON}"')
     lines.append(f'export PYTHONPATH="{PYTHONPATH}"')
     lines.append(f'export TRENDRADAR_HOME="{tr_home_path}"')
-    lines.append("export PYTHON_GIL=0")
     lines.append("```")
     lines.append("")
     lines.append("## Main Flow (Orchestrator)")

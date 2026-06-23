@@ -194,21 +194,23 @@ def send_to_wecom(file_path: str | Path, subject: str | None = None) -> bool:
 
 
 def _send_raw(file_path: Path, subject: str | None = None) -> bool:
-    """单次 hermes send 调用（内部使用）。"""
+    """单次 hermes send 调用（内部使用）。
+
+    标准 Python 3.14 不支持 PYTHON_GIL=0，需 pop 掉避免 Fatal Python error。
+    """
     cmd = ['hermes', 'send', '--to', 'wecom:bl', '--file', str(file_path)]
     if subject:
         cmd.extend(['--subject', subject])
-    for gil in ('1', '0'):
-        try:
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=30,
-                env={**os.environ, 'PYTHON_GIL': gil}
-            )
-            if result.returncode == 0:
-                return True
-        except Exception:
-            pass
-    return False
+    env = os.environ.copy()
+    env.pop('PYTHON_GIL', None)
+    try:
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=30,
+            env=env
+        )
+        return result.returncode == 0
+    except Exception:
+        return False
 
 
 # ── 原有检查 ──────────────────────────────────────────
@@ -259,23 +261,23 @@ def get_cron_jobs():
 
     FIX 2026-06-09 (Windows): env values must be str, not Path. Wrap explicitly
     to avoid TypeError on Windows CreateProcess.
+    FIX 2026-06-23: 移除 PYTHON_GIL 重试循环。标准 3.14 不支持 PYTHON_GIL=0，
+    pop 掉整个变量避免 Fatal Python error。
     """
-    for gil in ['1', '0']:
-        try:
-            # Build env with explicit str() coercion (HERMES_HOME is a Path).
-            _env = {k: (str(v) if not isinstance(v, str) else v)
-                    for k, v in os.environ.items()}
-            _env["HERMES_HOME"] = str(HERMES_HOME)
-            _env["PYTHON_GIL"] = gil
-            result = subprocess.run(
-                ["hermes", "cron", "list", "--json"],
-                capture_output=True, text=True, timeout=15,
-                env=_env
-            )
-            if result.returncode == 0:
-                return json.loads(result.stdout)
-        except (subprocess.TimeoutExpired, json.JSONDecodeError, FileNotFoundError):
-            continue
+    try:
+        _env = {k: (str(v) if not isinstance(v, str) else v)
+                for k, v in os.environ.items()}
+        _env["HERMES_HOME"] = str(HERMES_HOME)
+        _env.pop('PYTHON_GIL', None)
+        result = subprocess.run(
+            ["hermes", "cron", "list", "--json"],
+            capture_output=True, text=True, timeout=15,
+            env=_env
+        )
+        if result.returncode == 0:
+            return json.loads(result.stdout)
+    except (subprocess.TimeoutExpired, json.JSONDecodeError, FileNotFoundError):
+        pass
     return None
 
 
@@ -343,7 +345,7 @@ def check_sanity() -> str | None:
             result = subprocess.run(
                 [PYTHON, str(script), '--no-check-links', '--file', _probe_file],
                 capture_output=True, timeout=15,
-                env={**os.environ, 'PYTHONPATH': str(TRENDRADAR_HOME), 'PYTHON_GIL': '0'}
+                env={**os.environ, 'PYTHONPATH': str(TRENDRADAR_HOME)}
             )
         finally:
             try:
@@ -435,14 +437,13 @@ def _send_from_archive(archive_path: Path, alerts: list[str], slot_name: str) ->
             tmp = Path(tmp_path)
             try:
                 tmp.write_text(frag)
-                for gil in ['1', '0']:
-                    result = subprocess.run(
-                        ['hermes', 'send', '--to', 'wecom:bl', '--file', str(tmp)],
-                        capture_output=True, text=True, timeout=30,
-                        env={**os.environ, 'PYTHON_GIL': gil}
-                    )
-                    if result.returncode == 0:
-                        break
+                env = os.environ.copy()
+                env.pop('PYTHON_GIL', None)
+                result = subprocess.run(
+                    ['hermes', 'send', '--to', 'wecom:bl', '--file', str(tmp)],
+                    capture_output=True, text=True, timeout=30,
+                    env=env
+                )
                 if result.returncode == 0:
                     alerts.append(f"  ✅ {slot_name} 分片{i+1}/{len(fragments)} 已投递")
                 else:
@@ -552,7 +553,7 @@ def auto_redeliver_slot(alerts: list[str], push_id: str, slot_name: str, max_age
             [PYTHON, str(TRENDRADAR_HOME / 'scripts' / 'render_markdown.py'),
              '--push-id', push_id],
             capture_output=True, text=True, timeout=30,
-            env={**os.environ, 'PYTHONPATH': str(TRENDRADAR_HOME), 'PYTHON_GIL': '0'}
+            env={**os.environ, 'PYTHONPATH': str(TRENDRADAR_HOME)}
         )
         if result.returncode == 0 and result.stdout.strip():
             briefing_path.write_text(result.stdout)
@@ -560,7 +561,7 @@ def auto_redeliver_slot(alerts: list[str], push_id: str, slot_name: str, max_age
                 [PYTHON, str(TRENDRADAR_HOME / 'scripts' / 'sanity_check.py'),
                  '--push-id', push_id],
                 capture_output=True, timeout=15,
-                env={**os.environ, 'PYTHONPATH': str(TRENDRADAR_HOME), 'PYTHON_GIL': '0'}
+                env={**os.environ, 'PYTHONPATH': str(TRENDRADAR_HOME)}
             )
             if send_to_wecom(briefing_path):
                 alerts.append(f"  ✅ {slot_name}已补发至 WeCom")

@@ -118,7 +118,8 @@ def resend(date: str, slot: str, auto_confirm: bool = False, skip_delivered: boo
         print(f"\n📨 片{i+1}/{len(fragments)} 投递中 ...")
         result = subprocess.run(
             ['hermes', 'send', '--to', 'wecom:bl', frag],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True, text=True, encoding='utf-8',
+            errors='replace', timeout=30,
         )
         if result.returncode == 0:
             status = result.stdout.strip()[:120] if result.stdout else "ok"

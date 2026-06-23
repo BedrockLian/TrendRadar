@@ -299,7 +299,7 @@ def runtests() -> bool:
             capture_output=True, text=True, timeout=60, env=penv,
         )
     except subprocess.TimeoutExpired:
-        print('[TESTS TIMEOUT] pytest 60s 未完成 — Python 3.14t 在 200+ 测试时偶发 GC 抖动。'
+        print('[TESTS TIMEOUT] pytest 60s 未完成 — 可能是 GC 抖动。'
               ' 备份和清理已完成，标记为软失败')
         return True  # 软失败：备份/清理/vacuum 已成功，测试仅是辅助验证
     except Exception as e:

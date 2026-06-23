@@ -108,23 +108,16 @@ def ensure_db_migrated(db_path=None):
     return migrate(db_path)
 
 
-# ── GIL 检查（保留原逻辑）─────────────────────────────────
+# ── GIL 检查（标准 3.14 GIL=ON，静默通过）─────────────────
 import sys as _sys
 
 
 def _check_gil():
     global _GIL_OK
     _GIL_OK = True
-    if hasattr(_sys, '_is_gil_enabled') and not _sys._is_gil_enabled():
-        return
-    if '3.14' in _sys.version and 'free-threading' not in _sys.version.lower():
-        gil = os.environ.get('PYTHON_GIL', '')
-        if gil != '0':
-            import warnings
-            warnings.warn(
-                f"PYTHON_GIL={gil or '(unset)'} — 3.14t 建议 export PYTHON_GIL=0",
-                RuntimeWarning,
-            )
+    # 标准 Python 3.14 (GIL=ON) 下无需任何检查，静默通过。
+    # 如果运行在 free-threading 构建下，_is_gil_enabled 返回 False
+    # 但当前生产环境使用标准版 3.14.5 (GIL=ON)，不做警告。
 
 
 _GIL_OK = None

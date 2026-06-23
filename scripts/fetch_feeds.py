@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """TrendRadar 采集员 — 46个RSS源多线程并行抓取（ThreadPoolExecutor + urllib 同步版）
 
-针对 Python 3.14t free-threading 优化：移除 aiohttp/asyncio，改用 ThreadPoolExecutor
-实现真正的多线程并行 I/O。free-threading（GIL 关闭）下各线程可真正并发执行，
+针对标准 Python 3.14 (GIL=ON) 优化：移除 aiohttp/asyncio，改用 ThreadPoolExecutor。
+I/O bound 任务在 GIL=ON 下多线程本就能并行执行 HTTP 请求，
 消除 asyncio 单线程事件循环的隐式串行化开销。
 """
 from trendradar.scripts.settings import get_logger
@@ -145,7 +145,7 @@ def fetch_all(push_id: str = '') -> dict:
     """多线程并行抓取所有 RSS 源 + 热度追踪
 
     使用 ThreadPoolExecutor 实现真正的多线程并发。
-    在 Python 3.14t free-threading (GIL=OFF) 下各线程可真正并行执行 HTTP I/O。
+    在标准 Python 3.14 (GIL=ON) 下 I/O bound 任务可并行执行 HTTP 请求。
     """
     sources = _get_sources()
 
