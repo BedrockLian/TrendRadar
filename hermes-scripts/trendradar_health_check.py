@@ -24,8 +24,8 @@ FIXES = []
 
 # ── 已知 cron job 名称（用于动态匹配，不依赖 job ID） ──────────
 CRON_JOB_NAMES = [
-    '日报推送', '推送降级看门狗', '每日维护',
-    '自动体检', '周报推送', '月度趋势报告', 'slot_direct_push',
+    'TrendRadar 日报推送', 'TrendRadar 推送看门狗', 'TrendRadar 每日维护',
+    'TrendRadar 自动体检', 'TrendRadar 周报推送', 'TrendRadar 月度报告',
 ]
 
 def fail(component, severity, msg):

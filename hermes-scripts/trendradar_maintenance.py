@@ -279,14 +279,18 @@ def runtests() -> bool:
       - 60s 超时（避免拖死 cron 120s 限额）
     """
     import subprocess
-    pipeline_python = os.environ.get('PYTHON', '/usr/local/bin/python3.14t')
+    pipeline_python = os.environ.get('PYTHON', r'C:\Users\ASUS\AppData\Local\Python\pythoncore-3.14-64\python.exe')
     if not os.access(pipeline_python, os.X_OK):
         pipeline_python = sys.executable
     penv = os.environ.copy()
     # trefdradar 目录有 __init__.py，其父目录作为 PYTHONPATH 即可 import trendradar
     TR_PKG = TRENDRADAR_HOME / 'trendradar'
     penv['PYTHONPATH'] = str(TRENDRADAR_HOME) if TR_PKG.exists() else str(TRENDRADAR_HOME)
-    penv.setdefault('PYTHON_GIL', '0')
+    # 仅 free-threading (3.14t) 才需要关 GIL；标准 3.14 不支持 PYTHON_GIL=0
+    try:
+        penv.pop('PYTHON_GIL')
+    except KeyError:
+        pass
     try:
         result = subprocess.run(
             [pipeline_python, '-m', 'pytest', 'tests/', '-q', '--tb=line',
