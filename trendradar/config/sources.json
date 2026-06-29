@@ -412,7 +412,7 @@
       "name": "Foreign Affairs",
       "platform": "foreignaffairs",
       "type": "rss",
-      "category": "foreign_china",
+      "category": "news",
       "enabled": true,
       "feed_url": "https://www.foreignaffairs.com/rss.xml",
       "desc": "Foreign Affairs (CFR 旗下, FP 姊妹刊)",
@@ -500,7 +500,7 @@
       "desc": "印度三大报之一 (独立编辑, 填补印度区域空白)",
       "authority": 2,
       "language": "en",
-      "priority": 1
+      "priority": 0
     },
     {
       "id": "propublica",
