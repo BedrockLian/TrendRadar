@@ -12,52 +12,25 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 
-# ── TrendRadar 数据/缓存/存档（不推到 GitHub）─────────────
-# 原则：只保留必要配置文件 + 运行时脚本，运行时积累的数据本地留
-# 双 data 目录：外层 (TRENDRADAR_HOME/data) + 内层 (trendradar/data symlink→外层)
-#   - data/             外层 curated/sources/markers/db —— 全部运行时数据，不同步
-#   - cache/            raw_*.json / batch_*.json.zst —— 全部缓存，不同步
-#   - archive/          投递过的简报存档（每日累积），不同步
-#   - logs/             运行日志，不同步
+# ── TrendRadar 运行时数据（不推到 GitHub）──────────────────
 data/
 cache/
 archive/
 logs/
 output/
 mail_queue/
+reports/
+skills/
 *.db
 *.db.backup
 *.json.zst
 *.marker
 
-# ──配置文件 / Secrets（本地）────────────────────────────
+# ── 配置文件 / Secrets（本地）────────────────────────────
 .env
 .env.local
-trendradar/.env
-trendradar/config/ai_interests.txt.bak
 
-# ── IDE / OS临时文件 ─────────────────────────────────────
+# ── IDE / OS 临时文件 ─────────────────────────────────────
 *.swp
 .DS_Store
 Thumbs.db
-
-# ── 本地 sync机制产物(不入 GitHub) ────────────────────
-sync_repo.sh
-sync_files.py
-.sync_state/
-
-# ── 注意 ───────────────────────────────────────────────────
-# 必要配置文件（必同步）：
-#   - trendradar/config/sources.json       RSS 源定义（ai_translate.py 读这个）
-#   - trendradar/config/ai_interests.yaml  兴趣偏好
-#   - trendradar/config/timeline.yaml      推送时段
-#   - trendradar/config/keywords.py        关键词
-#   - trendradar/config/translation.py     翻译 batch size 等
-#   - trendradar/config/domains.py         板块配比
-# 必要脚本（必同步）：
-#   - trendradar/scripts/                  全部
-#   - trendradar/migrations/               数据库迁移
-# 必要文档（必同步）：
-#   - README.md, SETUP.md, ARCHITECTURE.md, PIPELINE.md, TRAPS.md
-# 必要测试（必同步）：
-#   - tests/（pytest）
