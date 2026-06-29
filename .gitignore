@@ -34,3 +34,6 @@ skills/
 *.swp
 .DS_Store
 Thumbs.db
+
+# ── 本地 sync 机制产物 ────────────────────────────────────
+.sync_state/
