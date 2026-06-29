@@ -16,7 +16,7 @@ TrendRadar 是一个三层结构的新闻聚合与智能推送系统：**日报*
 pipeline_orchestrator.py（一键6阶段）
   ① slot检测 → ② fetch+curate → ③ 并行(翻译+全文抓取) → ④ 脚本渲染 → ⑤ 分片 → ⑥ 指纹记录
   → 输出 JSON → auto-delivery → WeCom
-  [晚间] 追加 3×flash delegate_task 深度分析（2026-06-02 从 Pro 改 flash）
+  [晚间] 追加 3×flash delegate_task 深度分析
 ```
 
 | 时段 | 时间 | 条数 | 特点 |
@@ -77,9 +77,9 @@ pipeline_orchestrator.py（一键6阶段）
 | 功能 | 依赖 Hermes 的组件 |
 |------|-------------------|
 | **推送调度** | 日报 cron（`0 9,12,21 * * *`）+ 周报 cron（`30 9 * * 1`）+ 月报 cron（`0 9 1 * *`） |
-| **6 个 skill** | 上述定义，脱离 Hermes 无意义 |
+| **4 个 skill** | 上述定义，脱离 Hermes 无意义 |
 | **WeCom 投递** | cron final response → Gateway auto-delivery |
-| **晚间深度分析** | `delegate_task` 3×flash 子 Agent 并行（2026-06-02 从 Pro 改 flash） |
+| **晚间深度分析** | `delegate_task` 3×flash 子 Agent 并行 |
 | **周报/月报 Pro 分析** | `delegate_task` + `deep-research-cli` 六步协议 |
 | **KV 缓存共享** | Hermes KV cache（3 日报共池） |
 | **自动体检** | cron no_agent 模式 + health_check 脚本 |
@@ -93,75 +93,51 @@ pipeline_orchestrator.py（一键6阶段）
 
 ```
 TrendRadar/
-├── trendradar/                  # 核心 Python 包
-│   ├── scripts/                 #   管线/工具脚本
-│   │   ├── pipeline_orchestrator.py     # 一键编排器 v2.8.0（6阶段自动管线）
+├── .github/workflows/ci.yml       # CI 持续集成（在根目录）
+├── deploy/                         # 一键部署
+│   ├── hermes-scripts/             # Cron 脚本（→ $HERMES_HOME/scripts/）
+│   │   ├── trendradar_health_check.py   # 自动体检
+│   │   ├── trendradar_maintenance.py    # 每日备份清理
+│   │   └── delivery_watchdog.py         # 推送看门狗
+│   ├── prompts/                    # Cron prompt 模板
+│   └── one-key-setup.sh            # 一条龙部署入口
+├── skills/trendradar/              # Hermes Agent 技能（→ $HERMES_HOME/skills/trendradar/）
+│   ├── news-secretary/             # 日报推送（核心技能）
+│   ├── self-healing/               # 自动体检/自修复
+│   ├── report-generator/           # 报告生成
+│   └── system-config/              # 系统配置速查
+├── trendradar/                     # Python 包（核心代码）
+│   ├── scripts/                    # 管线/工具脚本（28 个）
+│   │   ├── pipeline_orchestrator.py     # 一键编排器（6阶段自动管线）
 │   │   ├── push_prepare.py              # fetch + curation 编排
 │   │   ├── fetch_feeds.py               # 多 RSS 异步抓取
 │   │   ├── curate_and_push.py           # 5 域并行精选 + 多样性惩罚
 │   │   ├── ai_translate.py              # AI 批量翻译 + 熔断退避
-│   │   ├── render_markdown.py           # 纯脚本渲染（摘要120字上限+句号边界截断）
-│   │   ├── render_deep_analysis.py      # flash 深度分析 + 知识图谱
+│   │   ├── render_markdown.py           # 纯脚本渲染
+│   │   ├── render_deep_analysis.py      # flash 深度分析
 │   │   ├── fragment_push.py             # UTF-8 字节计数分片
-│   │   ├── sanity_check.py              # 发布前拦截器(前言剥离/禁语/HTML/死链/脱敏)
+│   │   ├── sanity_check.py              # 发布前拦截器
 │   │   ├── blind_spot_audit.py          # 信息茧房盲点检测
-│   │   ├── aggregate_monthly.py         # 月度统计 + 兴趣漂移
-│   │   ├── record_fingerprints.py       # 指纹记录（Storage）
+│   │   ├── aggregate_monthly.py         # 月度统计
+│   │   ├── record_fingerprints.py       # 指纹记录
 │   │   ├── track_events.py              # 跨日事件追踪
 │   │   ├── heat_tracker.py              # 热度追踪引擎
-│   │   ├── push_slot_detect.py          # 推送时段检测（早/午/晚）
-│   │   ├── cleanup_fake_translations.py # 假翻译自动清理
-│   │   ├── interest_cli.py              # 兴趣偏好 CLI 管理
-│   │   ├── trace.py                     # 追踪/调试工具
-│   │   ├── gen_cron_prompt.py            # cron prompt 自动生成（SSOT）
-│   │   ├── common.py                    # 公共工具函数
-│   │   ├── settings.py                  # 统一配置（路径/API/BATCH_SIZE）
-│   │   ├── storage.py                   # SQLite 存储抽象层
-│   │   └── exitcodes.py                 # 退出码协议定义
-│   ├── config/                #   关键词/时段/翻译/兴趣配置
-│   │   ├── sources.json              # 39+ RSS 源列表
-│   │   ├── keywords.py               # AC 自动机关键词分类（505 词 × 6 域）
-│   │   ├── ai_interests.yaml         # 兴趣偏好评分配置
-│   │   └── timeline.yaml             # 推送时段配置
-│   ├── migrations/           #   SQLite 数据库迁移引擎
-│   │   ├── 001_initial.sql           # 初始表结构
-│   │   └── runner.py                 # 迁移执行器（up + down 回滚）
-│   ├── skills/               #   Hermes Agent 技能定义（4个）
-│   │   ├── news-secretary/           # 日报推送 v6.21.0
-│   │   ├── self-healing/             # 自动体检 v3.6.0
-│   │   ├── report-generator/         # 报告生成 v1.1.0
-│   │   └── system-config/            # 系统配置速查 v2.19.0
-│   ├── references/           #   核心参考文档（10 根 + 36 存档 + INDEX.md 索引）
-│   ├── tests/                #   测试用例（146 用例，含 E2E 管线 + 边界测试）
-│   │   ├── conftest.py
-│   │   ├── test_pipeline_e2e.py      # 编排器基础测试
-│   │   ├── test_pipeline_e2e_real.py  # 真实管线 E2E 测试（integrated）
-│   │   ├── test_ai_translate_boundary.py  # BATCH_SIZE 边界 + 熔断测试
-│   │   ├── test_fetch_feeds.py
-│   │   ├── test_curate_and_push.py
-│   │   ├── test_ai_translate.py
-│   │   ├── test_render_markdown.py
-│   │   ├── test_sanity_check.py
-│   │   ├── test_push_prepare.py
-│   │   ├── test_push_slot_detect.py
-│   │   ├── test_record_and_common.py
-│   │   ├── test_heat_tracker.py
-│   │   └── test_track_events.py
-│   ├── .github/workflows/ci.yml     # GitHub Actions CI（lint + smoke + test + refs 一致性校验）
-│   ├── KNOWLEDGE_GRAPH.md           # 完整代码分析：架构全景图/模块依赖/数据流（630 行）
-│   ├── README.md                    # 子包说明
-│   ├── requirements.txt
-│   ├── requirements-dev.txt
-│   └── pyproject.toml               # 包定义 v5.6.0
-├── hermes-scripts/           # 自动体检/维护/看门狗脚本
-│   ├── trendradar_health_check.py   # 每日自动体检（17项检查）
-│   ├── trendradar_maintenance.py    # 每日备份清理
-│   └── delivery_watchdog.py         # 推送降级看门狗
-├── one-key-setup.sh          # 一条龙部署脚本
+│   │   ├── push_slot_detect.py          # 推送时段检测
+│   │   ├── ...                          # 见 trendradar/scripts/ 目录
+│   ├── config/                    # 关键词/时段/翻译/兴趣配置
+│   │   ├── sources.json           # 48+ RSS 源列表
+│   │   ├── keywords.py            # AC 自动机关键词分类（505 词 × 6 域）
+│   │   ├── ai_interests.yaml      # 兴趣偏好评分配置
+│   │   └── timeline.yaml          # 推送时段配置
+│   ├── migrations/                # SQLite 数据库迁移引擎
+│   ├── references/                # 核心参考文档 + INDEX.md 索引
+│   ├── tests/                     # 测试用例（146+ 用例）
+│   ├── pyproject.toml             # 包定义 v5.7.0
+│   └── requirements.txt           # 依赖清单
 ├── .gitignore
 ├── LICENSE
-├── README.md                 # 本文件
-└── SETUP.md                  # 从零搭建指南
+├── README.md                      # 本文件
+└── SETUP.md                       # 从零搭建指南
 ```
 
 ---
@@ -170,29 +146,34 @@ TrendRadar/
 
 ```bash
 # 一条龙部署（推荐）
-curl -sSL https://raw.githubusercontent.com/BedrockLian/TrendRadar/main/one-key-setup.sh | bash
+curl -sSL https://raw.githubusercontent.com/BedrockLian/TrendRadar/main/deploy/one-key-setup.sh | bash
 
 # 或手动安装
+git clone https://github.com/BedrockLian/TrendRadar.git ~/TrendRadar
+cd ~/TrendRadar
+
+# 安装 Python 依赖
 cd trendradar && pip install -e ".[dev]"
 
 # 配置 API Key
 export DEEPSEEK_API_KEY="sk-xxx"
 
 # 初始化数据库
-python3 -c "from scripts.settings import ensure_db_migrated; ensure_db_migrated()"
+python3 -c "from trendradar.migrations.runner import migrate; from pathlib import Path; migrate(Path('data/fingerprints.db'))"
 
-# 手动跑一次日报
-export PYTHONPATH=/home/asus/.hermes PYTHON_GIL=0
-python3.14t scripts/pipeline_orchestrator.py --push-id morning --output text
+# 手动跑一次日报（设置 PYTHONPATH 为 trendradar/ 的父目录）
+export PYTHONPATH=/path/to/trendradar/parent
+export TRENDRADAR_HOME=/path/to/runtime/dir
+python3.14t -m trendradar.scripts.pipeline_orchestrator --push-id morning --output text
 
-# 查看管道步骤（SSOT 自描述）
-python3.14t scripts/pipeline_orchestrator.py --list-steps
+# 查看管道步骤
+python3.14t -m trendradar.scripts.pipeline_orchestrator --list-steps
 
-# 启动前自检
-python3.14t scripts/pipeline_orchestrator.py --check-version
+# 部署 Hermes Skills
+cp -r skills/trendradar/* ~/.hermes/skills/trendradar/
 
-# 管线诊断（快速定位故障）
-bash scripts/diag_pipeline.sh
+# 部署 Cron 脚本
+cp deploy/hermes-scripts/*.py ~/.hermes/scripts/
 ```
 
 ---
@@ -200,14 +181,14 @@ bash scripts/diag_pipeline.sh
 ## 测试
 
 ```bash
-# 全量测试（146 用例）
-cd trendradar && PYTHONPATH=$PWD pytest tests/ -v
+# 全量测试
+cd TrendRadar/trendradar && PYTHONPATH=$PWD/.. pytest tests/ -v
 
 # 集成测试（真实管线）
-cd trendradar && PYTHONPATH=$PWD pytest tests/ -m integration -v
+cd TrendRadar/trendradar && PYTHONPATH=$PWD/.. pytest tests/ -m integration -v
 
 # Lint + 安全扫描
-cd trendradar && ruff check trendradar/ && bandit -r trendradar/scripts/ -s B101
+cd TrendRadar && ruff check trendradar/ && bandit -r trendradar/scripts/ -s B101
 ```
 
 GitHub Actions CI 在每次 push 到 `main` 时自动运行 ruff lint → 烟雾测试 → 全量测试 → references 一致性校验。
@@ -229,7 +210,7 @@ GitHub Actions CI 在每次 push 到 `main` 时自动运行 ruff lint → 烟雾
 | 调度 | Hermes Agent cron（早/午/晚 + 周报 + 月报） |
 | 压缩 | zstandard (zstd) |
 | CI | GitHub Actions（ruff lint + pytest smoke/test + refs 校验） |
-| 文档 | 10 份核心参考文档 + 36 存档 + INDEX.md 索引 + KNOWLEDGE_GRAPH.md 代码分析 |
+| 文档 | 核心参考文档 + INDEX.md 索引 |
 
 ---
 
