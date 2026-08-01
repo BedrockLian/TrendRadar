@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "TrendRadar 的 Codex-only 本地任务计划：脚本生成结构化 JSON 和 Markdown，Codex 负责读取、判断和呈现；不调用外部消息平台。",
+  "description": "TrendRadar 的 Codex-only 本地任务计划：脚本生成结构化 JSON 和 Markdown，Codex 负责读取、判断，并将最终 Markdown 直接输出到当前聊天框；不打开本地预览、不以产物路径替代正文、不调用外部消息平台",
   "timezone": "Asia/Shanghai",
   "performance_budget_seconds": 180,
   "jobs": [
@@ -32,7 +32,7 @@
       "id": "trendradar-daily-briefing",
       "schedule": "0 9,12,21 * * *",
       "kind": "briefing",
-      "description": "执行抓取、精选、翻译、渲染和指纹记录，输出单个 JSON 结果及 Markdown 日报。",
+      "description": "执行抓取、精选、翻译、渲染和指纹记录，输出单个 JSON 结果；Codex 读取 briefing 后将完整 Markdown 直接输出到当前聊天框，不以本地预览或文件路径替代正文。",
       "entrypoint": "trendradar.pipeline.pipeline_orchestrator",
       "slots": ["morning", "noon", "evening"],
       "timeout_seconds": 180
@@ -41,7 +41,7 @@
       "id": "trendradar-weekly-report",
       "schedule": "30 9 * * 1",
       "kind": "report",
-      "description": "收集最近 7 天精选数据证据，供 Codex 生成有来源的周报。",
+      "description": "收集最近 7 天精选数据证据，供 Codex 生成并将有来源的完整 Markdown 周报直接输出到当前聊天框。",
       "entrypoint": "trendradar.reporting.report_task --period weekly",
       "timeout_seconds": 600
     },
@@ -49,7 +49,7 @@
       "id": "trendradar-monthly-report",
       "schedule": "0 9 1 * *",
       "kind": "report",
-      "description": "收集最近 32 天精选数据证据，供 Codex 生成有来源的月报。",
+      "description": "收集最近 32 天精选数据证据，供 Codex 生成并将有来源的完整 Markdown 月报直接输出到当前聊天框。",
       "entrypoint": "trendradar.reporting.report_task --period monthly",
       "timeout_seconds": 900
     }

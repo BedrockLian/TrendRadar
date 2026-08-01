@@ -13,7 +13,7 @@
 | 周报 | 周一 09:30 |
 | 月报 | 每月 1 日 09:00 |
 
-时区为 `Asia/Shanghai`。运行脚本只输出 JSON 和 Markdown；Codex 任务读取结果后向用户呈现。
+时区为 `Asia/Shanghai`。运行脚本只输出 JSON 和 Markdown；Codex 任务读取结果后，将报告 Markdown 本体直接输出到当前聊天框。产物路径和本地预览只用于审计与排障，不能替代正文。
 
 ## 入口
 

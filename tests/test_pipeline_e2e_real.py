@@ -50,3 +50,14 @@ def test_generated_plan_prompt_is_parseable():
     output = generate_cron_prompt(get_pipeline_steps())
     assert "TrendRadar Codex 计划任务" in output
     assert "trendradar-output-watchdog" in output
+    assert "直接输出到当前聊天框" in output
+    assert "不要用本地预览" in output
+
+
+def test_production_chat_output_contract_is_documented():
+    skill = (ROOT / "skills" / "trendradar" / "news-secretary" / "SKILL.md").read_text(encoding="utf-8")
+    pipeline = (ROOT / "docs" / "PIPELINE.md").read_text(encoding="utf-8")
+
+    assert "briefing" in skill
+    assert "最终回复必须是 `briefing` 中的 Markdown 本体" in skill
+    assert "不以本地预览、浏览器链接或 artifact 路径替代正文" in pipeline

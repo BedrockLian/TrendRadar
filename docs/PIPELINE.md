@@ -36,7 +36,7 @@
 }
 ```
 
-`silent` 表示没有新内容，`busy` 表示已有同名任务运行，`error` 表示需要诊断。Codex 只展示 `briefing`，不重新生成或拼接脚本输出。
+`silent` 表示没有新内容，`busy` 表示已有同名任务运行，`error` 表示需要诊断。生产环境中，Codex 将 `briefing` 原文直接作为聊天消息输出，让聊天框渲染 Markdown；不重新生成或拼接脚本输出，也不以本地预览、浏览器链接或 artifact 路径替代正文。
 
 没有配置外部 LLM Key 时，翻译阶段会把原文写入 `codex_translation_queue_<slot>_<date>.json`，并在 `stats.llm_stats.status` 标记为 `needs_codex`。Codex 读取队列后直接生成 URL 对齐的中文响应，再执行：
 
@@ -57,3 +57,5 @@ python -m trendradar.cli.codex_direct_translate --push-id noon --response <respo
 ## 输出格式
 
 Markdown 保留标题、条目、摘要、来源链接和统计尾注。渲染脚本的 docstring 是格式契约，修改时同步更新本文件。
+
+生产交付时不要给完整日报套代码围栏；必须直接发送 Markdown 本体，确保聊天框能够正常渲染。

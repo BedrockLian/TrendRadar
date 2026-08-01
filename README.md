@@ -1,6 +1,6 @@
 # TrendRadar
 
-TrendRadar 是一个多源 RSS 聚合、分类、精选、翻译和 Markdown 简报系统。脚本生成可审计的 JSON/Markdown 产物，Codex 读取结果并负责呈现，不调用外部消息平台。
+TrendRadar 是一个多源 RSS 聚合、分类、精选、翻译和 Markdown 简报系统。脚本生成可审计的 JSON/Markdown 产物，Codex 读取结果并将最终 Markdown 直接输出到聊天框，不调用外部消息平台。
 
 ## 快速开始
 
