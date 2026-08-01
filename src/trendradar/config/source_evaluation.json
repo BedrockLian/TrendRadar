@@ -71,6 +71,70 @@
     }
   },
   "overrides": {
+    "cna_asia": {
+      "quality": 4,
+      "authority": 4,
+      "source_kind": "regional_public_broadcaster",
+      "cadence_target_hours": 24,
+      "decision": "core",
+      "transport_kind": "official",
+      "official_url": "https://www.channelnewsasia.com/",
+      "verification_url": "https://www.channelnewsasia.com/rss",
+      "fallback_ids": ["bbc_china", "sixth_tone", "scmp_china"],
+      "replacement_status": "official_feed",
+      "notes": "CNA 官方 RSS；亚洲区域新闻入口，替代联合早报中国第三方中转。"
+    },
+    "cna_world": {
+      "quality": 4,
+      "authority": 4,
+      "source_kind": "regional_public_broadcaster",
+      "cadence_target_hours": 24,
+      "decision": "core",
+      "transport_kind": "official",
+      "official_url": "https://www.channelnewsasia.com/",
+      "verification_url": "https://www.channelnewsasia.com/rss",
+      "fallback_ids": ["bbc_world", "dw_news", "nikkei_asia"],
+      "replacement_status": "official_feed",
+      "notes": "CNA 官方 RSS；国际新闻入口，替代联合早报国际第三方中转。"
+    },
+    "pbs_newshour": {
+      "quality": 4,
+      "authority": 4,
+      "source_kind": "public_broadcaster",
+      "cadence_target_hours": 24,
+      "decision": "core",
+      "transport_kind": "official",
+      "official_url": "https://www.pbs.org/newshour/",
+      "verification_url": "https://www.pbs.org/newshour/about/pbs-news-rss-feeds",
+      "fallback_ids": ["bbc_world", "dw_news", "cna_world"],
+      "replacement_status": "official_feed",
+      "notes": "PBS NewsHour 官方头条 RSS；替代 AP 的 Google News 聚合入口。"
+    },
+    "rest_world": {
+      "quality": 4,
+      "authority": 4,
+      "source_kind": "nonprofit_specialist_publisher",
+      "cadence_target_hours": 168,
+      "decision": "specialist",
+      "transport_kind": "official",
+      "official_url": "https://restofworld.org/",
+      "verification_url": "https://restofworld.org/platforms/",
+      "fallback_ids": ["mit_tech_review", "wired", "arstechnica"],
+      "replacement_status": "official_feed",
+      "notes": "非营利全球科技报道；补足中国以外地区的技术与社会影响。"
+    },
+    "techcrunch": {
+      "quality": 4,
+      "authority": 4,
+      "source_kind": "tech_publisher",
+      "cadence_target_hours": 24,
+      "decision": "supplement",
+      "transport_kind": "official",
+      "official_url": "https://techcrunch.com/",
+      "fallback_ids": ["rest_world", "arstechnica", "mit_tech_review", "wired"],
+      "replacement_status": "retired_tls_failure",
+      "notes": "媒体本身仍有价值，但当前环境对 RSS、栏目 feed 和 API 均重复出现 TLS 提前断开，已移出生产源。"
+    },
     "reuters": {
       "quality": 4,
       "authority": 5,
@@ -81,8 +145,8 @@
       "official_url": "https://www.reuters.com/world/",
       "verification_url": "https://www.thomsonreuters.com/en/about-us/trust-principles",
       "fallback_ids": ["wsj_world", "financial_times", "bbc_world"],
-      "replacement_status": "official_rss_requires_license",
-      "notes": "Reuters 官方 RSS 交付需要授权；当前公开入口是 Google News 聚合，不能按官方直连计分。"
+      "replacement_status": "retired_public_aggregator",
+      "notes": "Reuters 官方 RSS 交付需要授权；当前公开入口是 Google News 聚合，已移出生产源，保留作授权接入记录。"
     },
     "ap_news": {
       "quality": 4,
@@ -94,8 +158,8 @@
       "official_url": "https://apnews.com/",
       "verification_url": "https://www.ap.org/about/news-values-and-principles/",
       "fallback_ids": ["nytimes_world", "bbc_world", "dw_news"],
-      "replacement_status": "official_api_requires_license",
-      "notes": "AP Media API 提供授权 RSS/API；公开 AP News RSS 当前返回授权错误，保留聚合入口但必须标记传输风险。"
+      "replacement_status": "retired_public_aggregator",
+      "notes": "AP Media API 提供授权 RSS/API；公开 AP News RSS 当前返回授权错误，已移出生产源，保留作授权接入记录。"
     },
     "afp": {
       "quality": 4,
@@ -107,8 +171,8 @@
       "official_url": "https://www.afp.com/en",
       "verification_url": "https://www.afp.com/en/agency/inside-afp/press-releases",
       "fallback_ids": ["bbc_world", "al_jazeera", "guardian_world"],
-      "replacement_status": "public_rss_press_releases_only",
-      "notes": "AFP 公开 RSS 可确认的是新闻稿，不等价于完整全球新闻流。"
+      "replacement_status": "retired_public_aggregator",
+      "notes": "AFP 公开 RSS 可确认的是新闻稿，不等价于完整全球新闻流；已移出生产源。"
     },
     "zaobao_china": {
       "quality": 3,
@@ -119,8 +183,8 @@
       "transport_kind": "third_party_mirror",
       "official_url": "https://www.zaobao.com.sg/",
       "fallback_ids": ["bbc_china", "sixth_tone", "scmp_china"],
-      "replacement_status": "no_public_official_rss_verified",
-      "notes": "当前 anyfeeder 中转两轮现场检查均失败；若必须保留，应自建并固定 RSSHub/网页采集版本。"
+      "replacement_status": "retired_third_party_mirror",
+      "notes": "当前 anyfeeder 中转连续现场检查失败；已移出生产源。若未来必须恢复，应自建并固定 RSSHub/网页采集版本。"
     },
     "zaobao_world": {
       "quality": 3,
@@ -131,8 +195,8 @@
       "transport_kind": "third_party_mirror",
       "official_url": "https://www.zaobao.com.sg/",
       "fallback_ids": ["bbc_world", "dw_news", "nikkei_asia"],
-      "replacement_status": "no_public_official_rss_verified",
-      "notes": "当前 anyfeeder 中转两轮现场检查均失败；不应作为唯一国际新闻来源。"
+      "replacement_status": "retired_third_party_mirror",
+      "notes": "当前 anyfeeder 中转连续现场检查失败；已移出生产源，不应作为唯一国际新闻来源。"
     },
     "bbc_world": {
       "quality": 4,
@@ -260,7 +324,9 @@
       "decision": "specialist",
       "official_url": "https://arxiv.org/list/cs.AI/recent",
       "verification_url": "https://info.arxiv.org/about/index.html",
-      "notes": "研究发现源；arXiv 官方明确说明内容不经过同行评审，不能直接当作已证实结论。"
+      "fallback_ids": ["mit_ai", "mit_tech_review", "nature_news"],
+      "replacement_status": "retired_preprint_feed",
+      "notes": "研究预印本不经过同行评审，且当前 RSS 抓取失败；已移出生产源，保留作研究候选记录。"
     },
     "nature_news": {
       "quality": 5,
@@ -283,6 +349,18 @@
       "fallback_ids": ["pcgamer", "gamesindustry", "videogameschronicle"],
       "replacement_status": "official_route_not_verified",
       "notes": "FeedBurner 不是内容聚合器，但属于旧式中转；当前可用，持续监测即可。"
+    },
+    "nintendo_life": {
+      "quality": 3,
+      "authority": 3,
+      "source_kind": "specialist_publisher",
+      "cadence_target_hours": 24,
+      "decision": "specialist",
+      "transport_kind": "official",
+      "official_url": "https://www.nintendolife.com/",
+      "fallback_ids": ["videogameschronicle", "pcgamer", "eurogamer"],
+      "replacement_status": "retired_http_403",
+      "notes": "现场返回 HTTP 403，已移出生产源；任天堂相关报道由其他稳定游戏媒体覆盖。"
     }
   }
 }

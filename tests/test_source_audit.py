@@ -37,9 +37,19 @@ def test_markdown_scorecard_contains_transport_and_decision():
     markdown = render_markdown(audit(live=False))
 
     assert "# TrendRadar RSS 来源评判表" in markdown
-    assert "news_aggregator" in markdown
-    assert "fallback_only" in markdown
-    assert "Reuters" in markdown
+    assert "official" in markdown
+    assert "news_aggregator" not in markdown
+    assert "core" in markdown
+    assert "CNA 亚洲" in markdown
+
+
+def test_enabled_sources_exclude_uncontrolled_aggregators():
+    result = audit(live=False)
+
+    assert all(
+        row["transport_kind"] not in {"news_aggregator", "third_party_mirror"}
+        for row in result["rows"]
+    )
 
 
 def test_source_metadata_keeps_transport_and_identity_consistent():
@@ -51,5 +61,17 @@ def test_source_metadata_keeps_transport_and_identity_consistent():
     assert by_id["zaobao_china"]["transport_kind"] == "third_party_mirror"
     assert by_id["bbc_china"]["language"] == "zh"
     assert by_id["nature_news"]["feed_url"].startswith("https://")
+    assert by_id["zaobao_china"]["enabled"] is False
+    assert by_id["zaobao_world"]["enabled"] is False
+    assert by_id["reuters"]["enabled"] is False
+    assert by_id["ap_news"]["enabled"] is False
+    assert by_id["afp"]["enabled"] is False
+    assert by_id["arxiv_ai"]["enabled"] is False
+    assert by_id["techcrunch"]["enabled"] is False
+    assert by_id["nintendo_life"]["enabled"] is False
+    assert by_id["cna_asia"]["transport_kind"] == "official"
+    assert by_id["cna_world"]["transport_kind"] == "official"
+    assert by_id["pbs_newshour"]["transport_kind"] == "official"
+    assert by_id["rest_world"]["transport_kind"] == "official"
     assert "mit_news" in by_id
     assert "ifanr" in by_id

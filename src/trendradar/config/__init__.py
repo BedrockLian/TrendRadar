@@ -9,7 +9,7 @@ Files in this directory (touched at runtime, do NOT edit during cron run):
 
 | File               | Format | Purpose                                  |
 |--------------------|--------|------------------------------------------|
-| sources.json       | JSON   | RSS source definitions (43 sources)      |
+| sources.json       | JSON   | RSS source definitions (50 enabled sources) |
 | ai_interests.yaml  | YAML   | Interest scoring preferences              |
 | timeline.yaml      | YAML   | Push schedule (morning/noon/evening)     |
 | keywords.py        | Python | Aho-Corasick keyword matcher             |

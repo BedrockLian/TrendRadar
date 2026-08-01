@@ -33,7 +33,7 @@
       "platform": "zaobao",
       "type": "rss",
       "category": "news",
-      "enabled": true,
+      "enabled": false,
       "feed_url": "https://plink.anyfeeder.com/zaobao/realtime/china",
       "authority": 2,
       "language": "zh",
@@ -41,7 +41,8 @@
       "transport_kind": "third_party_mirror",
       "official_url": "https://www.zaobao.com.sg/",
       "fallback_ids": ["bbc_china", "sixth_tone", "scmp_china"],
-      "replacement_status": "no_public_official_rss_verified"
+      "replacement_status": "retired_third_party_mirror",
+      "disabled_reason": "连续现场检查失败；生产环境改用 CNA 亚洲、BBC 中国、Sixth Tone 和南华早报直连源。"
     },
     {
       "id": "zaobao_world",
@@ -49,7 +50,7 @@
       "platform": "zaobao",
       "type": "rss",
       "category": "news",
-      "enabled": true,
+      "enabled": false,
       "feed_url": "https://plink.anyfeeder.com/zaobao/realtime/world",
       "authority": 2,
       "language": "zh",
@@ -57,7 +58,8 @@
       "transport_kind": "third_party_mirror",
       "official_url": "https://www.zaobao.com.sg/",
       "fallback_ids": ["bbc_world", "dw_news", "nikkei_asia"],
-      "replacement_status": "no_public_official_rss_verified"
+      "replacement_status": "retired_third_party_mirror",
+      "disabled_reason": "连续现场检查失败；生产环境改用 CNA 世界、BBC 世界、DW 和 Nikkei Asia 直连源。"
     },
     {
       "id": "theverge_games",
@@ -102,11 +104,16 @@
       "platform": "techcrunch",
       "type": "rss",
       "category": "tech",
-      "enabled": true,
+      "enabled": false,
       "feed_url": "https://techcrunch.com/feed/",
       "authority": 2,
       "language": "en",
-      "priority": 2
+      "priority": 2,
+      "transport_kind": "official",
+      "official_url": "https://techcrunch.com/",
+      "fallback_ids": ["rest_world", "arstechnica", "mit_tech_review", "wired"],
+      "replacement_status": "retired_tls_failure",
+      "disabled_reason": "现场审计、直连和代理重复访问均出现 TLS UNEXPECTED_EOF；改由稳定科技直连源覆盖。"
     },
     {
       "id": "videogameschronicle",
@@ -224,6 +231,40 @@
       "needs_proxy": true
     },
     {
+      "id": "cna_asia",
+      "name": "CNA 亚洲",
+      "platform": "cna",
+      "type": "rss",
+      "category": "foreign_china",
+      "enabled": true,
+      "feed_url": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6511",
+      "desc": "Channel NewsAsia 亚洲新闻官方 RSS，替代联合早报中国中转源",
+      "authority": 3,
+      "language": "en",
+      "priority": 1,
+      "freshness_days": 2,
+      "transport_kind": "official",
+      "official_url": "https://www.channelnewsasia.com/",
+      "replacement_status": "official_feed"
+    },
+    {
+      "id": "cna_world",
+      "name": "CNA 世界",
+      "platform": "cna",
+      "type": "rss",
+      "category": "foreign_china",
+      "enabled": true,
+      "feed_url": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6311",
+      "desc": "Channel NewsAsia 世界新闻官方 RSS，替代联合早报国际中转源",
+      "authority": 3,
+      "language": "en",
+      "priority": 1,
+      "freshness_days": 2,
+      "transport_kind": "official",
+      "official_url": "https://www.channelnewsasia.com/",
+      "replacement_status": "official_feed"
+    },
+    {
       "id": "nytimes_business",
       "name": "纽约时报·商务",
       "platform": "nytimes",
@@ -241,7 +282,7 @@
       "platform": "reuters",
       "type": "rss",
       "category": "economy",
-      "enabled": true,
+      "enabled": false,
       "feed_url": "https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx1YlY4U0FuSjFHZ0pTVlNnQVAB",
       "authority": 3,
       "language": "en",
@@ -250,7 +291,8 @@
       "transport_kind": "news_aggregator",
       "official_url": "https://www.reuters.com/world/",
       "fallback_ids": ["wsj_world", "financial_times", "bbc_world"],
-      "replacement_status": "official_rss_requires_license"
+      "replacement_status": "retired_public_aggregator",
+      "disabled_reason": "生产环境不再使用 Google News 聚合；改由 WSJ、FT、BBC、CNA 等直连源覆盖。"
     },
     {
       "id": "financial_times",
@@ -290,6 +332,23 @@
       "language": "en",
       "priority": 0,
       "freshness_days": 7
+    },
+    {
+      "id": "rest_world",
+      "name": "Rest of World",
+      "platform": "restofworld",
+      "type": "rss",
+      "category": "tech",
+      "enabled": true,
+      "feed_url": "https://restofworld.org/feed/latest/",
+      "desc": "非营利全球科技报道，补充中国以外地区的技术与社会影响",
+      "authority": 3,
+      "language": "en",
+      "priority": 1,
+      "freshness_days": 7,
+      "transport_kind": "official",
+      "official_url": "https://restofworld.org/",
+      "replacement_status": "official_feed"
     },
     {
       "id": "wired",
@@ -346,7 +405,7 @@
       "platform": "apnews",
       "type": "rss",
       "category": "news",
-      "enabled": true,
+      "enabled": false,
       "feed_url": "https://news.google.com/rss/search?q=Associated+Press&hl=en-US&gl=US&ceid=US:en",
       "authority": 3,
       "language": "en",
@@ -355,7 +414,8 @@
       "transport_kind": "news_aggregator",
       "official_url": "https://apnews.com/",
       "fallback_ids": ["nytimes_world", "bbc_world", "dw_news"],
-      "replacement_status": "official_api_requires_license"
+      "replacement_status": "retired_public_aggregator",
+      "disabled_reason": "生产环境不再使用 Google News 聚合；改由纽约时报、BBC、DW、PBS、CNA 等直连源覆盖。"
     },
     {
       "id": "al_jazeera",
@@ -539,13 +599,18 @@
       "platform": "arxiv",
       "type": "rss",
       "category": "tech",
-      "enabled": true,
+      "enabled": false,
       "feed_url": "https://rss.arxiv.org/rss/cs.AI",
       "desc": "AI 学术论文一手源 (填补AI研究空白)",
       "authority": 3,
       "language": "en",
       "priority": 2,
-      "freshness_days": 7
+      "freshness_days": 7,
+      "transport_kind": "official",
+      "official_url": "https://arxiv.org/list/cs.AI/recent",
+      "fallback_ids": ["mit_ai", "mit_tech_review", "nature_news"],
+      "replacement_status": "retired_preprint_feed",
+      "disabled_reason": "现场抓取失败且预印本未经同行评审；生产新闻流改用 MIT AI、MIT Technology Review 和 Nature News。"
     },
     {
       "id": "dw_news",
@@ -657,12 +722,29 @@
       "priority": 1
     },
     {
+      "id": "pbs_newshour",
+      "name": "PBS NewsHour",
+      "platform": "pbs",
+      "type": "rss",
+      "category": "news",
+      "enabled": true,
+      "feed_url": "https://www.pbs.org/newshour/feeds/rss/headlines",
+      "desc": "PBS NewsHour 官方头条 RSS，替代 AP 公共聚合入口",
+      "authority": 3,
+      "language": "en",
+      "priority": 1,
+      "freshness_days": 2,
+      "transport_kind": "official",
+      "official_url": "https://www.pbs.org/newshour/",
+      "replacement_status": "official_feed"
+    },
+    {
       "id": "afp",
       "name": "AFP",
       "platform": "afp",
       "type": "rss",
       "category": "news",
-      "enabled": true,
+      "enabled": false,
       "feed_url": "https://news.google.com/rss/search?q=AFP",
       "desc": "法新社 (全球三大通讯社之一, 补 Reuters+AP)",
       "authority": 3,
@@ -673,7 +755,8 @@
       "transport_kind": "news_aggregator",
       "official_url": "https://www.afp.com/en",
       "fallback_ids": ["bbc_world", "al_jazeera", "guardian_world"],
-      "replacement_status": "public_rss_press_releases_only"
+      "replacement_status": "retired_public_aggregator",
+      "disabled_reason": "生产环境不再使用 Google News 聚合；公开 AFP RSS 不等价于完整新闻流，改由 BBC、Al Jazeera、Guardian、PBS 等直连源覆盖。"
     },
     {
       "id": "ign",
@@ -699,13 +782,18 @@
       "platform": "nintendolife",
       "type": "rss",
       "category": "game",
-      "enabled": true,
+      "enabled": false,
       "feed_url": "https://www.nintendolife.com/feed/",
       "desc": "任天堂专线新闻 (填补任天堂空白, 36KB)",
       "authority": 2,
       "language": "en",
       "priority": 1,
-      "freshness_days": 1
+      "freshness_days": 1,
+      "transport_kind": "official",
+      "official_url": "https://www.nintendolife.com/",
+      "fallback_ids": ["videogameschronicle", "pcgamer", "eurogamer"],
+      "replacement_status": "retired_http_403",
+      "disabled_reason": "连续现场检查返回 HTTP 403；任天堂相关报道由 VGC、PC Gamer、Eurogamer 和 IGN 继续覆盖。"
     },
     {
       "id": "pcgamesn",

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""TrendRadar 采集员 — 54个RSS源多线程并行抓取（ThreadPoolExecutor + urllib 同步版）
+"""TrendRadar 采集员 — 50个启用RSS源多线程并行抓取（ThreadPoolExecutor + urllib 同步版）
 
 针对标准 Python 3.14 (GIL=ON) 优化：移除 aiohttp/asyncio，改用 ThreadPoolExecutor。
 I/O bound 任务在 GIL=ON 下多线程本就能并行执行 HTTP 请求，
