@@ -15,9 +15,6 @@ os.environ.setdefault("TRENDRADAR_HOME", tempfile.mkdtemp(prefix="trendradar-pyt
 # 把源码目录加入 sys.path，兼容未安装时的本地测试
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SRC_DIR = PROJECT_ROOT / 'src'
-SCRIPTS_DIR = SRC_DIR / 'trendradar' / 'scripts'
-if str(SCRIPTS_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_DIR))
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 

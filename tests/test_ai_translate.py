@@ -16,9 +16,6 @@ from unittest.mock import patch, MagicMock, AsyncMock
 import asyncio
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS_DIR = str(PROJECT_ROOT / 'src' / 'trendradar' / 'scripts')
-if SCRIPTS_DIR not in sys.path:
-    sys.path.insert(0, SCRIPTS_DIR)
 
 
 def _has_source_keyword(keyword: str) -> bool:

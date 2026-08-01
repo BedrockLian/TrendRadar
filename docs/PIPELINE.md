@@ -20,6 +20,9 @@
   "briefing": "...",
   "stats": {
     "total_elapsed": 12.3,
+    "llm_stats": {
+      "status": "translated"
+    },
     "budget": {
       "budget_seconds": 180,
       "elapsed_seconds": 12.3,
@@ -34,6 +37,14 @@
 ```
 
 `silent` 表示没有新内容，`busy` 表示已有同名任务运行，`error` 表示需要诊断。Codex 只展示 `briefing`，不重新生成或拼接脚本输出。
+
+没有配置外部 LLM Key 时，翻译阶段会把原文写入 `codex_translation_queue_<slot>_<date>.json`，并在 `stats.llm_stats.status` 标记为 `needs_codex`。Codex 读取队列后直接生成 URL 对齐的中文响应，再执行：
+
+```text
+python -m trendradar.cli.codex_direct_translate --push-id noon --response <response.json>
+```
+
+应用成功后重新渲染 Markdown；不会写入 `[未翻译]`、`[翻译失败]` 等占位文本。
 
 ## 性能策略
 

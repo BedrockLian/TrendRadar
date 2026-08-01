@@ -27,6 +27,9 @@ python -m trendradar.pipeline.pipeline_orchestrator --output json
 只读取 stdout 中的单个 JSON 对象：
 
 - `ok`：展示 `briefing`，并检查 `stats.budget.within_budget`。
+- 如果 `stats.llm_stats.status` 为 `needs_codex`，读取 `translation_queue`，由 Codex 直接翻译标题和摘要，保存为 URL 对齐的 JSON 响应后执行：
+  `python -m trendradar.cli.codex_direct_translate --push-id <slot> --response <response.json>`，然后重新渲染并展示最终 Markdown。
+- Codex 直出必须保留原文事实和来源链接；不得把原文复制到 `title_cn`/`summary_cn`，也不得生成 `[未翻译]`、`[翻译失败]` 等占位文本。
 - `silent`：记录本轮没有新内容，不补造摘要。
 - `busy`：保留正在运行的任务，避免并发重跑。
 - `error`：展示 `errors` 和 `artifacts` 路径，进入 self-healing 流程。

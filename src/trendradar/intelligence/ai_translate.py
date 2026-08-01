@@ -132,6 +132,17 @@ from trendradar.config.translation import (
 
 _translate_failures = 0        # 模块级熔断计数器
 
+# Translation markers from older runs are not valid translations.  Treat them
+# as missing so a later Codex-direct pass can repair the same item.
+_INVALID_TRANSLATION_PREFIXES = ('[未翻译]', '[翻译失败]', '[扩写失败]')
+
+
+def _has_real_translation(value: object) -> bool:
+    """Return whether a stored translation is usable rather than a marker."""
+    if not value or not str(value).strip():
+        return False
+    return not str(value).lstrip().startswith(_INVALID_TRANSLATION_PREFIXES)
+
 # ── Translation cache: title/summary hash → (title_cn, summary_cn) ──────────
 # Cross-slot dedup: same BBC article appearing in morning + noon + evening
 # hits cache instead of DeepSeek API. Saves ~3-5s per repeat item.
@@ -179,6 +190,40 @@ def _save_cache(cache: dict):
         _os.replace(tmp, p)
     except OSError as e:
         log.warning(f"translation cache write failed: {e}")
+
+
+def _write_codex_translation_queue(push_id: str, items: list) -> Path:
+    """Persist source-backed items for a Codex-direct translation pass.
+
+    The queue deliberately contains the original title/summary and URL only.
+    It is an auditable handoff, not a fake translation fallback.
+    """
+    from datetime import datetime
+    from trendradar.runtime.settings import atomic_write_json
+
+    today = datetime.now(CST).strftime('%Y%m%d')
+    queue_path = DATA_DIR / f'codex_translation_queue_{push_id}_{today}.json'
+    records = []
+    for domain, idx, item, title, summary, needs_title, needs_summary, source_lang in items:
+        records.append({
+            'domain': domain,
+            'index': idx,
+            'url': item.get('url', ''),
+            'source_platform': item.get('source_platform', ''),
+            'source_lang': source_lang,
+            'title': title,
+            'summary': summary,
+            'needs_title': needs_title,
+            'needs_summary': needs_summary,
+        })
+    atomic_write_json(queue_path, {
+        'version': 1,
+        'mode': 'codex_direct',
+        'push_id': push_id,
+        'created_at': datetime.now(CST).isoformat(),
+        'items': records,
+    }, indent=2)
+    return queue_path
 
 def _content_hash(text: str) -> str:
     """SHA1 of normalized text — stable across whitespace/case differences."""
@@ -532,8 +577,8 @@ def _load_and_scan(push_id: str) -> tuple[dict, list, list, Path]:
         for idx, item in enumerate(items):
             title = (item.get('title', '') or '').strip()
             summary = (item.get('summary', '') or '').strip()
-            has_title_cn = bool(item.get('title_cn'))
-            has_summary_cn = bool(item.get('summary_cn'))
+            has_title_cn = _has_real_translation(item.get('title_cn'))
+            has_summary_cn = _has_real_translation(item.get('summary_cn'))
 
             # Skip if both already translated/expanded
             if has_title_cn and has_summary_cn:
@@ -589,23 +634,35 @@ async def process_curated(push_id: str) -> dict:
     provider_name = os.environ.get('TRENDRADAR_LLM_PROVIDER', 'openai_chat').lower()
     if not api_key and provider_name != 'ollama':
         log.warning(
-            "No API key set for LLM provider — translation degraded. "
-            "Set DEEPSEEK_API_KEY or other provider env to enable translation."
+            "No API key set for LLM provider — handing source items to Codex direct output."
         )
-        # 降级：为所有需翻译的外媒条目打上标记
-        for domain, idx, item, title, summary, needs_title, needs_summary, _lang in items_to_translate:
-            if needs_title:
-                item['title_cn'] = f"[未翻译] {title}"
-            if needs_summary:
-                item['summary_cn'] = f"[{item.get('source_platform', '外媒')}] {summary[:80]}"
+        codex_items = items_to_translate + items_to_expand
+        queue_path = _write_codex_translation_queue(push_id, codex_items)
+        # Remove stale markers from older runs; raw source remains available
+        # until Codex writes a verified direct-output response.
+        for _domain, _idx, item, _title, _summary, _needs_title, _needs_summary, _lang in codex_items:
+            for field in ('title_cn', 'summary_cn'):
+                if str(item.get(field, '')).lstrip().startswith(_INVALID_TRANSLATION_PREFIXES):
+                    item.pop(field, None)
+        data['_llm_stats'] = {
+            'provider': 'codex_direct',
+            'status': 'needs_codex',
+            'translation_queue': str(queue_path),
+            'api_call_count': 0,
+            'estimated_tokens': 0,
+            'translated_count': 0,
+            'untranslated_count': len(codex_items),
+            'total_chars': sum(len(entry[3]) + len(entry[4]) for entry in codex_items),
+        }
         _write_back(data, curated_path, push_id)
-        log.info(f"Translation degraded: {len(items_to_translate)} items marked as untranslated")
+        log.info(f"Codex direct queue written: {len(codex_items)} items -> {queue_path}")
         return data
 
     total_chars = 0
     translated_count = 0
     api_call_count = 0
     estimated_tokens = 0
+    failed_entries = []
 
     async with aiohttp.ClientSession() as session:
         # Sprint 3 perf: 翻译 + 扩写并发 (互不依赖)
@@ -625,10 +682,9 @@ async def process_curated(push_id: str) -> dict:
                 if error:
                     for entry in batch:
                         domain, idx, item, title, summary, needs_title, needs_summary, _lang = entry
-                        if needs_title:
-                            item['title_cn'] = f"[翻译失败] {title}"
-                        if needs_summary:
-                            item['summary_cn'] = f"[{item.get('source_platform', '外媒')}] {summary[:80]}"
+                        item.pop('title_cn', None)
+                        item.pop('summary_cn', None)
+                        failed_entries.append(entry)
                     log.warning(f"Translation batch failed: {error}, {len(batch)} items degraded")
                     continue
                 for entry, (title_cn, summary_cn) in zip(batch, translations, strict=True):
@@ -656,6 +712,11 @@ async def process_curated(push_id: str) -> dict:
             api_call_count += len(expand_results)
             for batch, translations, error in expand_results:
                 if error:
+                    for entry in batch:
+                        _domain, _idx, item, _title, _summary, _needs_title, _needs_summary, _lang = entry
+                        item.pop('title_cn', None)
+                        item.pop('summary_cn', None)
+                        failed_entries.append(entry)
                     continue
                 for entry, (title_cn, summary_cn) in zip(batch, translations, strict=True):
                     domain, idx, item, title, summary, needs_title, needs_summary, _source_lang = entry
@@ -672,20 +733,25 @@ async def process_curated(push_id: str) -> dict:
                     except Exception:
                         pass
 
+    queue_path = None
+    if failed_entries:
+        queue_path = _write_codex_translation_queue(push_id, failed_entries)
+
+    data['_llm_stats'] = {
+        'provider': provider_name,
+        'status': 'needs_codex' if queue_path else 'translated',
+        'translation_queue': str(queue_path) if queue_path else '',
+        'api_call_count': api_call_count,
+        'estimated_tokens': estimated_tokens,
+        'translated_count': translated_count,
+        'untranslated_count': len(failed_entries),
+        'total_chars': total_chars,
+    }
     _write_back(data, curated_path, push_id)
 
     log.info(
         f"Done: {translated_count} items processed, "
         f"{total_chars} chars total, {api_call_count} API calls, ~{estimated_tokens} tokens")
-
-    # P1-13: 把统计信息写进 data 字典返回，orchestrator 透传到 push_log
-    if isinstance(data, dict):
-        data['_llm_stats'] = {
-            'api_call_count': api_call_count,
-            'estimated_tokens': estimated_tokens,
-            'translated_count': translated_count,
-            'total_chars': total_chars,
-        }
 
     return data
 
