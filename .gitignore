@@ -13,11 +13,14 @@ __pycache__/
 .pytest_cache/
 
 # ── TrendRadar 运行时数据（不推到 GitHub）──────────────────
+.runtime/
 data/
 cache/
 archive/
 logs/
 output/
+outputs/
+locks/
 mail_queue/
 reports/
 *.db

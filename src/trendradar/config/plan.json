@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "description": "TrendRadar 的 Codex-only 本地任务计划：脚本生成结构化 JSON 和 Markdown，Codex 负责读取、判断和呈现；不调用外部消息平台。",
+  "timezone": "Asia/Shanghai",
+  "performance_budget_seconds": 180,
+  "jobs": [
+    {
+      "id": "trendradar-health-check",
+      "schedule": "0 15 * * *",
+      "kind": "maintenance",
+      "description": "检查 Python、配置、数据库、锁和最近任务结果，确认运行环境健康。",
+      "entrypoint": "ops/codex/health_check.py",
+      "timeout_seconds": 180
+    },
+    {
+      "id": "trendradar-maintenance",
+      "schedule": "0 3 * * *",
+      "kind": "maintenance",
+      "description": "清理过期缓存和归档，执行数据库轻量维护，并记录维护结果。",
+      "entrypoint": "ops/codex/maintenance.py",
+      "timeout_seconds": 900
+    },
+    {
+      "id": "trendradar-output-watchdog",
+      "schedule": "10 9,12,21 * * *",
+      "kind": "watchdog",
+      "description": "检查日报任务是否按时完成，并确认对应 Markdown 产物真实存在。",
+      "entrypoint": "ops/codex/output_watchdog.py",
+      "timeout_seconds": 180
+    },
+    {
+      "id": "trendradar-daily-briefing",
+      "schedule": "0 9,12,21 * * *",
+      "kind": "briefing",
+      "description": "执行抓取、精选、翻译、渲染和指纹记录，输出单个 JSON 结果及 Markdown 日报。",
+      "entrypoint": "trendradar.pipeline.pipeline_orchestrator",
+      "slots": ["morning", "noon", "evening"],
+      "timeout_seconds": 180
+    },
+    {
+      "id": "trendradar-weekly-report",
+      "schedule": "30 9 * * 1",
+      "kind": "report",
+      "description": "收集最近 7 天精选数据证据，供 Codex 生成有来源的周报。",
+      "entrypoint": "trendradar.reporting.report_task --period weekly",
+      "timeout_seconds": 600
+    },
+    {
+      "id": "trendradar-monthly-report",
+      "schedule": "0 9 1 * *",
+      "kind": "report",
+      "description": "收集最近 32 天精选数据证据，供 Codex 生成有来源的月报。",
+      "entrypoint": "trendradar.reporting.report_task --period monthly",
+      "timeout_seconds": 900
+    }
+  ]
+}
