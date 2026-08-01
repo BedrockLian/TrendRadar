@@ -1,0 +1,288 @@
+{
+  "version": 1,
+  "last_reviewed": "2026-08-01",
+  "purpose": "用可复核的三维评分和传输闸门评估 RSS 来源，不把媒体品牌、聚合地址和当前抓取成功混为同一指标。",
+  "dimensions": {
+    "quality": {
+      "weight": 0.4,
+      "scale": "1-5",
+      "rule": "原创性、编辑规范、事实核验、上下文完整度和专业深度。"
+    },
+    "authority": {
+      "weight": 0.4,
+      "scale": "1-5",
+      "rule": "通讯社、公共机构、专业机构、区域媒体或垂直媒体在对应领域的可信身份。"
+    },
+    "freshness": {
+      "weight": 0.2,
+      "scale": "0-5",
+      "rule": "根据实时抓取时最新条目的年龄，与该来源 cadence_target_hours 比较。"
+    }
+  },
+  "freshness_score": {
+    "5": "最新条目不超过目标间隔",
+    "4": "不超过目标间隔的 2 倍",
+    "3": "不超过目标间隔的 4 倍",
+    "2": "不超过目标间隔的 7 倍",
+    "1": "超过目标间隔的 7 倍",
+    "0": "抓取失败、无法解析或没有有效条目"
+  },
+  "decision_thresholds": {
+    "core": 4.0,
+    "supplement": 3.2,
+    "fallback_only": 2.5,
+    "repair": 2.5
+  },
+  "category_defaults": {
+    "news": {
+      "quality": 3,
+      "authority": 3,
+      "cadence_target_hours": 24,
+      "source_kind": "publisher",
+      "decision": "supplement"
+    },
+    "foreign_china": {
+      "quality": 3,
+      "authority": 3,
+      "cadence_target_hours": 24,
+      "source_kind": "publisher",
+      "decision": "supplement"
+    },
+    "tech": {
+      "quality": 3,
+      "authority": 3,
+      "cadence_target_hours": 48,
+      "source_kind": "publisher",
+      "decision": "supplement"
+    },
+    "economy": {
+      "quality": 3,
+      "authority": 3,
+      "cadence_target_hours": 24,
+      "source_kind": "publisher",
+      "decision": "supplement"
+    },
+    "game": {
+      "quality": 3,
+      "authority": 2,
+      "cadence_target_hours": 48,
+      "source_kind": "specialist_publisher",
+      "decision": "specialist"
+    }
+  },
+  "overrides": {
+    "reuters": {
+      "quality": 4,
+      "authority": 5,
+      "source_kind": "wire",
+      "cadence_target_hours": 12,
+      "decision": "core",
+      "transport_kind": "news_aggregator",
+      "official_url": "https://www.reuters.com/world/",
+      "verification_url": "https://www.thomsonreuters.com/en/about-us/trust-principles",
+      "fallback_ids": ["wsj_world", "financial_times", "bbc_world"],
+      "replacement_status": "official_rss_requires_license",
+      "notes": "Reuters 官方 RSS 交付需要授权；当前公开入口是 Google News 聚合，不能按官方直连计分。"
+    },
+    "ap_news": {
+      "quality": 4,
+      "authority": 5,
+      "source_kind": "wire",
+      "cadence_target_hours": 12,
+      "decision": "core",
+      "transport_kind": "news_aggregator",
+      "official_url": "https://apnews.com/",
+      "verification_url": "https://www.ap.org/about/news-values-and-principles/",
+      "fallback_ids": ["nytimes_world", "bbc_world", "dw_news"],
+      "replacement_status": "official_api_requires_license",
+      "notes": "AP Media API 提供授权 RSS/API；公开 AP News RSS 当前返回授权错误，保留聚合入口但必须标记传输风险。"
+    },
+    "afp": {
+      "quality": 4,
+      "authority": 5,
+      "source_kind": "wire",
+      "cadence_target_hours": 12,
+      "decision": "core",
+      "transport_kind": "news_aggregator",
+      "official_url": "https://www.afp.com/en",
+      "verification_url": "https://www.afp.com/en/agency/inside-afp/press-releases",
+      "fallback_ids": ["bbc_world", "al_jazeera", "guardian_world"],
+      "replacement_status": "public_rss_press_releases_only",
+      "notes": "AFP 公开 RSS 可确认的是新闻稿，不等价于完整全球新闻流。"
+    },
+    "zaobao_china": {
+      "quality": 3,
+      "authority": 3,
+      "source_kind": "regional_publisher",
+      "cadence_target_hours": 24,
+      "decision": "fallback_only",
+      "transport_kind": "third_party_mirror",
+      "official_url": "https://www.zaobao.com.sg/",
+      "fallback_ids": ["bbc_china", "sixth_tone", "scmp_china"],
+      "replacement_status": "no_public_official_rss_verified",
+      "notes": "当前 anyfeeder 中转两轮现场检查均失败；若必须保留，应自建并固定 RSSHub/网页采集版本。"
+    },
+    "zaobao_world": {
+      "quality": 3,
+      "authority": 3,
+      "source_kind": "regional_publisher",
+      "cadence_target_hours": 24,
+      "decision": "fallback_only",
+      "transport_kind": "third_party_mirror",
+      "official_url": "https://www.zaobao.com.sg/",
+      "fallback_ids": ["bbc_world", "dw_news", "nikkei_asia"],
+      "replacement_status": "no_public_official_rss_verified",
+      "notes": "当前 anyfeeder 中转两轮现场检查均失败；不应作为唯一国际新闻来源。"
+    },
+    "bbc_world": {
+      "quality": 4,
+      "authority": 5,
+      "cadence_target_hours": 12,
+      "decision": "core",
+      "source_kind": "public_broadcaster",
+      "official_url": "https://www.bbc.com/news"
+    },
+    "dw_news": {
+      "quality": 4,
+      "authority": 5,
+      "cadence_target_hours": 12,
+      "decision": "core",
+      "source_kind": "public_broadcaster",
+      "official_url": "https://www.dw.com/"
+    },
+    "nytimes_world": {
+      "quality": 4,
+      "authority": 5,
+      "cadence_target_hours": 12,
+      "decision": "core",
+      "official_url": "https://www.nytimes.com/section/world"
+    },
+    "financial_times": {
+      "quality": 4,
+      "authority": 5,
+      "cadence_target_hours": 12,
+      "decision": "core",
+      "official_url": "https://www.ft.com/"
+    },
+    "wsj_world": {
+      "quality": 4,
+      "authority": 5,
+      "cadence_target_hours": 12,
+      "decision": "core",
+      "official_url": "https://www.wsj.com/news/world"
+    },
+    "propublica": {
+      "quality": 5,
+      "authority": 5,
+      "cadence_target_hours": 168,
+      "decision": "core",
+      "source_kind": "investigative_nonprofit",
+      "official_url": "https://www.propublica.org/"
+    },
+    "foreign_affairs": {
+      "quality": 5,
+      "authority": 5,
+      "cadence_target_hours": 168,
+      "decision": "core",
+      "source_kind": "specialist_analysis",
+      "official_url": "https://www.foreignaffairs.com/"
+    },
+    "bloomberg_markets": {
+      "quality": 4,
+      "authority": 5,
+      "cadence_target_hours": 12,
+      "decision": "core",
+      "official_url": "https://www.bloomberg.com/markets"
+    },
+    "science_news": {
+      "quality": 4,
+      "authority": 4,
+      "cadence_target_hours": 48,
+      "decision": "core",
+      "source_kind": "science_publisher",
+      "official_url": "https://www.sciencenews.org/"
+    },
+    "cnbc_world": {
+      "quality": 4,
+      "authority": 4,
+      "cadence_target_hours": 24,
+      "decision": "core",
+      "official_url": "https://www.cnbc.com/world/"
+    },
+    "nikkei_asia": {
+      "quality": 4,
+      "authority": 4,
+      "cadence_target_hours": 24,
+      "decision": "core",
+      "official_url": "https://asia.nikkei.com/"
+    },
+    "stat_news": {
+      "quality": 4,
+      "authority": 4,
+      "cadence_target_hours": 72,
+      "decision": "core",
+      "source_kind": "specialist_publisher",
+      "official_url": "https://www.statnews.com/"
+    },
+    "carbon_brief": {
+      "quality": 5,
+      "authority": 4,
+      "cadence_target_hours": 168,
+      "decision": "core",
+      "source_kind": "specialist_analysis",
+      "official_url": "https://www.carbonbrief.org/"
+    },
+    "mit_news": {
+      "quality": 4,
+      "authority": 4,
+      "source_kind": "institutional_newsroom",
+      "cadence_target_hours": 168,
+      "decision": "specialist",
+      "official_url": "https://news.mit.edu/",
+      "verification_url": "https://news.mit.edu/press/inquiries",
+      "notes": "MIT 官方新闻办公室的一手机构信息；权威但不是独立媒体报道。"
+    },
+    "mit_ai": {
+      "quality": 4,
+      "authority": 4,
+      "source_kind": "institutional_newsroom",
+      "cadence_target_hours": 168,
+      "decision": "specialist",
+      "official_url": "https://news.mit.edu/",
+      "verification_url": "https://news.mit.edu/press/inquiries",
+      "notes": "MIT 官方 AI 主题 RSS；出现抓取失败时优先核对 feed 路径和代理，而非立即删除来源。"
+    },
+    "arxiv_ai": {
+      "quality": 4,
+      "authority": 4,
+      "source_kind": "research_repository",
+      "cadence_target_hours": 168,
+      "decision": "specialist",
+      "official_url": "https://arxiv.org/list/cs.AI/recent",
+      "verification_url": "https://info.arxiv.org/about/index.html",
+      "notes": "研究发现源；arXiv 官方明确说明内容不经过同行评审，不能直接当作已证实结论。"
+    },
+    "nature_news": {
+      "quality": 5,
+      "authority": 5,
+      "source_kind": "science_publisher",
+      "cadence_target_hours": 168,
+      "decision": "core",
+      "official_url": "https://www.nature.com/",
+      "verification_url": "https://www.nature.com/nature-portfolio/about",
+      "notes": "Nature 品牌下需区分研究论文、新闻、评论和分析；更新较慢不等于低质量。"
+    },
+    "ign": {
+      "quality": 3,
+      "authority": 2,
+      "source_kind": "specialist_publisher",
+      "cadence_target_hours": 24,
+      "decision": "specialist",
+      "transport_kind": "legacy_relay",
+      "official_url": "https://www.ign.com/",
+      "fallback_ids": ["pcgamer", "gamesindustry", "videogameschronicle"],
+      "replacement_status": "official_route_not_verified",
+      "notes": "FeedBurner 不是内容聚合器，但属于旧式中转；当前可用，持续监测即可。"
+    }
+  }
+}

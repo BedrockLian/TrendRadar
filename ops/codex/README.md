@@ -9,5 +9,12 @@
 | `health_check.py` | 每日体检运行目录、数据库、配置和最近结果 |
 | `maintenance.py` | 清理运行缓存、压缩历史记录并执行轻量维护 |
 | `output_watchdog.py` | 检查指定日报时段是否按时产生产物 |
+| `source_audit.py` | 按质量、权威、更新频率和传输类型生成 RSS 来源评判表 |
 
 运行前设置 `TRENDRADAR_HOME` 可把运行数据放到独立目录；未设置时，仓库内运行默认使用 `.runtime/`。
+
+来源审计默认只读取评分表；需要实时核验时运行：
+
+```text
+python ops/codex/source_audit.py --live --format markdown
+```

@@ -8,6 +8,7 @@ TrendRadar 是一个多源 RSS 聚合、分类、精选、翻译和 Markdown 简
 python -m pip install -e ".[dev]"
 python -m trendradar.pipeline.pipeline_orchestrator --check-version
 python ops/codex/health_check.py
+python ops/codex/source_audit.py --live --format markdown
 python -m trendradar.pipeline.pipeline_orchestrator --push-id morning --output json
 ```
 

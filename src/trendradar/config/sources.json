@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "last_updated": "2026-06-21",
+  "last_updated": "2026-08-01",
   "data_sources": [
     {
       "id": "jiemian",
@@ -37,7 +37,11 @@
       "feed_url": "https://plink.anyfeeder.com/zaobao/realtime/china",
       "authority": 2,
       "language": "zh",
-      "priority": 2
+      "priority": 2,
+      "transport_kind": "third_party_mirror",
+      "official_url": "https://www.zaobao.com.sg/",
+      "fallback_ids": ["bbc_china", "sixth_tone", "scmp_china"],
+      "replacement_status": "no_public_official_rss_verified"
     },
     {
       "id": "zaobao_world",
@@ -49,7 +53,11 @@
       "feed_url": "https://plink.anyfeeder.com/zaobao/realtime/world",
       "authority": 2,
       "language": "zh",
-      "priority": 2
+      "priority": 2,
+      "transport_kind": "third_party_mirror",
+      "official_url": "https://www.zaobao.com.sg/",
+      "fallback_ids": ["bbc_world", "dw_news", "nikkei_asia"],
+      "replacement_status": "no_public_official_rss_verified"
     },
     {
       "id": "theverge_games",
@@ -122,7 +130,6 @@
       "enabled": true,
       "feed_url": "https://www.pcgamer.com/rss/",
       "desc": "PC游戏权威媒体",
-      "disabled_reason": "GFW blocked, consistently times out",
       "authority": 2,
       "language": "en",
       "priority": 2
@@ -136,7 +143,6 @@
       "enabled": true,
       "feed_url": "https://www.rockpapershotgun.com/feed",
       "desc": "专注PC游戏，长文评论",
-      "disabled_reason": "GFW blocked, consistently times out",
       "authority": 2,
       "language": "en",
       "priority": 1
@@ -150,7 +156,6 @@
       "enabled": true,
       "feed_url": "https://www.eurogamer.net/feed",
       "desc": "欧洲领先游戏媒体，深度评测",
-      "disabled_reason": "GFW blocked, consistently times out",
       "authority": 2,
       "language": "en",
       "priority": 0
@@ -200,7 +205,7 @@
       "enabled": true,
       "feed_url": "https://feeds.bbci.co.uk/zhongwen/simp/rss.xml",
       "authority": 2,
-      "language": "en",
+      "language": "zh",
       "priority": 0,
       "needs_proxy": true,
       "freshness_days": 3
@@ -241,7 +246,11 @@
       "authority": 3,
       "language": "en",
       "priority": 1,
-      "freshness_days": 3
+      "freshness_days": 3,
+      "transport_kind": "news_aggregator",
+      "official_url": "https://www.reuters.com/world/",
+      "fallback_ids": ["wsj_world", "financial_times", "bbc_world"],
+      "replacement_status": "official_rss_requires_license"
     },
     {
       "id": "financial_times",
@@ -313,7 +322,7 @@
       "type": "rss",
       "category": "tech",
       "enabled": true,
-      "feed_url": "http://feeds.nature.com/nature/rss/current",
+      "feed_url": "https://feeds.nature.com/nature/rss/current",
       "authority": 3,
       "language": "en",
       "priority": 0,
@@ -342,7 +351,11 @@
       "authority": 3,
       "language": "en",
       "priority": 0,
-      "freshness_days": 3
+      "freshness_days": 3,
+      "transport_kind": "news_aggregator",
+      "official_url": "https://apnews.com/",
+      "fallback_ids": ["nytimes_world", "bbc_world", "dw_news"],
+      "replacement_status": "official_api_requires_license"
     },
     {
       "id": "al_jazeera",
@@ -355,10 +368,13 @@
       "authority": 3,
       "language": "en",
       "priority": 1,
-      "desc": "卡塔尔半岛电视台（Google News 聚合）"
+      "desc": "卡塔尔半岛电视台官方 RSS",
+      "transport_kind": "official",
+      "official_url": "https://www.aljazeera.com/",
+      "replacement_status": "official_feed"
     },
     {
-      "id": "the_decoder",
+      "id": "mit_news",
       "name": "MIT News",
       "platform": "mit",
       "type": "rss",
@@ -450,7 +466,7 @@
       "freshness_days": 7
     },
     {
-      "id": "36kr",
+      "id": "ifanr",
       "name": "爱范儿",
       "platform": "ifanr",
       "type": "rss",
@@ -653,7 +669,11 @@
       "language": "en",
       "priority": 0,
       "freshness_days": 1,
-      "needs_proxy": true
+      "needs_proxy": true,
+      "transport_kind": "news_aggregator",
+      "official_url": "https://www.afp.com/en",
+      "fallback_ids": ["bbc_world", "al_jazeera", "guardian_world"],
+      "replacement_status": "public_rss_press_releases_only"
     },
     {
       "id": "ign",
@@ -667,7 +687,11 @@
       "authority": 2,
       "language": "en",
       "priority": 1,
-      "freshness_days": 1
+      "freshness_days": 1,
+      "transport_kind": "legacy_relay",
+      "official_url": "https://www.ign.com/",
+      "fallback_ids": ["pcgamer", "gamesindustry", "videogameschronicle"],
+      "replacement_status": "official_route_not_verified"
     },
     {
       "id": "nintendo_life",
